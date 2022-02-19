@@ -1,5 +1,5 @@
 CXX = g++
-CPPFLAGS = -DDEBUG -I.. -I../coder
+CPPFLAGS = -DDEBUG -I../src -I../extern
 CXXFLAGS = -g -rdynamic -Wall -Wextra -std=c++11
 LDFLAGS =
 GTEST_LIB_ROOT =
@@ -16,7 +16,7 @@ TESTS = $(TEST_SRCS:%.cpp=%)
 EXECS = $(TEST_SRCS:%.cpp=%.exe)
 DEPFILES := $(TEST_SRCS:%.cpp=%.d)
 
-VPATH = ../
+VPATH = ../src
 LAPACK_LIB =
 ifeq ($(LAPACK_LIB),)
 	LAPACK_LIB = -llapack -lblas
