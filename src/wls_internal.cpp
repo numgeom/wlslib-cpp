@@ -16016,21 +16016,23 @@ namespace wls
     //     wls = wls_resize(wls, dim, npoints)
     //     wls = wls_resize(wls, dim, npoints, degree)
     //     wls = wls_resize(wls, dim, npoints, degree, order)
+    //     wls = wls_resize(wls, dim, npoints, degree, order, interp0)
     //
     //  Parameters
     //  ----------
-    //     wls:       previously allocated WlsObject object
-    //     dim:       dimension
-    //     npoints:   number of points
-    //     degree:    degree of polynomials (use negative for tensor product monomials)
-    //     order:     order of the confluent Vandermonde system (default is 0)
+    //     wls:       Previously allocated WlsObject object
+    //     dim:       Dimension
+    //     npoints:   Number of points.
+    //     degree:    Degree of polynomials (negative for tensor product monomials).
+    //     order:     Order of the confluent Vandermonde system (default is 0).
+    //     interp0:   Whether to enforce WLS to pass through the first point.
     //
     //  Returns
     //  -------
     //     wls:       a MATLAB/C struct that contains the buffer spaces for
     //                computing WLS and its differentiation.
     //
-    //   See also wls_init wls_diff
+    //   See also wls_init, wls_var_diff
     b_wls->degree = degree;
     b_wls->order = order;
 

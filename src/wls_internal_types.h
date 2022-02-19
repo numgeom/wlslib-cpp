@@ -26,6 +26,7 @@ struct WlsObject {
   int npoints;
   int degree;
   int order;
+  boolean_T interp0;
   int stride;
   ::coder::array<double, 2U> us;
   ::coder::array<double, 1U> rweights;
