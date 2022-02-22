@@ -47,8 +47,8 @@ boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
   //        to be called by wls::rrqr_factor in C++ automatically.
   //
   //
-  //  See also rrqr_factor, gen_vander_1d_dag, gen_vander_2d_dag,
-  //  gen_vander_3d_dag Force to be column major
+  //  See also rrqr_factor, gen_vander_dag
+  //  Force to be column major
   n = dag.size(1) - 1;
   //  Resize work space if needed
   if (work.size(1) < dag.size(1)) {
