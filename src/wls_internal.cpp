@@ -16247,7 +16247,7 @@ namespace wls
     b_wls->hs_inv.size[1] = dim;
     b_wls->hs_inv.size[0] = 1;
     if (use_dag) {
-      if ((dim != b_wls->dag.size(1)) || (ncols != b_wls->dag.size(0))) {
+      if ((dim != b_wls->dag.size(1)) || (ncols + 1 != b_wls->dag.size(0))) {
         //  Reset DAG if dimension or degree has changed.
         //  Add one additional row for storing the signature.
         b_wls->dag.set_size(ncols + 1, dim);
