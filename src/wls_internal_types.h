@@ -10,6 +10,7 @@
 // Include files
 #include "rtwtypes.h"
 #include "coder_array.h"
+#include "coder_bounded_array.h"
 
 // Type Definitions
 namespace wls {
