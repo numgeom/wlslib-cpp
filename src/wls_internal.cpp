@@ -1188,7 +1188,8 @@ namespace wls
     //  Use last entry as signature
     u1 = dag.size(1) * dag.size(0) - 1;
     u0 = dag.size(0);
-    dag[u1 % u0 * dag.size(1) + u1 / u0] = static_cast<unsigned char>(degree);
+    dag[u1 % u0 * dag.size(1) + u1 / u0] = static_cast<unsigned char>(degree +
+      127);
   }
 
   static inline
@@ -4152,7 +4153,7 @@ namespace wls
     //  Use last entry as signature
     i = dag.size(1) * dag.size(0) - 1;
     j = dag.size(0);
-    dag[i % j * dag.size(1) + i / j] = static_cast<unsigned char>(degree);
+    dag[i % j * dag.size(1) + i / j] = static_cast<unsigned char>(degree + 127);
   }
 
   static inline
@@ -15069,7 +15070,7 @@ namespace wls
     //  Use last entry as signature
     i = dag.size(1) * dag.size(0) - 1;
     x = dag.size(0);
-    dag[i % x * dag.size(1) + i / x] = static_cast<unsigned char>(degree);
+    dag[i % x * dag.size(1) + i / x] = static_cast<unsigned char>(degree + 127);
   }
 
   static inline
@@ -16150,12 +16151,14 @@ namespace wls
     //
     //  Notes
     //  -----
-    //  If one of the arguments degree or order is missing, then its
-    //  corresponding value in the input wls object will be preserved.
+    //  If one of the arguments degree, order, or use_dag is missing, then its
+    //  corresponding value in the input wls object will be preserved. If
+    //  present, they will overwrite the values in `wls`.
     //
     //   See also WlsObject, wls_init, wls_var_diff
     b_wls->degree = degree;
     b_wls->order = order;
+    b_wls->use_dag = use_dag;
 
     //  make stride a multiple of four
     stride = ((npoints + 3) / 4) << 2;
@@ -16253,7 +16256,8 @@ namespace wls
         b_wls->dag.set_size(ncols + 1, dim);
         u1 = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         b_degree = b_wls->dag.size(0);
-        b_wls->dag[u1 % b_degree * b_wls->dag.size(1) + u1 / b_degree] = 127U;
+        b_wls->dag[u1 % b_degree * b_wls->dag.size(1) + u1 / b_degree] =
+          MAX_uint8_T;
       }
     } else {
       b_wls->dag.set_size(0, dim);
@@ -16670,7 +16674,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -17083,7 +17087,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -17436,7 +17440,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -17847,7 +17851,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -18255,7 +18259,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -18664,7 +18668,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
@@ -19073,7 +19077,7 @@ namespace wls
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         wls_idx_0 = b_wls->dag.size(0);
         if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree) {
+            degree + 127) {
           //  Wrapper function for building DAG in nD.
           //
           //     dag = gen_vander_dag(dim, degree)
