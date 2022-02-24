@@ -48,7 +48,7 @@ TEST(BACKSOLVE, NO_STRIDE) {
     }
   }
   for (int i = 0; i < 20; ++i)
-    EXPECT_NEAR(bs[i], bs2[i], 1e-12 * std::abs(bs[i]));
+    EXPECT_NEAR(bs[i], bs2[i], 1.e-10 * std::abs(bs[i]));
 }
 
 TEST(BACKSOLVE, STRIDE) {
@@ -68,6 +68,6 @@ TEST(BACKSOLVE, STRIDE) {
     }
     const auto *bb = bs.data() + k * 15;
     for (int i = 0; i < 10; ++i)
-      EXPECT_NEAR(b[i], bb[i], 1e-12 * std::abs(b[i]));
+      EXPECT_NEAR(b[i], bb[i], 1.e-10 * std::abs(b[i]));
   }
 }
