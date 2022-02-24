@@ -82,7 +82,7 @@ TEST(VANDER, ONE_D) {
     const auto VMap  = MatrixMap(V.data(), n, wls::compute_ncols<1>(degree));
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < wls::compute_ncols<1>(degree); ++j)
-        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1e-12);
+        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1.e-10);
   }
 }
 
@@ -96,7 +96,7 @@ TEST(VANDER, TWO_D) {
     const auto VMap  = MatrixMap(V.data(), n, wls::compute_ncols<2>(degree));
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < wls::compute_ncols<2>(degree); ++j)
-        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1e-12);
+        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1.e-10);
   }
 }
 
@@ -110,6 +110,6 @@ TEST(VANDER, THREE_D) {
     const auto VMap  = MatrixMap(V.data(), n, wls::compute_ncols<3>(degree));
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < wls::compute_ncols<3>(degree); ++j)
-        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1e-12);
+        ASSERT_NEAR(VMap(i, j), V_ref[i][j], 1.e-10);
   }
 }

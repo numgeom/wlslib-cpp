@@ -115,7 +115,7 @@ TEST(BLAS1, DOT_REAL) {
   lapack_int nn     = n;
   lapack_int inc    = 1;
   const auto v_dot2 = WLS_FC(ddot, DDOT)(&nn, v1, &inc, v2, &inc);
-  EXPECT_NEAR(v_dot, v_dot2, 1e-12);
+  EXPECT_NEAR(v_dot, v_dot2, 1.e-10);
   wls::free_mat(v1);
   wls::free_mat(v2);
 }

@@ -15,18 +15,13 @@
 // Type Definitions
 namespace wls {
 
-struct WlsWeight {
-  ::coder::array<char, 2U> name;
-  ::coder::array<double, 1U> params_shared;
-  ::coder::array<double, 2U> params_pointwise;
-  ::coder::array<boolean_T, 1U> omit_rows;
-};
 
 struct WlsObject {
   int npoints;
   int degree;
   int order;
   boolean_T interp0;
+  boolean_T use_dag;
   int stride;
   ::coder::array<double, 2U> us;
   ::coder::array<double, 1U> rweights;
@@ -41,6 +36,13 @@ struct WlsObject {
   ::coder::array<int, 1U> jpvt;
   ::coder::array<double, 1U> work;
   boolean_T rowmajor;
+};
+
+struct WlsWeight {
+  ::coder::array<char, 2U> name;
+  ::coder::array<double, 1U> params_shared;
+  ::coder::array<double, 2U> params_pointwise;
+  ::coder::array<boolean_T, 1U> omit_rows;
 };
 
 } // namespace wls

@@ -40,7 +40,7 @@ TEST(VANDER, NO_STRIDE) {
   double     alpha = 2.0;
   wls::vander_axpy(alpha, X.data(), 20, 10, Y.data());
   for (int i = 0; i < 200; ++i) Y_bak[i] += alpha * X[i];
-  for (int i = 0; i < 200; ++i) EXPECT_NEAR(Y[i], Y_bak[i], 1e-12);
+  for (int i = 0; i < 200; ++i) EXPECT_NEAR(Y[i], Y_bak[i], 1.e-10);
 }
 
 TEST(VANDER, STRIDE) {
@@ -56,5 +56,5 @@ TEST(VANDER, STRIDE) {
   for (int j = 0; j < 10; ++j)
     for (int i = 0; i < 10; ++i) Y_mat(i, j) += alpha * X_mat(i, j);
   for (int j = 0; j < 10; ++j)
-    for (int i = 0; i < 10; ++i) EXPECT_NEAR(Y_mat(i, j), Y_axpy(i, j), 1e-12);
+    for (int i = 0; i < 10; ++i) EXPECT_NEAR(Y_mat(i, j), Y_axpy(i, j), 1.e-10);
 }

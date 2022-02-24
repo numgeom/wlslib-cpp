@@ -47,12 +47,13 @@ boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
   //        to be called by wls::rrqr_factor in C++ automatically.
   //
   //
-  //  See also rrqr_factor, gen_vander_1d_dag, gen_vander_2d_dag,
-  //  gen_vander_3d_dag Force to be column major
-  n = dag.size(1) - 1;
+  //  See also rrqr_factor, gen_vander_dag
+  //  Force to be column major
+  n = dag.size(1) - 2;
+  //  Last column of dag is for signature
   //  Resize work space if needed
-  if (work.size(1) < dag.size(1)) {
-    work.set_size(4, dag.size(1));
+  if (work.size(1) < dag.size(1) - 1) {
+    work.set_size(4, dag.size(1) - 1);
   }
   //  compute inverse permutation and tag whether each column is truncated
   for (i = 0; i <= n; i++) {
@@ -124,14 +125,14 @@ boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
     int n2;
     //  permute the truncated columns to the end
     *n1 = 0;
-    n2 = dag.size(1);
+    n2 = dag.size(1) - 2;
     for (i = 0; i <= n; i++) {
       //  i is original ids
       if (work[4 * i + 1] == 0) {
         (*n1)++;
         p[*n1 - 1] = i + 1;
       } else {
-        p[n2 - 1] = i + 1;
+        p[n2] = i + 1;
         n2--;
       }
     }
