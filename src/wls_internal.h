@@ -24,12 +24,14 @@ struct WlsWeight;
 // Function Declarations
 namespace wls {
 static inline void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
-                      const ::coder::array<double, 2U> &fs,
-                      ::coder::array<double, 2U> &vdops);
+                      const ::coder::array<double, 2U> &fs, int npoints,
+                      ::coder::array<double, 2U> &vdops,
+                      ::coder::array<double, 2U> &result);
 
 static inline void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
-                      const ::coder::array<double, 2U> &fs, int npoints,
-                      ::coder::array<double, 2U> &vdops);
+                      const ::coder::array<double, 2U> &fs,
+                      ::coder::array<double, 2U> &vdops,
+                      ::coder::array<double, 2U> &result);
 
 static inline void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
                       ::coder::array<double, 2U> &vdops);
