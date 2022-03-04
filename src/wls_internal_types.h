@@ -10,13 +10,10 @@
 // Include files
 #include "rtwtypes.h"
 #include "coder_array.h"
+#include "coder_bounded_array.h"
 
 // Type Definitions
 namespace wls {
-struct emxArray_real_T_3x1 {
-  double data[3];
-  int size[2];
-};
 
 struct WlsObject {
   int npoints;
@@ -26,9 +23,9 @@ struct WlsObject {
   boolean_T use_dag;
   int stride;
   ::coder::array<double, 2U> us;
-  emxArray_real_T_3x1 origin;
+  ::coder::bounded_array<double, 3U, 2U> origin;
   ::coder::array<double, 1U> rweights;
-  emxArray_real_T_3x1 hs_inv;
+  ::coder::bounded_array<double, 3U, 2U> hs_inv;
   ::coder::array<unsigned char, 2U> dag;
   ::coder::array<double, 2U> V;
   ::coder::array<double, 2U> QR;
@@ -39,8 +36,7 @@ struct WlsObject {
   ::coder::array<int, 1U> jpvt;
   ::coder::array<double, 1U> work;
   boolean_T rowmajor;
-  ::coder::array<double, 2U> QRt_;
-  int izero_;
+  ::coder::array<double, 2U> QRt;
 };
 
 struct WlsWeight {
