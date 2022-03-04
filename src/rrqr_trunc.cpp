@@ -23,35 +23,8 @@ boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
   int nChanged;
   boolean_T permuted;
   //  Truncate the output from QRCP based on DAG
-  //
-  //  [permuted, n1, p] = rrqr_tunc(dag, n1, rank, p)
-  //  [permuted, n1, p, work] = rrqr_tunc(dag, n1, rank, p, work)
-  //
-  //  Parameters
-  //  ----------
-  //      dag:    Direct Acyclic Graph of the Vandermonde matrix
-  //      n1:     The original length of the permutation vector
-  //      rank:   Numerical rank of the matrix determined by rrqr
-  //      p:      Column pivoting vector (1-based index) (length >= n)
-  //      work:   Integer work space; you can start with zeros(1,0) and its
-  //              allocation will grow automatically as needed
-  //
-  //  Output
-  //  ------
-  //      permuted: Whether the output is permuted
-  //      n1:       Number of columns or refactorization
-  //      p:        Updated column pivoting vector
-  //      work:     Work space returned for reuse.
-  //
-  //  Note: Do NOT call this function manually. It is meant for code generation
-  //        to be called by wls::rrqr_factor in C++ automatically.
-  //
-  //
-  //  See also rrqr_factor, gen_vander_dag
-  //  Force to be column major
   n = dag.size(1) - 2;
   //  Last column of dag is for signature
-  //  Resize work space if needed
   if (work.size(1) < dag.size(1) - 1) {
     work.set_size(4, dag.size(1) - 1);
   }
@@ -91,14 +64,12 @@ boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
   }
   permuted = (nChanged + 1 != 0);
   //  If a monomial is truncated but some of its children are not, then make
-  //  sure its untruncated children are all marked as candidate for truncation.
   while (nChanged + 1 != 0) {
     int c;
     boolean_T allChildrenTruncated;
     c = work[4 * nChanged + 2] - 1;
     nChanged--;
     //  Make sure all the untruncated children of a candidate monomial
-    //  are considered for truncation.
     allChildrenTruncated = true;
     b_i = dag.size(0);
     for (j = 0; j < b_i; j++) {

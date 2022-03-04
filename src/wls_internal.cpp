@@ -11,7 +11,6 @@
 #include "wls_lapack.hpp"
 #include <cmath>
 #include <cstring>
-#include <stdio.h>
 
 // Variable Definitions
 namespace wls
@@ -100,8 +99,9 @@ namespace wls
     &dag);
   static inline
   int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
-    m, int n, ::coder::array<double, 2U> &QR, ::coder::array<int, 1U> &p, ::
-    coder::array<double, 1U> &work, const ::coder::array<unsigned char, 2U> &dag);
+    rowoffset, int coloffset, int m, int n, ::coder::array<double, 2U> &QR, ::
+    coder::array<int, 1U> &p, ::coder::array<double, 1U> &work, const ::coder::
+    array<unsigned char, 2U> &dag);
   static inline
   void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
     int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
@@ -181,9 +181,6 @@ namespace wls
     int j;
 
     //  Find the kth smallest number in arr(l:r).
-    //
-    //       [dist, arr] = find_kth_shortest_dist(arr, k);
-    //       [dist, arr] = find_kth_shortest_dist(arr, k, start, end)
     if (k < l) {
       k = l;
     }
@@ -244,38 +241,6 @@ namespace wls
     coder::array<double, 2U> &V)
   {
     //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    //
-    //     V = gen_vander(us)
-    //     V = gen_vander(us, npoints)
-    //     V = gen_vander(us, npoints, degree)
-    //     V = gen_vander(us, npoints, degree, order)
-    //     V = gen_vander(us, npoints, degree, order, weights)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv, V)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-d, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix
-    //              Use -1, -2, and -4 for grad, Laplacian, and bi-Laplacian.
-    //     weights: Weights for all points (n-by-1, where n>=1; use zeros(0,1)
-    //              or omit it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //  The order argument must passed in with coder.ignoreConst(<expr>) in
-    //  the caller order to avoid generation of local buffers.
-    //
-    //  See also
-    //     gen_vander_1d, gen_vander_2d, gen_vander_3d
-    //  Compute Vandermonde system
     switch (us.size(1)) {
      case 1:
       {
@@ -291,126 +256,12 @@ namespace wls
         int stride;
         boolean_T b;
         boolean_T b1;
-        boolean_T flag;
         b_npoints = npoints - 1;
 
         //  Generate (confluent) Vandermonde matrix in 1D.
-        //
-        //     V = gen_vander_1d(us)
-        //     V = gen_vander_1d(us, npoints)
-        //     V = gen_vander_1d(us, npoints, degree, order)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V, stride)
-        //
-        //  Parameters
-        //  ----------
-        //     us:      Local coordinates of points (n-by-1, where n>=npoints)
-        //     npoints: Number of points. Use 0 for default (size(us, 1))
-        //     degree:  Maximum degree of monomials (default is 2)
-        //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-        //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively
-        //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-        //              it to use unit weights)
-        //     h_inv:   Inverse of radius for scaling rows in CVM (size 1-by-0 or 1-by-1)
-        //     V:       Vandermonde matrix (must be preallocated if present at input)
-        //     stride:  number of rows in each row block in V (0 for default)
-        //
-        //  Returns
-        //  -------
-        //     V:      confluent Vandermonde matrix
-        //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-        //
-        //  Notes
-        //  -----
-        //     It is more efficient to provide weights here to incorporate them when
-        //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-        //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-        //
-        //     Entries in each row of V are in ascending degrees. For  the confluent
-        //     Vandermonde matrix, row blocks are in increasing order of derivatives.
-        //
-        //     For example, if order==1, V has the following content:
-        //         weights(1) * [1, u1, u1^2, u1^3, u1^4, ...]
-        //         weights(2) * [1, u2, u2^2, u2^3, u2^4, ...]
-        //         ...
-        //         h_inv * weights(1) * [0, 1, 2u1, 3u1^2, 4u1^3, ...]
-        //         h_inv * weights(2) * [0, 1, 2u2, 3u2^2, 4u2^3, ...]
-        //         ...
-        //
-        //  See also gen_vander_2d, gen_vander_3d
-        //  Handle input arguments
         if (npoints == 0) {
           b_npoints = us.size(0) - 1;
-        } else {
-          flag = (npoints <= us.size(0));
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Input us is too small.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
         }
-
-        flag = (degree >= 0);
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(flag, "Degree must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-        if (!flag) {
-          fprintf(stderr, "Degree must be nonnegative\n");
-          fflush(stderr);
-        }
-
-        assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-          flag = true;
-        } else {
-          flag = false;
-        }
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-        if (!flag) {
-          fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-          fflush(stderr);
-        }
-
-        assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
         if (hs_inv_size[1] == 0) {
           h_inv_ = 1.0;
@@ -600,132 +451,12 @@ namespace wls
     degree, ::coder::array<double, 2U> &V)
   {
     //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    //
-    //     V = gen_vander(us)
-    //     V = gen_vander(us, npoints)
-    //     V = gen_vander(us, npoints, degree)
-    //     V = gen_vander(us, npoints, degree, order)
-    //     V = gen_vander(us, npoints, degree, order, weights)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv, V)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-d, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix
-    //              Use -1, -2, and -4 for grad, Laplacian, and bi-Laplacian.
-    //     weights: Weights for all points (n-by-1, where n>=1; use zeros(0,1)
-    //              or omit it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //  The order argument must passed in with coder.ignoreConst(<expr>) in
-    //  the caller order to avoid generation of local buffers.
-    //
-    //  See also
-    //     gen_vander_1d, gen_vander_2d, gen_vander_3d
-    //  Compute Vandermonde system
     switch (us_size[1]) {
      case 1:
       {
         int i;
 
         //  Generate (confluent) Vandermonde matrix in 1D.
-        //
-        //     V = gen_vander_1d(us)
-        //     V = gen_vander_1d(us, npoints)
-        //     V = gen_vander_1d(us, npoints, degree, order)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V, stride)
-        //
-        //  Parameters
-        //  ----------
-        //     us:      Local coordinates of points (n-by-1, where n>=npoints)
-        //     npoints: Number of points. Use 0 for default (size(us, 1))
-        //     degree:  Maximum degree of monomials (default is 2)
-        //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-        //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively
-        //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-        //              it to use unit weights)
-        //     h_inv:   Inverse of radius for scaling rows in CVM (size 1-by-0 or 1-by-1)
-        //     V:       Vandermonde matrix (must be preallocated if present at input)
-        //     stride:  number of rows in each row block in V (0 for default)
-        //
-        //  Returns
-        //  -------
-        //     V:      confluent Vandermonde matrix
-        //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-        //
-        //  Notes
-        //  -----
-        //     It is more efficient to provide weights here to incorporate them when
-        //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-        //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-        //
-        //     Entries in each row of V are in ascending degrees. For  the confluent
-        //     Vandermonde matrix, row blocks are in increasing order of derivatives.
-        //
-        //     For example, if order==1, V has the following content:
-        //         weights(1) * [1, u1, u1^2, u1^3, u1^4, ...]
-        //         weights(2) * [1, u2, u2^2, u2^3, u2^4, ...]
-        //         ...
-        //         h_inv * weights(1) * [0, 1, 2u1, 3u1^2, 4u1^3, ...]
-        //         h_inv * weights(2) * [0, 1, 2u2, 3u2^2, 4u2^3, ...]
-        //         ...
-        //
-        //  See also gen_vander_2d, gen_vander_3d
-        //  Handle input arguments
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(true, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-        assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(true, "Degree must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-        assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(true, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-        assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        //  Number of row blocks
         if ((V.size(1) != 1) || (V.size(0) != degree + 1)) {
           V.set_size(degree + 1, 1);
         }
@@ -758,38 +489,6 @@ namespace wls
     double, 2U> &V)
   {
     //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    //
-    //     V = gen_vander(us)
-    //     V = gen_vander(us, npoints)
-    //     V = gen_vander(us, npoints, degree)
-    //     V = gen_vander(us, npoints, degree, order)
-    //     V = gen_vander(us, npoints, degree, order, weights)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander(us, npoints, degree, order, weights, hs_inv, V)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-d, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix
-    //              Use -1, -2, and -4 for grad, Laplacian, and bi-Laplacian.
-    //     weights: Weights for all points (n-by-1, where n>=1; use zeros(0,1)
-    //              or omit it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //  The order argument must passed in with coder.ignoreConst(<expr>) in
-    //  the caller order to avoid generation of local buffers.
-    //
-    //  See also
-    //     gen_vander_1d, gen_vander_2d, gen_vander_3d
-    //  Compute Vandermonde system
     switch (us.size(1)) {
      case 1:
       {
@@ -803,121 +502,8 @@ namespace wls
         int stride;
         boolean_T b;
         boolean_T b1;
-        boolean_T flag;
 
         //  Generate (confluent) Vandermonde matrix in 1D.
-        //
-        //     V = gen_vander_1d(us)
-        //     V = gen_vander_1d(us, npoints)
-        //     V = gen_vander_1d(us, npoints, degree, order)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V)
-        //     V = gen_vander_1d(us, npoints, degree, order, weights, h_inv, V, stride)
-        //
-        //  Parameters
-        //  ----------
-        //     us:      Local coordinates of points (n-by-1, where n>=npoints)
-        //     npoints: Number of points. Use 0 for default (size(us, 1))
-        //     degree:  Maximum degree of monomials (default is 2)
-        //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-        //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively
-        //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-        //              it to use unit weights)
-        //     h_inv:   Inverse of radius for scaling rows in CVM (size 1-by-0 or 1-by-1)
-        //     V:       Vandermonde matrix (must be preallocated if present at input)
-        //     stride:  number of rows in each row block in V (0 for default)
-        //
-        //  Returns
-        //  -------
-        //     V:      confluent Vandermonde matrix
-        //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-        //
-        //  Notes
-        //  -----
-        //     It is more efficient to provide weights here to incorporate them when
-        //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-        //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-        //
-        //     Entries in each row of V are in ascending degrees. For  the confluent
-        //     Vandermonde matrix, row blocks are in increasing order of derivatives.
-        //
-        //     For example, if order==1, V has the following content:
-        //         weights(1) * [1, u1, u1^2, u1^3, u1^4, ...]
-        //         weights(2) * [1, u2, u2^2, u2^3, u2^4, ...]
-        //         ...
-        //         h_inv * weights(1) * [0, 1, 2u1, 3u1^2, 4u1^3, ...]
-        //         h_inv * weights(2) * [0, 1, 2u2, 3u2^2, 4u2^3, ...]
-        //         ...
-        //
-        //  See also gen_vander_2d, gen_vander_3d
-        //  Handle input arguments
-        flag = (npoints <= us.size(0));
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(flag, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-        if (!flag) {
-          fprintf(stderr, "Input us is too small.\n");
-          fflush(stderr);
-        }
-
-        assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        flag = (degree >= 0);
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(flag, "Degree must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-        if (!flag) {
-          fprintf(stderr, "Degree must be nonnegative\n");
-          fflush(stderr);
-        }
-
-        assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-          flag = true;
-        } else {
-          flag = false;
-        }
-
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-        if (!flag) {
-          fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-          fflush(stderr);
-        }
-
-        assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
         stride = us.size(0);
         nrblks = order + 1;
 
@@ -1128,76 +714,22 @@ namespace wls
   void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
-    int u0;
-    int u1;
-    boolean_T flag;
+    int b_i;
 
     //  Build a dag for Vandermonde matrix in 1D.
-    //
-    //     dag = gen_vander_1d_dag(degree)
-    //     dag = gen_vander_1d_dag(degree, dag)
-    //
-    //  Parameters
-    //  ----------
-    //     degree:  Maximum degree of monomials (default is 2).
-    //
-    //  Returns
-    //  -------
-    //     dag:     A direct acyclic graph stored in a 1-by-(degree+2) M-array
-    //        (in column major, or a (degree+2)-by-1 M-array if row major).
-    //        Each monomial points to its "child" that is one degree higher.
-    //        Each of its entry stores the difference between the index
-    //        of its child and its own index. The last entry is used store
-    //        a signature, so that it can be recomputed when needed.
-    //
-    //     dag_colMajor is an optional output in column-major for testing.
-    //
-    //  See also gen_vander_1d, gen_vander_2d_dag, gen_vander_3d_dag, rrqr_trunc
-    //  Handle input arguments
-    if ((dag.size(0) == 0) || (dag.size(1) == 0)) {
-      u1 = 0;
-    } else {
-      u0 = dag.size(0);
-      u1 = dag.size(1);
-      if (u0 >= u1) {
-        u1 = u0;
-      }
-    }
-
-    flag = (u1 >= degree + 2);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "DAG must be preallocated.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "DAG must be preallocated.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     for (int i{0}; i < degree; i++) {
-      u1 = dag.size(0);
-      dag[i % u1 * dag.size(1) + i / u1] = 1U;
+      b_i = dag.size(0);
+      dag[i % b_i * dag.size(1) + i / b_i] = 1U;
     }
 
-    u1 = dag.size(0);
-    dag[degree % u1 * dag.size(1) + degree / u1] = 0U;
+    int i1;
+    b_i = dag.size(0);
+    dag[degree % b_i * dag.size(1) + degree / b_i] = 0U;
 
     //  a leaf has no child
-    //  Use last entry as signature
-    u1 = dag.size(1) * dag.size(0) - 1;
-    u0 = dag.size(0);
-    dag[u1 % u0 * dag.size(1) + u1 / u0] = static_cast<unsigned char>(degree +
+    b_i = dag.size(1) * dag.size(0) - 1;
+    i1 = dag.size(0);
+    dag[b_i % i1 * dag.size(1) + b_i / i1] = static_cast<unsigned char>(degree +
       127);
   }
 
@@ -1210,95 +742,6 @@ namespace wls
     int ncols;
 
     //  Generate generalized/confluent Vandermonde matrix in 2D.
-    //
-    //     V = gen_vander_2d(us)
-    //     V = gen_vander_2d(us, npoints)
-    //     V = gen_vander_2d(us, npoints, degree, order)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-2, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal triangle,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal triangle.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2]
-    //        ...
-    //
-    //     For degree=-2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2, u1^2*v1, u1*v1^2, u1^2*v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2, u2^2*v2, u2*v2^2, u2^2*v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0,    2u1*v1,  v1^2,    2u1*v1^2]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0,    2u2*v2,  v2^2,    2u2*v2^2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1,    u1^2,    2u1*v1,  2u1^2*v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2,    u2^2,    2u2*v1,  2u2^2*v2]
-    //        ...
-    //
-    //  See also gen_vander_1d, gen_vander_3d
-    //  Handle input arguments
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  Number of row blocks
     ncols = (degree + 1) * (degree + 2) / 2;
 
     //  Allocate storage for V
@@ -1307,7 +750,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     V[0] = 1.0;
     V[V.size(1)] = us_data[0];
     V[V.size(1) * 2] = us_data[1];
@@ -1329,7 +771,6 @@ namespace wls
     }
 
     //  Compute the bi-degree terms if degree<0
-    //  compute higher order confluent Vandermonde matrix blocks incrementally
   }
 
   static inline
@@ -1350,115 +791,8 @@ namespace wls
     int nrows;
     int stride;
     int x;
-    boolean_T flag;
 
     //  Generate generalized/confluent Vandermonde matrix in 2D.
-    //
-    //     V = gen_vander_2d(us)
-    //     V = gen_vander_2d(us, npoints)
-    //     V = gen_vander_2d(us, npoints, degree, order)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-2, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal triangle,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal triangle.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2]
-    //        ...
-    //
-    //     For degree=-2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2, u1^2*v1, u1*v1^2, u1^2*v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2, u2^2*v2, u2*v2^2, u2^2*v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0,    2u1*v1,  v1^2,    2u1*v1^2]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0,    2u2*v2,  v2^2,    2u2*v2^2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1,    u1^2,    2u1*v1,  2u1^2*v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2,    u2^2,    2u2*v1,  2u2^2*v2]
-    //        ...
-    //
-    //  See also gen_vander_1d, gen_vander_3d
-    //  Handle input arguments
-    flag = (npoints <= us.size(0));
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Input us is too small.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     stride = us.size(0);
     nrblks = (order + 1) * (order + 2) / 2;
 
@@ -1494,7 +828,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     if (weights.size(0) == 0) {
       if (degree != 0) {
         for (iPnt = 0; iPnt < npoints; iPnt++) {
@@ -1587,33 +920,10 @@ namespace wls
       int offset;
 
       //  This is an optimized version of update_vander_ordern for first-order CVM
-      flag = (degree != 0);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  Compute derivative with respect to u
       for (iPnt = 0; iPnt < npoints; iPnt++) {
-        i = stride + iPnt;
-        V[i] = 0.0;
-        V[i + V.size(1)] = V[iPnt];
-        V[i + V.size(1) * 2] = 0.0;
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
       }
 
       c = 3;
@@ -1758,27 +1068,6 @@ namespace wls
           int row;
 
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
           x = dd * (dd + 1) / 2;
           offset = x * stride;
           offset_prev = (dd - 1) * dd / 2 * stride;
@@ -1840,7 +1129,6 @@ namespace wls
           }
 
           //  Compute derivative with respect to v
-          //  Initialize block to zero
           for (col = 0; col < x; col++) {
             i = offset + 1;
             i2 = offset + npoints;
@@ -1902,27 +1190,6 @@ namespace wls
             int row;
 
             //  Compute order-N CVM row blocks from order-(N-1) CVM.
-            flag = (degree != 0);
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr, "Runtime assertion error.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             offset = 3 * us.size(0);
             offset_prev = us.size(0);
 
@@ -1980,7 +1247,6 @@ namespace wls
             offset += us.size(0);
 
             //  Compute derivative with respect to v
-            //  Initialize block to zero
             offset_prev = (us.size(0) + us.size(0)) + us.size(0);
             i = offset + 1;
             i2 = offset + npoints;
@@ -2043,24 +1309,9 @@ namespace wls
               int row;
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-              assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 3 * us.size(0);
 
               //  Compute derivative with respect to u
-              //  Initialize block to zero
               i = offset + 1;
               i1 = offset + npoints;
               for (col = 0; col < 3; col++) {
@@ -2094,7 +1345,6 @@ namespace wls
               offset += us.size(0);
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev = (us.size(0) + us.size(0)) + us.size(0);
               i = offset + 1;
               i1 = offset + npoints;
@@ -2126,29 +1376,8 @@ namespace wls
               }
 
               //  Compute the bi-degree terms if degree<0
-              //  function for the Bilaplacian of P elements
               offset = 5 * us.size(0);
               offset_prev = 3 * us.size(0);
-              flag = (degree >= 4);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
               //  compute du^4 and du^2*dv^2
               for (int terms{0}; terms < 2; terms++) {
@@ -2222,27 +1451,6 @@ namespace wls
               int row;
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 3 * us.size(0);
               offset_prev = us.size(0);
 
@@ -2300,7 +1508,6 @@ namespace wls
               offset += us.size(0);
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev = (us.size(0) + us.size(0)) + us.size(0);
               i = offset + 1;
               i2 = offset + npoints;
@@ -2354,27 +1561,6 @@ namespace wls
               }
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 5 * us.size(0);
               offset_prev = 3 * us.size(0);
 
@@ -2435,7 +1621,6 @@ namespace wls
               }
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               i = offset + 1;
               i2 = offset + npoints;
               for (col = 0; col < 6; col++) {
@@ -2488,27 +1673,6 @@ namespace wls
               }
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = us.size(0) << 3;
               offset_prev = 5 * us.size(0);
 
@@ -2569,7 +1733,6 @@ namespace wls
               }
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev += us.size(0);
               i = offset + 1;
               i2 = offset + npoints;
@@ -2624,25 +1787,6 @@ namespace wls
             }
           }
           break;
-
-         default:
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-          fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-          fflush(stderr);
-          assert(false);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          break;
         }
       }
     }
@@ -2668,119 +1812,11 @@ namespace wls
     int nrows;
     int stride;
     int x;
-    boolean_T flag;
 
     //  Generate generalized/confluent Vandermonde matrix in 2D.
-    //
-    //     V = gen_vander_2d(us)
-    //     V = gen_vander_2d(us, npoints)
-    //     V = gen_vander_2d(us, npoints, degree, order)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_2d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-2, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal triangle,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal triangle.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2]
-    //        ...
-    //
-    //     For degree=-2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, u1^2, u1*v1, v1^2, u1^2*v1, u1*v1^2, u1^2*v1^2]
-    //        weights(2) * [1, u2, v2, u2^2, u2*v2, v2^2, u2^2*v2, u2*v2^2, u2^2*v2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  2u1,  v1,    0,    2u1*v1,  v1^2,    2u1*v1^2]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  2u2,  v2,    0,    2u2*v2,  v2^2,    2u2*v2^2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    u1,  2v1,    u1^2,    2u1*v1,  2u1^2*v1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    u2,  2v2,    u2^2,    2u2*v1,  2u2^2*v2]
-    //        ...
-    //
-    //  See also gen_vander_1d, gen_vander_3d
-    //  Handle input arguments
     if (npoints == 0) {
       npoints = us.size(0);
-    } else {
-      flag = (npoints <= us.size(0));
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "Input us is too small.");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Input us is too small.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
-
-    if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
     if (hs_inv_size[1] == 0) {
       hs_inv__idx_0 = 1.0;
@@ -2825,7 +1861,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     if (degree != 0) {
       for (iPnt = 0; iPnt < npoints; iPnt++) {
         V[iPnt] = 1.0;
@@ -2906,28 +1941,6 @@ namespace wls
       int offset;
 
       //  This is an optimized version of update_vander_ordern for first-order CVM
-      flag = (degree != 0);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  Compute derivative with respect to u
       for (iPnt = 0; iPnt < npoints; iPnt++) {
         i = stride + iPnt;
         V[i] = 0.0;
@@ -3078,27 +2091,6 @@ namespace wls
           int row;
 
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
           offset = 3 * stride;
           offset_prev = stride;
 
@@ -3159,7 +2151,6 @@ namespace wls
           }
 
           //  Compute derivative with respect to v
-          //  Initialize block to zero
           i = offset + 1;
           i2 = offset + npoints;
           for (col = 0; col < 3; col++) {
@@ -3221,27 +2212,6 @@ namespace wls
             int row;
 
             //  Compute order-N CVM row blocks from order-(N-1) CVM.
-            flag = (degree != 0);
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr, "Runtime assertion error.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             offset = 3 * us.size(0);
             offset_prev = us.size(0);
 
@@ -3299,7 +2269,6 @@ namespace wls
             offset += us.size(0);
 
             //  Compute derivative with respect to v
-            //  Initialize block to zero
             offset_prev = (us.size(0) + us.size(0)) + us.size(0);
             i = offset + 1;
             i2 = offset + npoints;
@@ -3362,24 +2331,9 @@ namespace wls
               int row;
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-              assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 3 * us.size(0);
 
               //  Compute derivative with respect to u
-              //  Initialize block to zero
               i = offset + 1;
               i1 = offset + npoints;
               for (col = 0; col < 3; col++) {
@@ -3413,7 +2367,6 @@ namespace wls
               offset += us.size(0);
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev = (us.size(0) + us.size(0)) + us.size(0);
               i = offset + 1;
               i1 = offset + npoints;
@@ -3445,29 +2398,8 @@ namespace wls
               }
 
               //  Compute the bi-degree terms if degree<0
-              //  function for the Bilaplacian of P elements
               offset = 5 * us.size(0);
               offset_prev = 3 * us.size(0);
-              flag = (degree >= 4);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
               //  compute du^4 and du^2*dv^2
               for (int terms{0}; terms < 2; terms++) {
@@ -3543,27 +2475,6 @@ namespace wls
               int row;
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 3 * us.size(0);
               offset_prev = us.size(0);
 
@@ -3621,7 +2532,6 @@ namespace wls
               offset += us.size(0);
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev = (us.size(0) + us.size(0)) + us.size(0);
               i = offset + 1;
               i2 = offset + npoints;
@@ -3675,27 +2585,6 @@ namespace wls
               }
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = 5 * us.size(0);
               offset_prev = 3 * us.size(0);
 
@@ -3756,7 +2645,6 @@ namespace wls
               }
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               i = offset + 1;
               i2 = offset + npoints;
               for (col = 0; col < 6; col++) {
@@ -3809,27 +2697,6 @@ namespace wls
               }
 
               //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              flag = (degree != 0);
-
-              //  Throw error if condition false
-              //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-              mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-              if (!flag) {
-                fprintf(stderr, "Runtime assertion error.\n");
-                fflush(stderr);
-              }
-
-              assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
               offset = us.size(0) << 3;
               offset_prev = 5 * us.size(0);
 
@@ -3890,7 +2757,6 @@ namespace wls
               }
 
               //  Compute derivative with respect to v
-              //  Initialize block to zero
               offset_prev += us.size(0);
               i = offset + 1;
               i2 = offset + npoints;
@@ -3945,25 +2811,6 @@ namespace wls
             }
           }
           break;
-
-         default:
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-          fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-          fflush(stderr);
-          assert(false);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          break;
         }
       }
     }
@@ -3979,27 +2826,6 @@ namespace wls
     int j;
 
     //  Build a dag for Vandermonde matrix in 2D.
-    //
-    //     dag = gen_vander_2d_dag(degree)
-    //     dag = gen_vander_2d_dag(degree, dag)
-    //
-    //  Parameters
-    //  ----------
-    //     degree:  Maximum degree of monomials. Use negative for tensor-product monomials.
-    //
-    //  Returns
-    //  -------
-    //     dag:     A direct acyclic graph stored in a 2-by-(#monomials+1) M-array
-    //        (in column major, or a (#monomials+1)-by-2 M-array if row major).
-    //        Each column represents a monomial (x^i*y^j), and it column stores
-    //        the offsets to the indices of its "child" monomials
-    //        (i.e., x^(i+1)*y^j and x^i*y^(j+1)). The last entry is used store
-    //        a signature, so that it can be recomputed when needed.
-    //
-    //     dag_colMajor is an optional output in column-major for testing.
-    //
-    //  See also gen_vander_2d, gen_vander_1d_dag, gen_vander_3d_dag, rrqr_trunc
-    //  Handle input arguments
     if (degree != 0) {
       dag[0] = 1U;
 
@@ -4105,99 +2931,6 @@ namespace wls
     int ncols;
 
     //  Generate generalized/confluent Vandermonde matrix in 3D.
-    //
-    //     V = gen_vander_3d(us)
-    //     V = gen_vander_3d(us, npoints)
-    //     V = gen_vander_3d(us, npoints, degree, order)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-3, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal tetrahedron,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal tetrahedron.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1^2, u1*v1, v1^2, u1*w1, v1*w1, w1^2]
-    //        weights(2) * [1, u2, v2, w2, u2^2, u2*v2, v2^2, u2*w2, v2*w2, w2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  2u1,  v1,    0,   w1,     0,     0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  2u2,  v2,    0,   w2,     0,     0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    0,  u1,  2v1,   0,     w1,    0]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    0,  u2,  2v2,   0,     w2,    0]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,    0,   0,    0,   u1,   v1,     2w1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,    0,   0,    0,   u2,   v2,     2w2]
-    //
-    //     For degree=-1 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1*v1, u1*w1, v1*w1, u1*v1*w1]
-    //        weights(2) * [1, u2, v2, w2, u2*v2, u2*w2, v2*w2, u2*v2*w2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  v1,   w1,   0,     v1*w1]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  v2,   w2,   0,     v2*w2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,  u1,   0,    w1,    u1*w1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,  u2,   0,    w2,    u2*w2]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,   0,   u1,   v1,    u1*v1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,   0,   u2,   v2,    u2*v2]
-    //
-    //  See also gen_vander_1d, gen_vander_2d
-    //  Handle input arguments
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     ncols = (degree + 1) * (degree + 2) * (degree + 3) / 6;
 
     //  Allocate storage for V
@@ -4206,7 +2939,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     V[0] = 1.0;
     V[V.size(1)] = us_data[0];
     V[V.size(1) * 2] = us_data[1];
@@ -4239,20 +2971,6 @@ namespace wls
     }
 
     //  Compute the tri-degree terms if degree<0
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
   }
 
   static inline
@@ -4284,124 +3002,11 @@ namespace wls
     int p;
     int stride;
     int x;
-    boolean_T flag;
 
     //  Generate generalized/confluent Vandermonde matrix in 3D.
-    //
-    //     V = gen_vander_3d(us)
-    //     V = gen_vander_3d(us, npoints)
-    //     V = gen_vander_3d(us, npoints, degree, order)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-3, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal tetrahedron,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal tetrahedron.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1^2, u1*v1, v1^2, u1*w1, v1*w1, w1^2]
-    //        weights(2) * [1, u2, v2, w2, u2^2, u2*v2, v2^2, u2*w2, v2*w2, w2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  2u1,  v1,    0,   w1,     0,     0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  2u2,  v2,    0,   w2,     0,     0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    0,  u1,  2v1,   0,     w1,    0]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    0,  u2,  2v2,   0,     w2,    0]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,    0,   0,    0,   u1,   v1,     2w1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,    0,   0,    0,   u2,   v2,     2w2]
-    //
-    //     For degree=-1 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1*v1, u1*w1, v1*w1, u1*v1*w1]
-    //        weights(2) * [1, u2, v2, w2, u2*v2, u2*w2, v2*w2, u2*v2*w2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  v1,   w1,   0,     v1*w1]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  v2,   w2,   0,     v2*w2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,  u1,   0,    w1,    u1*w1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,  u2,   0,    w2,    u2*w2]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,   0,   u1,   v1,    u1*v1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,   0,   u2,   v2,    u2*v2]
-    //
-    //  See also gen_vander_1d, gen_vander_2d
-    //  Handle input arguments
     if (npoints == 0) {
       npoints = us.size(0);
-    } else {
-      flag = (npoints <= us.size(0));
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
-
-    if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
     if (hs_inv_size[1] == 0) {
       hs_inv_idx_0 = 1.0;
@@ -4446,7 +3051,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     if (degree != 0) {
       for (iPnt = 0; iPnt < npoints; iPnt++) {
         V[iPnt] = 1.0;
@@ -4537,7 +3141,6 @@ namespace wls
         int gap;
 
         //  Within each level, x^deg is at the peak of Pascal triangle
-        //  implicitly calculating number of elements in corner Pascal triangles
         cornerTriangle = (cornerTriangle + p) + degree;
         counterBottomRow = 1;
 
@@ -4577,20 +3180,6 @@ namespace wls
       }
     }
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (order != 0) {
       //     %% compute higher order confluent Vandermonde matrix blocks incrementally
       switch (order) {
@@ -4602,28 +3191,6 @@ namespace wls
           int offset;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
             i = stride + iPnt;
             V[i] = 0.0;
@@ -4719,7 +3286,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -4866,7 +3432,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -4997,7 +3562,6 @@ namespace wls
               int degg;
 
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -5065,28 +3629,6 @@ namespace wls
           int partition;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
             i = stride + iPnt;
             V[i] = 0.0;
@@ -5181,7 +3723,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -5327,7 +3868,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -5456,7 +3996,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -5606,7 +4145,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -5880,7 +4418,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -5985,7 +4522,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -6092,7 +4628,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -6231,7 +4766,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -6290,28 +4824,6 @@ namespace wls
           int offset;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
             i = stride + iPnt;
             V[i] = 0.0;
@@ -6407,7 +4919,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -6554,7 +5065,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -6685,7 +5195,6 @@ namespace wls
               int degg;
 
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -6753,28 +5262,6 @@ namespace wls
           int partition;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
             i = stride + iPnt;
             V[i] = 0.0;
@@ -6869,7 +5356,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -7015,7 +5501,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -7144,7 +5629,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -7294,7 +5778,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -7568,7 +6051,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -7673,7 +6155,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -7780,7 +6261,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -7919,7 +6399,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -7993,52 +6472,8 @@ namespace wls
           int kdegree;
           int offset;
           int partition;
-          flag = (degree > 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag,
-                   "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr,
-                    "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
             i = stride + iPnt;
             V[i] = 0.0;
@@ -8133,7 +6568,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -8279,7 +6713,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -8408,7 +6841,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -8558,7 +6990,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -8832,7 +7263,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -8937,7 +7367,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -9044,7 +7473,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -9183,7 +7611,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -9536,25 +7963,6 @@ namespace wls
           }
         }
         break;
-
-       default:
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
-
-#else //MATLAB_MEX_FILE
-
-        fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4.\n");
-        fflush(stderr);
-        assert(false);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        break;
       }
     }
   }
@@ -9585,120 +7993,8 @@ namespace wls
     int p;
     int stride;
     int x;
-    boolean_T flag;
 
     //  Generate generalized/confluent Vandermonde matrix in 3D.
-    //
-    //     V = gen_vander_3d(us)
-    //     V = gen_vander_3d(us, npoints)
-    //     V = gen_vander_3d(us, npoints, degree, order)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V)
-    //     V = gen_vander_3d(us, npoints, degree, order, weights, hs_inv, V, stride)
-    //     V_colMajor (optional): V stored in colum-major. Useful for debugging.
-    //
-    //  Parameters
-    //  ----------
-    //     us:      Local coordinates of points (n-by-3, where n>=npoints)
-    //     npoints: Number of points. Use 0 for default (size(us, 1))
-    //     degree:  Maximum degree of monomials (default is 2)
-    //     order:   Order of derivative in confluent Vandermonde matrix. Use -1,
-    //              -2, and -4 for grad, Laplacian, and biLaplacian, respectively.
-    //     weights: Weights for all points (n-by-1, where n>=1; use [] or omit
-    //              it to use unit weights)
-    //     hs_inv:  Inverse length for scaling rows in CVM (size 1-by-0 or 1-by-d)
-    //     V:       Vandermonde matrix (must be preallocated if present at input)
-    //     stride:  number of rows in each row block in V (0 for default)
-    //
-    //  Returns
-    //  -------
-    //     V:      confluent Vandermonde matrix
-    //
-    //  Notes
-    //  -----
-    //     It is more efficient to provide weights here to incorporate them when
-    //     constructing the Vandermonde matrix (linear-time overhead in npoints)
-    //     than scaling the matrix afterwards (linear in npoints*nmonomials).
-    //
-    //     Entries in each row are ordered based on the levels in Pascal tetrahedron,
-    //     including tensor-product monomials. The row blocks of CVM are based on
-    //     the levels in Pascal tetrahedron.
-    //
-    //     For example, for degree=2 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1^2, u1*v1, v1^2, u1*w1, v1*w1, w1^2]
-    //        weights(2) * [1, u2, v2, w2, u2^2, u2*v2, v2^2, u2*w2, v2*w2, w2^2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  2u1,  v1,    0,   w1,     0,     0]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  2u2,  v2,    0,   w2,     0,     0]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,    0,  u1,  2v1,   0,     w1,    0]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,    0,  u2,  2v2,   0,     w2,    0]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,    0,   0,    0,   u1,   v1,     2w1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,    0,   0,    0,   u2,   v2,     2w2]
-    //
-    //     For degree=-1 and order=1, V looks as follows:
-    //        weights(1) * [1, u1, v1, w1, u1*v1, u1*w1, v1*w1, u1*v1*w1]
-    //        weights(2) * [1, u2, v2, w2, u2*v2, u2*w2, v2*w2, u2*v2*w2]
-    //        ...
-    //        hs_inv(1)*weights(1) * [0, 1,  0,  0,  v1,   w1,   0,     v1*w1]
-    //        hs_inv(1)*weights(2) * [0, 1,  0,  0,  v2,   w2,   0,     v2*w2]
-    //        ...
-    //        hs_inv(2)*weights(1) * [0, 0,  1,  0,  u1,   0,    w1,    u1*w1]
-    //        hs_inv(2)*weights(2) * [0, 0,  1,  0,  u2,   0,    w2,    u2*w2]
-    //        ...
-    //        hs_inv(3)*weights(1) * [0, 0,  0,  1,   0,   u1,   v1,    u1*v1]
-    //        hs_inv(3)*weights(2) * [0, 0,  0,  1,   0,   u2,   v2,    u2*v2]
-    //
-    //  See also gen_vander_1d, gen_vander_2d
-    //  Handle input arguments
-    flag = (npoints <= us.size(0));
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    if ((order >= 0) || (order == -1) || (order == -2) || (order == -4)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Order must be 0, 1, 2, -1, -2, or -4");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     stride = us.size(0);
     nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
     switch (order) {
@@ -9732,7 +8028,6 @@ namespace wls
     }
 
     //  compute 0th order generalized Vandermonde matrix
-    //  Compute generalized Vandermonde matrix of order-0
     if (weights.size(0) == 0) {
       if (degree != 0) {
         for (iPnt = 0; iPnt < npoints; iPnt++) {
@@ -9836,7 +8131,6 @@ namespace wls
         int gap;
 
         //  Within each level, x^deg is at the peak of Pascal triangle
-        //  implicitly calculating number of elements in corner Pascal triangles
         cornerTriangle = (cornerTriangle + p) + degree;
         counterBottomRow = 1;
 
@@ -9876,27 +8170,6 @@ namespace wls
       }
     }
 
-    flag = (order <= 2);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (order != 0) {
       //     %% compute higher order confluent Vandermonde matrix blocks incrementally
       switch (order) {
@@ -9907,34 +8180,11 @@ namespace wls
           int offset;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt];
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -9990,9 +8240,8 @@ namespace wls
 
             for (kdegree = 0; kdegree <= d - 2; kdegree++) {
               for (iPnt = 0; iPnt < npoints; iPnt++) {
-                b_degree = stride + iPnt;
-                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
-                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -10024,16 +8273,14 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
               // counter for the bottom row to be subtracted later
               for (kdegree = 0; kdegree < deg; kdegree++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -10056,9 +8303,8 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (j = 0; j <= i1; j++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  b_degree = stride + iPnt;
-                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
-                    balance)] * us[us.size(1) * iPnt + 2];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -10170,7 +8416,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -10300,7 +8545,6 @@ namespace wls
               int degg;
 
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -10363,34 +8607,11 @@ namespace wls
           int partition;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt];
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -10445,9 +8666,8 @@ namespace wls
 
             for (kdegree = 0; kdegree <= d - 2; kdegree++) {
               for (iPnt = 0; iPnt < npoints; iPnt++) {
-                b_degree = stride + iPnt;
-                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
-                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -10479,16 +8699,14 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
               // counter for the bottom row to be subtracted later
               for (kdegree = 0; kdegree < deg; kdegree++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -10511,9 +8729,8 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (j = 0; j <= i1; j++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  b_degree = stride + iPnt;
-                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
-                    balance)] * us[us.size(1) * iPnt + 2];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -10624,7 +8841,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -10752,7 +8968,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -10900,7 +9115,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -11168,7 +9382,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -11269,7 +9482,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -11375,7 +9587,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -11513,7 +9724,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -11570,34 +9780,11 @@ namespace wls
           int offset;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt];
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -11653,9 +9840,8 @@ namespace wls
 
             for (kdegree = 0; kdegree <= d - 2; kdegree++) {
               for (iPnt = 0; iPnt < npoints; iPnt++) {
-                b_degree = stride + iPnt;
-                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
-                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -11687,16 +9873,14 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
               // counter for the bottom row to be subtracted later
               for (kdegree = 0; kdegree < deg; kdegree++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -11719,9 +9903,8 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (j = 0; j <= i1; j++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  b_degree = stride + iPnt;
-                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
-                    balance)] * us[us.size(1) * iPnt + 2];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -11833,7 +10016,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -11963,7 +10145,6 @@ namespace wls
               int degg;
 
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -12026,34 +10207,11 @@ namespace wls
           int partition;
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt];
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -12108,9 +10266,8 @@ namespace wls
 
             for (kdegree = 0; kdegree <= d - 2; kdegree++) {
               for (iPnt = 0; iPnt < npoints; iPnt++) {
-                b_degree = stride + iPnt;
-                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
-                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -12142,16 +10299,14 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
               // counter for the bottom row to be subtracted later
               for (kdegree = 0; kdegree < deg; kdegree++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -12174,9 +10329,8 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (j = 0; j <= i1; j++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  b_degree = stride + iPnt;
-                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
-                    balance)] * us[us.size(1) * iPnt + 2];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -12287,7 +10441,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -12415,7 +10568,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -12563,7 +10715,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -12831,7 +10982,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -12932,7 +11082,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -13038,7 +11187,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -13176,7 +11324,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -13237,58 +11384,13 @@ namespace wls
           int kdegree;
           int offset;
           int partition;
-          flag = (degree > 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag,
-                   "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr,
-                    "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
           //  Compute order-1 CVM row blocks from order-0 GVM.
-          flag = (degree != 0);
-
-          //  Throw error if condition false
-          //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-          mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-          if (!flag) {
-            fprintf(stderr, "Runtime assertion error.\n");
-            fflush(stderr);
-          }
-
-          assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-          // compute derivatives with respect to u
           for (iPnt = 0; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt];
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -13343,9 +11445,8 @@ namespace wls
 
             for (kdegree = 0; kdegree <= d - 2; kdegree++) {
               for (iPnt = 0; iPnt < npoints; iPnt++) {
-                b_degree = stride + iPnt;
-                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
-                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -13377,16 +11478,14 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
               // counter for the bottom row to be subtracted later
               for (kdegree = 0; kdegree < deg; kdegree++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -13409,9 +11508,8 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (j = 0; j <= i1; j++) {
                 for (iPnt = 0; iPnt < npoints; iPnt++) {
-                  b_degree = stride + iPnt;
-                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
-                    balance)] * us[us.size(1) * iPnt + 2];
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -13522,7 +11620,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -13650,7 +11747,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -13798,7 +11894,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 1;
 
@@ -14066,7 +12161,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -14167,7 +12261,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -14273,7 +12366,6 @@ namespace wls
               i = 1 - degree;
               for (p = i; p <= maxLayers; p++) {
                 //  Within each level, x^deg is at the peak of Pascal triangle
-                //  implicitly calculating number of elements in corner Pascal triangles
                 cornerTriangle = (cornerTriangle + p) + degree;
                 counterBottomRow = 0;
 
@@ -14411,7 +12503,6 @@ namespace wls
             i = 1 - degree;
             for (p = i; p <= maxLayers; p++) {
               //  Within each level, x^deg is at the peak of Pascal triangle
-              //  implicitly calculating number of elements in corner Pascal triangles
               cornerTriangle = (cornerTriangle + p) + degree;
               counterBottomRow = 0;
 
@@ -14748,25 +12839,6 @@ namespace wls
           }
         }
         break;
-
-       default:
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
-
-#else //MATLAB_MEX_FILE
-
-        fprintf(stderr, "Order must be 0, 1, 2, -1, -2, or -4.\n");
-        fflush(stderr);
-        assert(false);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-        break;
       }
     }
   }
@@ -14784,28 +12856,6 @@ namespace wls
     int x;
 
     //  Build a DAG for Vandermonde matrix in 3D.
-    //
-    //     dag = gen_vander_3d_dag(degree)
-    //     dag = gen_vander_3d_dag(degree, dag)
-    //
-    //  Parameters
-    //  ----------
-    //     degree:  Maximum degree of monomials. Use negative for tensor-product monomials.
-    //
-    //  Returns
-    //  -------
-    //     dag:     A direct acyclic graph stored in a 3-by-(#monomials+1) M-array
-    //        (in column major, or a (#monomials+1)-by-3 M-array if row major).
-    //        Each column represents a monomial (x^i*y^j*z^k), and its column
-    //        stores the offsets to the indices of its "child" monomials
-    //        (i.e., x^(i+1)*y^j*z^k, x^i*y^(j+1)*z^k, and x^i*y^j+*z^(k+1)).
-    //        The last entry is used store a signature, so that it can be
-    //       recomputed when needed.
-    //
-    //     dag_colMajor is an optional output in column-major for testing.
-    //
-    //  See also gen_vander_3d, gen_vander_1d_dag, gen_vander_2d_dag, rrqr_trunc
-    //  Handle input arguments
     if (degree != 0) {
       dag[0] = 1U;
 
@@ -14948,127 +12998,53 @@ namespace wls
 
   static inline
   int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
-    m, int n, ::coder::array<double, 2U> &QR, ::coder::array<int, 1U> &p, ::
-    coder::array<double, 1U> &work, const ::coder::array<unsigned char, 2U> &dag)
+    rowoffset, int coloffset, int m, int n, ::coder::array<double, 2U> &QR, ::
+    coder::array<int, 1U> &p, ::coder::array<double, 1U> &work, const ::coder::
+    array<unsigned char, 2U> &dag)
   {
     int rank;
-    boolean_T flag;
 
-    //  Compute rank-revealing QR with column pivoting
-    //
-    //  [rank, QR, p] = rrqr_factor(A)
-    //  [rank, QR, p] = rrqr_factor(A, thres)
-    //  [rank, QR, p] = rrqr_factor(A, thres, m, n)
-    //  [rank, QR, p, work] = rrqr_factor(A, thres, m, n, QR, p, work)
-    //  [rank, QR, p, work] = rrqr_factor(A, thres, m, n, QR, p, work, dag)
-    //
-    //  Parameters
-    //  ----------
-    //      A:      Weighted generalized Vandermonde matrix
-    //      thres:  Threshold for 2-norm condition number
-    //      m:      Number of rows (use 0 for the default value of nrows(A))
-    //      n:      Number of columns (use 0 for for the default value of ncolumns(A))
-    //      QR:     Preallocated buffer for output QR (nrows(A)-by-(n+1))
-    //      p:      Preallocated buffer for column pivoting vector (length >= n)
-    //      work:   Work space; you can start with zeros(0,1) and its allocation
-    //              will grow automatically as needed
-    //      dag:    Direct acyclic graph for the Vandermonde matrix
-    //
-    //  Output
-    //  ------
-    //      rank:   The estimated numerical rank of matrix A.
-    //      QR:     Internal representation of QRCP (including tau in (n+1)st column)
-    //      p:      Column pivoting vector (1-based index) (length >= n)
-    //      work:   Work space returned for reuse.
-    //
-    //  See also rrqr_rsolve, rrqr_rtsolve, rrqr_qmulti, rrqr_qtmulti, gen_vander_dag
-    //  Must not inline to prevent buffer allocation
-    //  Obtain input arguments
+    //  rrqr_factor  Compute rank-revealing QR with column pivoting
     if (m == 0) {
-      m = A.size(1);
+      m = A.size(1) - rowoffset;
     }
 
     if (n == 0) {
-      n = A.size(0);
+      n = A.size(0) - coloffset;
     }
 
     //  Preallocate output arguments
-    flag = (QR.size(1) == A.size(1));
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "The number of rows in QR must be equal to that of A.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "The number of rows in QR must be equal to that of A.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    flag = (QR.size(0) >= n + 1);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "The number of columns in QR must be greater than that of A.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr,
-              "The number of columns in QR must be greater than that of A.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    flag = (p.size(0) >= n);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag,
-             "Length of permutation vector must be no smaller than the number of columns.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr,
-              "Length of permutation vector must be no smaller than the number of columns.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  Allocate work space if needed
-    //  Invoke C++ function
     p[0] = 0;
     if ((0 == n) || ((dag.size(0) == 0) || (dag.size(1) == 0))) {
-      rank = wls::rrqr_factor_nodag(&A[0], thres, m, n, &QR[0], &(p.data())[0],
-        &(work.data())[0], work.size(0), A.size(1));
+      int i;
+      int i1;
+      int i2;
+
+      //  Note: A and Q are always stored in column major
+      i = coloffset * A.size(1) + rowoffset;
+      i1 = A.size(1);
+      i2 = A.size(0);
+      rank = wls::rrqr_factor_nodag(&A[i % i2 * i1 + i / i2], thres, m, n, &QR[0],
+        &(p.data())[0], &(work.data())[0], work.size(0), A.size(1));
     } else {
-      rank = wls::rrqr_factor(&A[0], thres, m, n, &QR[0], &(p.data())[0],
-        &(work.data())[0], work.size(0), A.size(1), &dag[0], dag.size(1),
-        dag.size(0));
+      int i;
+      int i1;
+      int i2;
+      int i3;
+      int i4;
+      int i5;
+
+      //  Note: A, Q, and dag are always stored in column major
+      i = coloffset * A.size(1) + rowoffset;
+      i1 = A.size(1);
+      i2 = A.size(0);
+      i3 = static_cast<int>(static_cast<double>(coloffset) * static_cast<double>
+                            (dag.size(1)));
+      i4 = dag.size(1);
+      i5 = dag.size(0);
+      rank = wls::rrqr_factor(&A[i % i2 * i1 + i / i2], thres, m, n, &QR[0],
+        &(p.data())[0], &(work.data())[0], work.size(0), A.size(1), &dag[i3 % i5
+        * i4 + i3 / i5], dag.size(1), dag.size(0) - coloffset);
     }
 
     return rank;
@@ -15079,35 +13055,11 @@ namespace wls
     int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
     1U> &work)
   {
+    int i;
     int stride_bs;
-    int u1;
     int wsize;
-    boolean_T flag;
 
     //  Perform Q*bs, where Q is stored implicitly in QR
-    //
-    //     bs = rrqr_qmulti(QR, m, n, rank, bs)
-    //     bs = rrqr_qmulti(QR, m, n, rank, bs, nrhs)
-    //     [bs, work] = rrqr_qmulti(QR, m, n, rank, bs, nrhs, work)
-    //
-    //  Parameters
-    //  ----------
-    //     QR:      Output structure of `rrqr_factor`
-    //     m:       Number of rows in Q (use 0 for default, nrows(QR))
-    //     n:       Number of columns in Q (use 0 for default, ncolumns(QR)-1)
-    //     rank:    Numerical rank of R (must be <= n)
-    //     bs:      Right-hand side vectors of size n-by-nrhs, preallocated to
-    //              max(m,n)-by-nrhs.
-    //     nrhs:    Number of columns in bs (use 0 for default, ncolumns(bs))
-    //     work:    Work space; you can start with zeros(1,0) and its allocation
-    //              will grow automatically as needed.
-    //
-    //  Output
-    //     bs:      Solution vectors, which overwrite bs from input
-    //     work:    Work space returned for reuse.
-    //
-    //  See also rrqr_factor, rrqr_rsolve, rrqr_rtsolve, rrqr_qtmulti
-    //  Obtain stride
     stride_bs = bs.size(1);
 
     //  Obtain input arguments
@@ -15123,37 +13075,6 @@ namespace wls
       rank = n;
     }
 
-    u1 = n;
-    if (m <= n) {
-      u1 = m;
-    }
-
-    if ((rank <= u1) && (rank >= 1)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Rank must be a positive value no greater than min(m,n).");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr,
-              "Rank must be a positive value no greater than min(m,n).\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (nrhs == 0) {
       nrhs = bs.size(0);
     }
@@ -15165,10 +13086,10 @@ namespace wls
     }
 
     //  zero out extra rows in bs to avoid errors in LAPACK
-    u1 = n + 1;
-    for (int i{u1}; i <= m; i++) {
+    i = n + 1;
+    for (int b_i{i}; b_i <= m; b_i++) {
       for (int j{0}; j < nrhs; j++) {
-        bs[(i + bs.size(1) * j) - 1] = 0.0;
+        bs[(b_i + bs.size(1) * j) - 1] = 0.0;
       }
     }
 
@@ -15181,27 +13102,7 @@ namespace wls
   void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
     ::coder::array<double, 2U> &bs, int nrhs)
   {
-    int i;
-    boolean_T flag;
-
     //  Perform forward substitution to compute bs=R'\bs, where R is stored in QR
-    //
-    //     bs = rrqr_rtsolve(QR, n, rank, bs)
-    //     bs = rrqr_rtsolve(QR, n, rank, bs, nrhs)
-    //
-    //  Parameters
-    //  ----------
-    //    QR:      Output structure of `rrqr_factor`
-    //    n:       Number of columns in R (use 0 for default, ncolumns(QR)-1)
-    //    rank:    Numerical rank of R (must be >0 and <= n)
-    //    bs:      Right-hand side vectors
-    //    nrhs:    Number of columns in bs (use 0 for default, ncolumns(bs))
-    //
-    //  Output
-    //    bs:      Solution vectors, which overwrite bs from input
-    //
-    //  See also rrqr_factor, rrqr_rsolve, rrqr_qmulti, rrqr_qtmulti
-    //  Obtain input arguments
     if (n == 0) {
       n = QR.size(0) - 1;
     }
@@ -15210,43 +13111,11 @@ namespace wls
       rank = n;
     }
 
-    if (QR.size(1) > n) {
-      i = n;
-    } else {
-      i = QR.size(1);
-    }
-
-    if ((rank <= i) && (rank >= 1)) {
-      flag = true;
-    } else {
-      flag = false;
-    }
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "Rank must be a positive value no greater than n.");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Rank must be a positive value no greater than n.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (nrhs == 0) {
       nrhs = bs.size(0);
     }
 
     //  Obtain stride
-    //  Invoke C++ function
     wls::rrqr_rtsolve(&QR[0], n, rank, QR.size(1), nrhs, &bs[0], bs.size(1));
   }
 
@@ -15262,50 +13131,8 @@ namespace wls
     double sigma;
     int abs_degree;
     int i;
-    boolean_T flag;
 
     //  Weights based on Buhmann's radial basis function
-    //
-    //     ws = wls_buhmann_weights(us, npoints, degree, params_sh, params_pw, ws)
-    //
-    //     The weight for the ith point is computed as
-    //       w_i = gamma_i *
-    //       (1/9+r_i*r_i*(-14/15+r_i*sqrt(r_i)*(16/3+sqrt(r_i)*(-7+sqrt(r_i)*112/45))))
-    //     where r_i = norm(us(i,:), 2)/rho   if degree>=0, and
-    //           r_i = norm(us(i,:), inf)/rho if degree <0,
-    //     for rho=sigma*dist_k and gamma_i>=0.
-    //
-    //  Parameters
-    //  ----------
-    //     us:  Shifted and rescaled local coordinates in d dimensions (size m-by-d)
-    //     npoints:  Number of points (use 0 for the default value size(us, 1))
-    //     degree:   Degree of polynomials (default is 2)
-    //     params_sh: Shared parameters of size k-by-1 (use empty for default).
-    //           params_sh(1): sigma (use 0 for the degree-based default)
-    //     params_pw: Pointwise parameters of size npoints-by-1 (use empty for default).
-    //           params_pw(:,1): gamma value for each point for safeguards
-    //     ws:       Preallocated storage for the weights
-    //
-    //  Returns
-    //  -------
-    //     ws:       Computed weights for each point.
-    //
-    //  See also
-    //     wls_init, wls_invdist_weights, wls_eno_weights, WlsWeight
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "npoints must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (degree == 0) {
       degree = 2;
     }
@@ -15328,28 +13155,6 @@ namespace wls
 
     if (ws.size(0) == 0) {
       ws.set_size(npoints);
-    } else {
-      flag = (ws.size(0) >= npoints);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "length of ws cannot be smaller than npoints");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "length of ws cannot be smaller than npoints\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
 
     //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
@@ -15412,27 +13217,6 @@ namespace wls
         }
       }
     } else {
-      flag = (params_pw.size(0) >= npoints);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "size(params_pw,1) should be >=npoints");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "size(params_pw,1) should be >=npoints\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
       for (int b_i{0}; b_i < npoints; b_i++) {
         double b_gamma;
         b_gamma = params_pw[params_pw.size(1) * b_i];
@@ -15499,144 +13283,10 @@ namespace wls
     double h2bar_tmp;
     double safegauard;
     int i;
-    boolean_T flag;
 
     //  WLS-ENO weights based on function values
-    //
-    //     ws = wls_eno_weights(us, npoints, degree, us_unscaled, params_sh, params_pw, ws)
-    //
-    //     The weight for the ith point is computed as
-    //       w_i = gamma*(r_i^2 + epsilon_ID) .^ -0.25 / ...
-    //           (c0*|f_i-g0|^2 + c1*df*alpha_i + epsilon_ENO*df^2*hbar^2)
-    //     where r_i = norm(us(i,:), 2)   if degree>=0 and
-    //           r_i = norm(us(i,:), inf) if degree <0,
-    //
-    //  Parameters
-    //  ----------
-    //     us:  Shifted and rescaled local coordinates in d dimensions (size m-by-d)
-    //     npoints:  Number of points (use 0 for the default value size(us, 1))
-    //     degree:   Degree of polynomials (negative for tensor-product)
-    //     us_unscaled:    Unscaled local coordinates for computing hbar_squared
-    //     params_sh: Shared parameters of size k-by-1, where k>=3
-    //           params_sh(1): g0, reference solution at center node
-    //           params_sh(2): df_global, i.e., global range of f
-    //           params_sh(3): c0 (use 0 for default 1)
-    //           params_sh(4): c1 (use 0 for default 0.05)
-    //           params_sh(5): epsilon_ID (use 0 for default 0.01)
-    //           params_sh(6): epsilon_ENO (use 0 for default 0.001)
-    //     params_pw: Pointwise parameters of size npoints-by-2 or npoints-by-3
-    //           params_pw(:,1): function value for each point
-    //           params_pw(:,2): max |alpha| in 1-ring for each node
-    //           params_pw(:,3): gamma value for each point (optional)
-    //     ws:       Preallocated storage for the weights
-    //
-    //  Returns
-    //  -------
-    //     ws:       Computed weight for each point
-    //
-    //  See also
-    //     wls_init, wls_invdist_weights, wls_buhmann_weights, WlsWeight
-    flag = (params_sh.size(0) >= 2);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "first two shared parameters are required");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "first two shared parameters are required\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    flag = (params_pw.size(0) >= npoints);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "size(params_pw,1) should be >=npoints");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "size(params_pw,1) should be >=npoints\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    flag = (params_pw.size(1) >= 2);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "size(params_pw,2) should be >=2");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "size(params_pw,2) should be >=2\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "npoints must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     if (ws.size(0) == 0) {
       ws.set_size(npoints);
-    } else {
-      flag = (ws.size(0) >= npoints);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "length of ws cannot be smaller than npoints");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "length of ws cannot be smaller than npoints\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
 
     //  Compute hbar using ws as buffer space
@@ -15660,73 +13310,11 @@ namespace wls
     }
 
     //  Weights based on inverse distance
-    //
-    //     ws = wls_invdist_weights(us, npoints, degree, params_sh, params_pw, ws)
-    //
-    //     The weight for the ith point is computed as
-    //       w_i = gamma_i * (r_i + epsilon) .^ -alpha
-    //     where r_i = norm(us(i,:), 2)   if degree>=0 and
-    //           r_i = norm(us(i,:), inf) if degree <0,
-    //     alpha=degree/2 by default, and gamma_i>=0;
-    //
-    //  Parameters
-    //  ----------
-    //     us:  Shifted and rescaled local coordinates in d dimensions (size m-by-d)
-    //     npoints:  Number of points (use 0 for the default value size(us, 1))
-    //     degree:   Degree of polynomials (negative for tensor-product)
-    //     params_sh: Shared parameters of size k-by-1, where k>=0.
-    //           params_sh(1): epsilon (use 0 for default 0.01)
-    //           params_sh(2): alpha (use 0 for default abs(degree)/2)
-    //     params_pw: Pointwise parameters of size npoints-by-1 (use empty for default).
-    //           params_pw(:,1): gamma value for each point for safeguards
-    //     ws:       Preallocated storage for the weights
-    //
-    //  Returns
-    //  -------
-    //     ws:       Computed weight for each point
-    //
-    //  See also
-    //     wls_init, wls_buhmann_weights, wls_eno_weights, WlsWeight
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "npoints must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     epsilon = 0.01;
     alpha = std::abs(b_degree) / 2.0;
     if (h2bar_tmp != 0.0) {
       epsilon = h2bar_tmp;
     }
-
-    flag = (ws.size(0) >= npoints);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "length of ws cannot be smaller than npoints");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "length of ws cannot be smaller than npoints\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
 
     for (i = 0; i < npoints; i++) {
       double r;
@@ -15803,50 +13391,8 @@ namespace wls
     double alpha;
     double epsilon;
     int b_degree;
-    boolean_T flag;
 
     //  Weights based on inverse distance
-    //
-    //     ws = wls_invdist_weights(us, npoints, degree, params_sh, params_pw, ws)
-    //
-    //     The weight for the ith point is computed as
-    //       w_i = gamma_i * (r_i + epsilon) .^ -alpha
-    //     where r_i = norm(us(i,:), 2)   if degree>=0 and
-    //           r_i = norm(us(i,:), inf) if degree <0,
-    //     alpha=degree/2 by default, and gamma_i>=0;
-    //
-    //  Parameters
-    //  ----------
-    //     us:  Shifted and rescaled local coordinates in d dimensions (size m-by-d)
-    //     npoints:  Number of points (use 0 for the default value size(us, 1))
-    //     degree:   Degree of polynomials (negative for tensor-product)
-    //     params_sh: Shared parameters of size k-by-1, where k>=0.
-    //           params_sh(1): epsilon (use 0 for default 0.01)
-    //           params_sh(2): alpha (use 0 for default abs(degree)/2)
-    //     params_pw: Pointwise parameters of size npoints-by-1 (use empty for default).
-    //           params_pw(:,1): gamma value for each point for safeguards
-    //     ws:       Preallocated storage for the weights
-    //
-    //  Returns
-    //  -------
-    //     ws:       Computed weight for each point
-    //
-    //  See also
-    //     wls_init, wls_buhmann_weights, wls_eno_weights, WlsWeight
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "npoints must be nonnegative");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     epsilon = 0.01;
     if (degree < 0) {
       b_degree = -degree;
@@ -15865,28 +13411,6 @@ namespace wls
 
     if (ws.size(0) == 0) {
       ws.set_size(npoints);
-    } else {
-      flag = (ws.size(0) >= npoints);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "length of ws cannot be smaller than npoints");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "length of ws cannot be smaller than npoints\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
 
     if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
@@ -15925,27 +13449,6 @@ namespace wls
         ws[i] = std::pow(r2 + epsilon, -alpha);
       }
     } else {
-      flag = (params_pw.size(0) >= npoints);
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "size(params_pw,1) should be >=npoints");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "size(params_pw,1) should be >=npoints\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
       for (int i{0}; i < npoints; i++) {
         double b_gamma;
         b_gamma = params_pw[params_pw.size(1) * i];
@@ -15997,38 +13500,9 @@ namespace wls
     int ncols;
     int nrows;
     int stride;
-    int u1;
+    int unnamed_idx_0;
 
     //  Reinitialize the buffers of WlsObject
-    //
-    //     wls = wls_resize(wls, dim, npoints)
-    //     wls = wls_resize(wls, dim, npoints, degree)
-    //     wls = wls_resize(wls, dim, npoints, degree, order)
-    //     wls = wls_resize(wls, dim, npoints, degree, order, use_dag)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       Previously allocated WlsObject object
-    //     dim:       Dimension
-    //     npoints:   Number of points.
-    //     degree:    Degree of polynomials (negative for tensor product monomials).
-    //     order:     Order of the confluent Vandermonde system (default is 0).
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //
-    //  Returns
-    //  -------
-    //     wls:       a MATLAB/C struct that contains the buffer spaces for
-    //                computing WLS and its differentiation.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, or use_dag is missing, then its
-    //  corresponding value in the input wls object will be preserved. If
-    //  present, they will overwrite the values in `wls`.
-    //
-    //   See also WlsObject, wls_init, wls_func, wls_var_diff
     b_wls->degree = degree;
     b_wls->order = order;
     b_wls->use_dag = use_dag;
@@ -16052,20 +13526,6 @@ namespace wls
         break;
 
        default:
-        //  Throw error if condition false
-        //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-        mxAssert(true, "Dimension must be 1, 2, or 3.");
-
-#else //MATLAB_MEX_FILE
-
-        assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
         nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
         break;
       }
@@ -16098,20 +13558,6 @@ namespace wls
       break;
 
      default:
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "Dimension must be 1, 2, or 3.");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
       if (degree > 0) {
         ncols = (degree + 1) * (degree + 2) * (degree + 3) / 6;
       } else {
@@ -16125,84 +13571,72 @@ namespace wls
     if (use_dag) {
       if ((dim != b_wls->dag.size(1)) || (ncols + 1 != b_wls->dag.size(0))) {
         //  Reset DAG if dimension or degree has changed.
-        //  Add one additional row for storing the signature.
         b_wls->dag.set_size(ncols + 1, dim);
-        u1 = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
+        unnamed_idx_0 = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
         b_degree = b_wls->dag.size(0);
-        b_wls->dag[u1 % b_degree * b_wls->dag.size(1) + u1 / b_degree] =
-          MAX_uint8_T;
+        b_wls->dag[unnamed_idx_0 % b_degree * b_wls->dag.size(1) + unnamed_idx_0
+          / b_degree] = MAX_uint8_T;
       }
     } else {
       b_wls->dag.set_size(0, dim);
     }
 
     b_wls->jpvt.set_size(ncols);
+
+    //  V is always full, but QR has one fewer row and column in interp0 mode
     b_wls->V.set_size(ncols, nrows);
-    b_wls->QR.set_size(ncols + 1, nrows);
+    unnamed_idx_0 = (ncols - b_wls->interp0) + 1;
+    b_wls->QR.set_size(unnamed_idx_0, nrows);
     b_wls->rank = 0;
 
     //  work space
     b_degree = ncols << 2;
-    u1 = ncols + 1;
-    if (nrows >= u1) {
-      u1 = nrows;
+    unnamed_idx_0 = ncols + 1;
+    if (nrows >= unnamed_idx_0) {
+      unnamed_idx_0 = nrows;
     }
 
     if (b_degree < 4160) {
       b_degree = 4160;
     }
 
-    b_wls->work.set_size((u1 << 5) + b_degree);
+    b_wls->work.set_size((unnamed_idx_0 << 5) + b_degree);
   }
 
   static inline
-  void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
+  void wls_func1(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
                  ::coder::array<double, 2U> &fs, int npoints, ::coder::array<
                  double, 2U> &vdops, ::coder::array<double, 2U> &result)
   {
+    int i;
     int iPoint;
     int iRow;
     int j;
     int nDims;
-    int ncols;
     int nrows;
     int nrows_vdops;
     int u0;
     int u1;
 
     //  Compute WLS-fitting at one or more points.
-    //
-    //  [wls, vdops] = wls_func(wls, pnts) computes fitting at given points.
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs)
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs, npoints) specifies number
-    //    of points in pnts
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     pnts:      Local coordinates of the quadrature points (n-by-d)
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //     npoints:   Number of points in pnts
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-n. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size n-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_func
-    ncols = b_wls->ncols;
-    nDims = pnts.size(1);
+    nDims = pnts.size(1) - 1;
 
     //  scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((npoints + 3) / 4) << 2, pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint < npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
-          iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint < npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (pnts[dim + pnts.size(1)
+            * iPoint] - b_wls->origin.data[dim]) * b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint < npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
+            iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
@@ -16218,14 +13652,16 @@ namespace wls
     }
 
     //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(npoints, nrows_vdops);
+    u1 = nrows_vdops - b_wls->interp0;
+    b_wls->vdops.set_size(npoints, u1);
 
     //  Extract vopts from Vandermonde matrix
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u1 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = b_wls->jpvt[iMonomial];
       for (iPoint = 0; iPoint < npoints; iPoint++) {
-        b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] = b_wls->
-          V[iPoint + b_wls->V.size(1) * (j - 1)];
+        b_wls->vdops[(iMonomial + b_wls->interp0) + b_wls->vdops.size(1) *
+          iPoint] = b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
       }
     }
 
@@ -16233,22 +13669,37 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, npoints);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 npoints, b_wls->work);
+    vdops.set_size(nrows_vdops, npoints);
 
     //  Transpose the operator for row-major
-    vdops.set_size(nrows_vdops, npoints);
-    for (int i{0}; i < nrows_vdops; i++) {
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j < npoints; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
       for (int k{0}; k < npoints; k++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j < npoints; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 1.0 - s;
       }
     }
 
@@ -16265,7 +13716,7 @@ namespace wls
       u1 = fs.size(1);
       for (int iFunc{0}; iFunc < u1; iFunc++) {
         for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          for (iRow = 0; iRow <= nrows; iRow++) {
+          for (iRow = 0; iRow < nrows; iRow++) {
             result[iFunc + result.size(1) * iPnt] = result[iFunc + result.size(1)
               * iPnt] + fs[iFunc + fs.size(1) * iRow] * vdops[iPnt + vdops.size
               (1) * iRow];
@@ -16276,15 +13727,15 @@ namespace wls
   }
 
   static inline
-  void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
+  void wls_func2(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
                  ::coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                  &vdops, ::coder::array<double, 2U> &result)
   {
+    int i;
     int iPoint;
     int iRow;
     int j;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -16292,39 +13743,25 @@ namespace wls
     int u1;
 
     //  Compute WLS-fitting at one or more points.
-    //
-    //  [wls, vdops] = wls_func(wls, pnts) computes fitting at given points.
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs)
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs, npoints) specifies number
-    //    of points in pnts
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     pnts:      Local coordinates of the quadrature points (n-by-d)
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //     npoints:   Number of points in pnts
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-n. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size n-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_func
     npoints = pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = pnts.size(1);
+    nDims = pnts.size(1) - 1;
 
     //  scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((pnts.size(0) + 3) / 4) << 2, pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
-          iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (pnts[dim + pnts.size(1)
+            * iPoint] - b_wls->origin.data[dim]) * b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
+            iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
@@ -16340,14 +13777,16 @@ namespace wls
     }
 
     //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(pnts.size(0), nrows_vdops);
+    u1 = nrows_vdops - b_wls->interp0;
+    b_wls->vdops.set_size(pnts.size(0), u1);
 
     //  Extract vopts from Vandermonde matrix
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u1 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = b_wls->jpvt[iMonomial];
       for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] = b_wls->
-          V[iPoint + b_wls->V.size(1) * (j - 1)];
+        b_wls->vdops[(iMonomial + b_wls->interp0) + b_wls->vdops.size(1) *
+          iPoint] = b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
       }
     }
 
@@ -16355,22 +13794,37 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, pnts.size(0));
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 pnts.size(0), b_wls->work);
+    vdops.set_size(nrows_vdops, pnts.size(0));
 
     //  Transpose the operator for row-major
-    vdops.set_size(nrows_vdops, pnts.size(0));
-    for (int i{0}; i < nrows_vdops; i++) {
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= npoints; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
       for (int k{0}; k <= npoints; k++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= npoints; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 1.0 - s;
       }
     }
 
@@ -16387,7 +13841,7 @@ namespace wls
       u1 = fs.size(1);
       for (int iFunc{0}; iFunc < u1; iFunc++) {
         for (int iPnt{0}; iPnt <= npoints; iPnt++) {
-          for (iRow = 0; iRow <= nrows; iRow++) {
+          for (iRow = 0; iRow < nrows; iRow++) {
             result[iFunc + result.size(1) * iPnt] = result[iFunc + result.size(1)
               * iPnt] + fs[iFunc + fs.size(1) * iRow] * vdops[iPnt + vdops.size
               (1) * iRow];
@@ -16398,13 +13852,13 @@ namespace wls
   }
 
   static inline
-  void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, ::
+  void wls_func3(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, ::
                  coder::array<double, 2U> &vdops)
   {
+    int i;
     int iPoint;
     int j;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -16412,39 +13866,25 @@ namespace wls
     int u1;
 
     //  Compute WLS-fitting at one or more points.
-    //
-    //  [wls, vdops] = wls_func(wls, pnts) computes fitting at given points.
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs)
-    //  [wls, vdops, result] = wls_func(wls, pnts, fs, npoints) specifies number
-    //    of points in pnts
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     pnts:      Local coordinates of the quadrature points (n-by-d)
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //     npoints:   Number of points in pnts
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-n. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size n-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_func
     npoints = pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = pnts.size(1);
+    nDims = pnts.size(1) - 1;
 
     //  scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((pnts.size(0) + 3) / 4) << 2, pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
-          iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (pnts[dim + pnts.size(1)
+            * iPoint] - b_wls->origin.data[dim]) * b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = pnts[dim + pnts.size(1) *
+            iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
@@ -16460,14 +13900,16 @@ namespace wls
     }
 
     //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(pnts.size(0), nrows_vdops);
+    u0 = nrows_vdops - b_wls->interp0;
+    b_wls->vdops.set_size(pnts.size(0), u0);
 
     //  Extract vopts from Vandermonde matrix
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u0 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u0; iMonomial++) {
       j = b_wls->jpvt[iMonomial];
       for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] = b_wls->
-          V[iPoint + b_wls->V.size(1) * (j - 1)];
+        b_wls->vdops[(iMonomial + b_wls->interp0) + b_wls->vdops.size(1) *
+          iPoint] = b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
       }
     }
 
@@ -16475,12 +13917,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, pnts.size(0));
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 pnts.size(0), b_wls->work);
+    vdops.set_size(nrows_vdops, pnts.size(0));
 
     //  Transpose the operator for row-major
-    vdops.set_size(nrows_vdops, pnts.size(0));
-    for (int i{0}; i < nrows_vdops; i++) {
+    u0 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u0; i++) {
       for (j = 0; j <= npoints; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -16493,81 +13937,35 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= npoints; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 1.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
-                 WlsWeight *weight, int degree, int order, boolean_T interp0,
+  void wls_init1(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+                 WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag, int npoints)
   {
     int dim;
-    boolean_T flag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = interp0;
+    b_wls->interp0 = (interp0 != 0);
+    interp0 = b_wls->interp0;
     b_wls->use_dag = use_dag;
     if (npoints <= 0) {
       npoints = us.size(0);
-    } else {
-      flag = (npoints <= us.size(0));
-
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag,
-               "Number of points cannot be greater than the first dimension of `us`.");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr,
-                "Number of points cannot be greater than the first dimension of `us`.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
     }
 
     //  Resize buffers
@@ -16578,6 +13976,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -16585,33 +13984,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -16628,49 +14008,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i < npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i < npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i < npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i < npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i < npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -16685,55 +14176,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i < npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i < npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i < npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i < npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i < npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -16745,9 +14219,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -16764,29 +14238,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, npoints, degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -16804,20 +14255,6 @@ namespace wls
       if ((order > 0) && (npoints != b_wls->stride) && (npoints != b_wls->stride))
       {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = npoints;
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -16838,16 +14275,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -16860,8 +14297,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16888,8 +14327,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -16903,20 +14340,6 @@ namespace wls
 
         if (npoints != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = npoints;
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -16932,55 +14355,22 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
+  void wls_init2(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
   {
     int degree;
     int dim;
+    int interp0;
     int npoints;
     int order;
     boolean_T use_dag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
 
     //  Default is to use unit weight
     degree = b_wls->degree;
     order = b_wls->order;
+    interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
 
@@ -16993,40 +14383,21 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
-      int i1;
       int j;
       int ncols;
       int nrblks;
       int src;
       int trg;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -17043,49 +14414,162 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              int i1;
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                i1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > i1) {
+                    b_us -= i1;
+                  }
+                }
+              }
+
+              i1 = b_wls->us.size(0);
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              int i1;
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                i1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > i1) {
+                    b_us -= i1;
+                  }
+                }
+              }
+
+              i1 = b_wls->us.size(0);
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            i1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > i1) {
-                wls_idx_0 -= i1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -17100,55 +14584,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            i1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > i1) {
-                wls_idx_0 -= i1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          i1 = b_wls->us.size(0);
-          b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -17159,9 +14626,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
 
         //  unit weights
-        wls_idx_0 = b_wls->rweights.size(0);
-        b_wls->rweights.set_size(wls_idx_0);
-        for (i = 0; i < wls_idx_0; i++) {
+        b_us = b_wls->rweights.size(0);
+        b_wls->rweights.set_size(b_us);
+        for (i = 0; i < b_us; i++) {
           b_wls->rweights[i] = 1.0;
         }
       }
@@ -17175,20 +14642,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -17209,15 +14662,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      //  Perform QR with column pivoting
       if ((degree > 1) && (degree < 7)) {
         thres = dv[degree - 1];
       } else {
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -17244,8 +14698,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -17259,20 +14711,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -17288,54 +14726,21 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+  void wls_init3(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight)
   {
     int degree;
     int dim;
+    int interp0;
     int npoints;
     int order;
     boolean_T use_dag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
     degree = b_wls->degree;
     order = b_wls->order;
+    interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
 
@@ -17348,6 +14753,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -17355,33 +14761,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -17398,49 +14785,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -17455,55 +14953,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -17515,9 +14996,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -17534,30 +15015,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            boolean_T flag;
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, us.size(0), degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -17575,20 +15032,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -17609,16 +15052,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -17631,8 +15074,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -17659,8 +15104,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -17674,20 +15117,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -17703,52 +15132,19 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+  void wls_init4(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree)
   {
     int dim;
+    int interp0;
     int npoints;
     int order;
     boolean_T use_dag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
     order = b_wls->order;
+    interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
 
@@ -17761,6 +15157,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -17768,33 +15165,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -17811,49 +15189,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -17868,55 +15357,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -17928,9 +15400,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -17947,30 +15419,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            boolean_T flag;
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, us.size(0), degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -17988,20 +15436,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -18022,16 +15456,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -18044,8 +15478,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -18072,8 +15508,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -18087,20 +15521,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -18116,50 +15536,17 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+  void wls_init5(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order)
   {
     int dim;
+    int interp0;
     int npoints;
     boolean_T use_dag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
+    interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
 
@@ -18171,6 +15558,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -18178,33 +15566,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -18221,49 +15590,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -18278,55 +15758,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -18338,9 +15801,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -18357,30 +15820,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            boolean_T flag;
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, us.size(0), degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -18398,20 +15837,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -18432,16 +15857,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -18454,8 +15879,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -18482,8 +15909,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -18497,20 +15922,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -18526,51 +15937,17 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
-                 WlsWeight *weight, int degree, int order, boolean_T interp0)
+  void wls_init6(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+                 WlsWeight *weight, int degree, int order, int interp0)
   {
     int dim;
     int npoints;
     boolean_T use_dag;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = interp0;
+    b_wls->interp0 = (interp0 != 0);
+    interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
 
@@ -18582,6 +15959,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -18589,33 +15967,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -18632,49 +15991,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -18689,55 +16159,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -18749,9 +16202,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -18768,30 +16221,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            boolean_T flag;
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, us.size(0), degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -18809,20 +16238,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -18843,16 +16258,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -18865,8 +16280,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -18893,8 +16310,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -18908,20 +16323,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -18937,51 +16338,17 @@ namespace wls
   }
 
   static inline
-  void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
-                 WlsWeight *weight, int degree, int order, boolean_T interp0,
+  void wls_init7(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
+                 WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag)
   {
     int dim;
     int npoints;
 
     //  Initialize WlsObject in 1D, 2D, or 3D.
-    //
-    //     wls = wls_init(wls, us)
-    //     wls = wls_init(wls, us, weight)
-    //     wls = wls_init(wls, us, weight, degree)
-    //     wls = wls_init(wls, us, weight, degree, order)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag)
-    //     wls = wls_init(wls, us, weight, degree, order, interp0, use_dag, npoints)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:     An WlsObject with (partially) preallocated work space.
-    //     us:      input points in local coordinate system (m-by-dim)
-    //     weight:  An WlsWeight object specifying the weighting scheme.
-    //     degree:  degree of polynomials (default is 2)
-    //     order:   degree of derivatives in the input (default is 0)
-    //     interp0: Whether to enforce WLS to pass through the first point.
-    //     use_dag:   Whether to use DAG if truncation is needed for QRCP,
-    //                so that high-degree polynomials will be truncated first.
-    //                (Default is true. Use false for better efficiency.)
-    //     npoints: number of points (default is size(us,1))
-    //
-    //  Returns
-    //  -------
-    //     wls:   The WlsObject containing the V matrix, its QR factorization,
-    //            permutation vector, rank, weights, dag, and work space.
-    //
-    //  Notes
-    //  -----
-    //  If one of the arguments degree, order, interp0, or use_dag is missing,
-    //  then its corresponding value in the input wls object will be preserved.
-    //
-    //  See also
-    //     WlsWeight, WlsObject, wls_var_kernel, wls_var_diff, wls_var_func, wls_var_grad,
-    //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = interp0;
+    b_wls->interp0 = (interp0 != 0);
+    interp0 = b_wls->interp0;
     b_wls->use_dag = use_dag;
     npoints = us.size(0) - 1;
 
@@ -18993,6 +16360,7 @@ namespace wls
       double thres;
       int b_b;
       int b_i;
+      int b_us;
       int i;
       int j;
       int ncols;
@@ -19000,33 +16368,14 @@ namespace wls
       int src;
       int trg;
       int u1;
-      int wls_idx_0;
-      boolean_T b;
-      boolean_T b1;
 
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        wls_idx_0 = b_wls->dag.size(0);
-        if (b_wls->dag[i % wls_idx_0 * b_wls->dag.size(1) + i / wls_idx_0] !=
-            degree + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
-          //
-          //     dag = gen_vander_dag(dim, degree)
-          //     dag = gen_vander_dag(dim, degree, dag)
-          //
-          //  Parameters
-          //  ----------
-          //     dim:     Dimension
-          //     degree:  Maximum degree of monomials. Use negative
-          //              for tensor-product monomials.
-          //
-          //  Returns
-          //  -------
-          //     dag: Dependency graph of Vandermonde system
-          //
-          //  See also gen_vander, rrqr_trunc
-          //  Compute the dag
           switch (us.size(1)) {
            case 1:
             gen_vander_1d_dag(degree, b_wls->dag);
@@ -19043,49 +16392,160 @@ namespace wls
         }
       }
 
+      if (b_wls->interp0 != 0) {
+        //  Make the first node the origin in interp0 mode
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = us[0];
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+                us[0];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = us[0];
+          b_wls->origin.data[1] = us[1];
+          b_wls->origin.data[2] = us[2];
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] -
+              us[1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] -
+              us[2];
+          }
+          break;
+        }
+      } else {
+        switch (us.size(1)) {
+         case 1:
+          {
+            boolean_T b;
+            boolean_T b1;
+            b_wls->origin.size[1] = 1;
+            b_wls->origin.size[0] = 1;
+            b_wls->origin.data[0] = 0.0;
+            b = true;
+            b1 = (us.size(1) <= 0);
+            i = us.size(1) * us.size(0);
+            b_us = 0;
+            for (b_i = 0; b_i <= npoints; b_i++) {
+              if (b1 || (b_i >= i)) {
+                b_us = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+              } else {
+                u1 = us.size(1) * us.size(0) - 1;
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                } else {
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
+                  }
+                }
+              }
+
+              u1 = b_wls->us.size(0);
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+            }
+          }
+          break;
+
+         case 2:
+          b_wls->origin.size[1] = 2;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+          }
+          break;
+
+         default:
+          b_wls->origin.size[1] = 3;
+          b_wls->origin.size[0] = 1;
+          b_wls->origin.data[0] = 0.0;
+          b_wls->origin.data[1] = 0.0;
+          b_wls->origin.data[2] = 0.0;
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
+          }
+          break;
+        }
+      }
+
       //  Scale us to be between -1 and 1
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
         for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
-          }
-
-          maxx = std::fmax(maxx, std::abs(us[wls_idx_0]));
+          i = b_wls->us.size(0);
+          maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
+            + b_i / i]));
         }
         break;
 
        case 2:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::abs(us[us.size(1) * b_i]), std::
-            abs(us[us.size(1) * b_i + 1])));
+          maxx = std::fmax(maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i]), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
         }
         break;
 
        default:
         for (b_i = 0; b_i <= npoints; b_i++) {
-          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(us[us.size(1) *
-            b_i]), std::abs(us[us.size(1) * b_i + 1])), std::abs(us[us.size(1) *
-            b_i + 2])));
+          maxx = std::fmax(maxx, std::fmax(std::fmax(std::abs(b_wls->us
+            [b_wls->us.size(1) * b_i]), std::abs(b_wls->us[b_wls->us.size(1) *
+            b_i + 1])), std::abs(b_wls->us[b_wls->us.size(1) * b_i + 2])));
         }
         break;
       }
@@ -19100,55 +16560,38 @@ namespace wls
         b_wls->hs_inv.data[b_i] = maxx_inv;
       }
 
-      //  scale us and save solution into wls.us
-      switch (us.size(1)) {
-       case 1:
-        b = true;
-        b1 = (us.size(1) <= 0);
-        i = us.size(1) * us.size(0);
-        wls_idx_0 = 0;
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          if (b1 || (b_i >= i)) {
-            wls_idx_0 = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-          } else {
-            u1 = us.size(1) * us.size(0) - 1;
-            if (wls_idx_0 > MAX_int32_T - us.size(1)) {
-              wls_idx_0 = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
-            } else {
-              wls_idx_0 += us.size(1);
-              if (wls_idx_0 > u1) {
-                wls_idx_0 -= u1;
-              }
-            }
+      //  scale wls.us
+      if (maxx_inv != 1.0) {
+        switch (us.size(1)) {
+         case 1:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            i = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
+            b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
+          break;
 
-          u1 = b_wls->us.size(0);
-          b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[wls_idx_0] *
-            maxx_inv;
-        }
-        break;
+         case 2:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+          }
+          break;
 
-       case 2:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
+         default:
+          for (b_i = 0; b_i <= npoints; b_i++) {
+            b_wls->us[b_wls->us.size(1) * b_i] = b_wls->us[b_wls->us.size(1) *
+              b_i] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 1] = b_wls->us[b_wls->us.size(1)
+              * b_i + 1] * maxx_inv;
+            b_wls->us[b_wls->us.size(1) * b_i + 2] = b_wls->us[b_wls->us.size(1)
+              * b_i + 2] * maxx_inv;
+          }
+          break;
         }
-        break;
-
-       default:
-        for (b_i = 0; b_i <= npoints; b_i++) {
-          b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] * maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1] *
-            maxx_inv;
-          b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2] *
-            maxx_inv;
-        }
-        break;
       }
 
       //  Compute point-wise weights
@@ -19160,9 +16603,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          wls_idx_0 = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(wls_idx_0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else {
@@ -19179,30 +16622,6 @@ namespace wls
                                 weight->params_shared, weight->params_pointwise,
                                 b_wls->rweights);
           } else {
-            boolean_T flag;
-            flag = (c == 'E');
-
-            //  Throw error if condition false
-            //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-            mxAssert(flag,
-                     "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
-
-#else //MATLAB_MEX_FILE
-
-            if (!flag) {
-              fprintf(stderr,
-                      "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.\n");
-              fflush(stderr);
-            }
-
-            assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
             //  WLS-ENO
             wls_eno_weights(b_wls->us, us.size(0), degree, us,
                             weight->params_shared, weight->params_pointwise,
@@ -19220,20 +16639,6 @@ namespace wls
       if ((order > 0) && (us.size(0) != b_wls->stride) && (us.size(0) !=
            b_wls->stride)) {
         //  Compact the storage of Vandermonde matrix
-        //
-        //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-        //
-        //  Parameters
-        //  ----------
-        //     V:        confluent Vandermonde matrix
-        //     npoints:  number of points
-        //     nrblks:   number of row blocks
-        //     stride:   length of each row block
-        //     rowmajor: Array is in row-major
-        //
-        //  Returns
-        //  -------
-        //     V:       V with data in first npoints*nrblks rows
         trg = us.size(0);
         for (b_b = 2; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
@@ -19254,16 +16659,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      wls_idx_0 = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (wls_idx_0 <= u1) {
-        u1 = wls_idx_0;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (b_i = 0; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          wls_idx_0 = b_wls->V.size(0);
-          for (i = 0; i < wls_idx_0; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -19276,8 +16681,10 @@ namespace wls
         thres = 1.0E+8;
       }
 
-      b_wls->rank = rrqr_factor(b_wls->V, thres, b_wls->nrows, ncols, b_wls->QR,
-        b_wls->jpvt, b_wls->work, b_wls->dag);
+      //  In interp0 mode, we trim off the first row and first column.
+      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
+        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
+        b_wls->dag);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -19304,8 +16711,6 @@ namespace wls
           }
         } else {
           //  Compute scaling factors for each block. Use wls.vdops as work space.
-          //  It is important to `coder.ignoreConst` on fourth argument so that
-          //  V is not optimized to be a 1-D array by MATLAB Coder.
           gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
           for (int blk{2}; blk <= nrblks; blk++) {
             int J;
@@ -19319,20 +16724,6 @@ namespace wls
 
         if (us.size(0) != b_wls->stride) {
           //  Compact the storage of Vandermonde matrix
-          //
-          //   V = compact_vander(V, npoints, nrblks, stride, rowmajor)
-          //
-          //  Parameters
-          //  ----------
-          //     V:        confluent Vandermonde matrix
-          //     npoints:  number of points
-          //     nrblks:   number of row blocks
-          //     stride:   length of each row block
-          //     rowmajor: Array is in row-major
-          //
-          //  Returns
-          //  -------
-          //     V:       V with data in first npoints*nrblks rows
           trg = us.size(0);
           for (b_b = 2; b_b <= nrblks; b_b++) {
             src = (b_b - 1) * b_wls->stride;
@@ -19348,17 +16739,16 @@ namespace wls
   }
 
   static inline
-  void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_bilap1(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                       coder::array<double, 2U> &fs, ::coder::array<double, 1U>
                       &vdops, ::coder::array<double, 2U> &result)
   {
     int bilap_size_idx_1;
+    int i;
     int iPoint;
     int iRow;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -19366,37 +16756,8 @@ namespace wls
     int u0;
     int u1;
     signed char bilap_data[9];
-    boolean_T flag;
 
     //  Compute variational (vector) bi-Laplacian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_bilap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       bilap_size_idx_1 = 1;
@@ -19435,79 +16796,31 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
-
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (1 / lenWs * lenWs == 1);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -4,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -19518,14 +16831,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u1 = 0; u1 < nrows_vdops; u1++) {
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
       int offset;
 
@@ -19533,19 +16849,21 @@ namespace wls
       offset = (bilap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset
-              + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-              iPoint] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+              b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -19555,18 +16873,31 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (iRow = 0; iRow <= nrows; iRow++) {
+      for (iRow = 0; iRow < nrows; iRow++) {
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
+    }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
     }
 
     if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
@@ -19581,7 +16912,7 @@ namespace wls
       //  Compute solution
       u1 = fs.size(1);
       for (int iFunc{0}; iFunc < u1; iFunc++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
             vdops[iRow];
         }
@@ -19590,13 +16921,13 @@ namespace wls
   }
 
   static inline
-  void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_bilap2(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, ::coder::array<double, 1U> &vdops)
   {
     int bilap_size_idx_1;
+    int i;
     int iPoint;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -19606,34 +16937,6 @@ namespace wls
     signed char bilap_data[9];
 
     //  Compute variational (vector) bi-Laplacian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_bilap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       bilap_size_idx_1 = 1;
@@ -19659,80 +16962,44 @@ namespace wls
      default:
       if (b_wls->degree > 0) {
         bilap_size_idx_1 = 9;
-        for (u0 = 0; u0 < 9; u0++) {
-          bilap_data[u0] = iv[u0];
+        for (u1 = 0; u1 < 9; u1++) {
+          bilap_data[u1] = iv[u1];
         }
       } else {
         bilap_size_idx_1 = 9;
-        for (u0 = 0; u0 < 9; u0++) {
-          bilap_data[u0] = iv1[u0];
+        for (u1 = 0; u1 < 9; u1++) {
+          bilap_data[u1] = iv1[u1];
         }
       }
       break;
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -4,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -19743,14 +17010,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
       int offset;
 
@@ -19758,13 +17028,14 @@ namespace wls
       offset = (bilap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial];
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset +
-            iPoint) + b_wls->V.size(1) * (j - 1)];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+            b_wls->V.size(1) * (j - 1)];
         }
       }
     }
@@ -19773,11 +17044,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -19786,18 +17058,29 @@ namespace wls
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
+    }
   }
 
   static inline
-  void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_bilap3(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                       array<double, 1U> &vdops)
   {
     int bilap_size_idx_1;
+    int i;
     int iPoint;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -19805,37 +17088,8 @@ namespace wls
     int u0;
     int u1;
     signed char bilap_data[9];
-    boolean_T flag;
 
     //  Compute variational (vector) bi-Laplacian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_bilap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_bilap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       bilap_size_idx_1 = 1;
@@ -19861,92 +17115,44 @@ namespace wls
      default:
       if (b_wls->degree > 0) {
         bilap_size_idx_1 = 9;
-        for (u0 = 0; u0 < 9; u0++) {
-          bilap_data[u0] = iv[u0];
+        for (u1 = 0; u1 < 9; u1++) {
+          bilap_data[u1] = iv[u1];
         }
       } else {
         bilap_size_idx_1 = 9;
-        for (u0 = 0; u0 < 9; u0++) {
-          bilap_data[u0] = iv1[u0];
+        for (u1 = 0; u1 < 9; u1++) {
+          bilap_data[u1] = iv1[u1];
         }
       }
       break;
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
-
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (1 / lenWs * lenWs == 1);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -4,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -19957,14 +17163,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
       int offset;
 
@@ -19972,19 +17181,21 @@ namespace wls
       offset = (bilap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset
-              + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-              iPoint] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+              b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -19994,11 +17205,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -20007,10 +17219,22 @@ namespace wls
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
+    }
   }
 
   static inline
-  void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl1(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                      &vdops, double result_data[], int result_size[2])
@@ -20022,45 +17246,11 @@ namespace wls
     int u1;
 
     //  Variational curl operators as weighted sum at quadrature points in 3D
-    //
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-3)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or 3. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-3 will be used
-    //                to scale the three components of the curl, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-3).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-9.
-    //                To apply the operator, use
-    //                   [sum(fs(:,2:3) .* vdops(:,2:3), 'all');
-    //                    sum(fs(:,[1,3]) .* vdops(:,[4,6]), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,7:8), 'all')];
-    //     result:    Computed solution of size 3-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  compute vdops and reorganize
     if (ws.size(1) <= 1) {
       int iPoint;
       int j;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -20068,67 +17258,31 @@ namespace wls
       int u0;
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int dim{0}; dim < nDims; dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+              b_wls->hs_inv.data[dim];
+          }
+        }
+      } else {
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -20139,9 +17293,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(9, nrows_vdops);
-      u0 = nrows_vdops * 9;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = b_wls->izero_ + 9;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -20155,7 +17312,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -20166,20 +17322,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -20190,12 +17348,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, 9);
-      for (i = 0; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j < 9; j++) {
-          vdops[j + 9 * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+          vdops[j + 9 * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -20205,6 +17365,19 @@ namespace wls
           for (int iRow{0}; iRow < nrows; iRow++) {
             vdops[k + 9 * iRow] = vdops[k + 9 * iRow] * b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j < 9; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + 9 * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(iv4[j] == 1) - s;
         }
       }
 
@@ -20232,50 +17405,15 @@ namespace wls
       int lenWs;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
       int u0;
-      boolean_T flag;
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
       } else {
@@ -20283,37 +17421,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (9 / lenWs * lenWs == 9);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int dim{0}; dim < nDims; dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+              b_wls->hs_inv.data[dim];
+          }
+        }
+      } else {
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -20324,9 +17453,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(9, nrows_vdops);
-      u0 = nrows_vdops * 9;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = b_wls->izero_ + 9;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -20353,20 +17485,23 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if (ws.size(0) == 0) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                  [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                  iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) *
+                  iPoint) - 1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) *
+                  j];
               }
             }
           }
@@ -20383,12 +17518,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, 9);
-      for (i = 0; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j < 9; j++) {
-          vdops[j + 9 * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+          vdops[j + 9 * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -20398,6 +17535,19 @@ namespace wls
           for (int iRow{0}; iRow < nrows; iRow++) {
             vdops[k + 9 * iRow] = vdops[k + 9 * iRow] * b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j < 9; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + 9 * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(iv5[j] == 1) - s;
         }
       }
 
@@ -20450,7 +17600,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl2(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int i;
@@ -20458,7 +17608,6 @@ namespace wls
     int j;
     int nDims;
     int nOps;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -20467,101 +17616,31 @@ namespace wls
     int u1;
 
     //  Variational curl operators as weighted sum at quadrature points in 3D
-    //
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-3)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or 3. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-3 will be used
-    //                to scale the three components of the curl, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-3).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-9.
-    //                To apply the operator, use
-    //                   [sum(fs(:,2:3) .* vdops(:,2:3), 'all');
-    //                    sum(fs(:,[1,3]) .* vdops(:,[4,6]), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,7:8), 'all')];
-    //     result:    Computed solution of size 3-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  compute vdops and reorganize
-    //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -20572,9 +17651,12 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(9, nrows_vdops);
-    u0 = nrows_vdops * 9;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 9;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
@@ -20588,7 +17670,6 @@ namespace wls
     }
 
     //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp < nOps; iOp++) {
       signed char b_i;
 
@@ -20599,12 +17680,14 @@ namespace wls
         offset = (b_i - 1) * stride;
 
         //  Sum up monomials weighted by weights for each component
-        for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+        u1 = b_wls->ncols - b_wls->interp0;
+        for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
           j = b_wls->jpvt[iMonomial];
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * (j - 1)];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * (j - 1)];
           }
         }
       }
@@ -20614,12 +17697,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 nOps, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, 9);
-    for (i = 0; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j < 9; j++) {
-        vdops[j + 9 * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + 9 * (i + b_wls->interp0)] = b_wls->vdops[i + b_wls->vdops.size
+          (1) * j];
       }
     }
 
@@ -20629,6 +17714,19 @@ namespace wls
         for (int iRow{0}; iRow < nrows; iRow++) {
           vdops[k + 9 * iRow] = vdops[k + 9 * iRow] * b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j < 9; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + 9 * (i - 1)];
+        }
+
+        vdops[j] = static_cast<double>(iv4[j] == 1) - s;
       }
     }
 
@@ -20655,51 +17753,17 @@ namespace wls
   }
 
   static inline
-  void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl3(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                      array<double, 2U> &vdops)
   {
     //  Variational curl operators as weighted sum at quadrature points in 3D
-    //
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-3)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or 3. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-3 will be used
-    //                to scale the three components of the curl, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-3).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-9.
-    //                To apply the operator, use
-    //                   [sum(fs(:,2:3) .* vdops(:,2:3), 'all');
-    //                    sum(fs(:,[1,3]) .* vdops(:,[4,6]), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,7:8), 'all')];
-    //     result:    Computed solution of size 3-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  compute vdops and reorganize
     if (ws.size(1) <= 1) {
       int i;
       int iPoint;
       int j;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -20708,67 +17772,31 @@ namespace wls
       int u1;
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int dim{0}; dim < nDims; dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+              b_wls->hs_inv.data[dim];
+          }
+        }
+      } else {
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -20779,9 +17807,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(9, nrows_vdops);
-      u0 = nrows_vdops * 9;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = b_wls->izero_ + 9;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -20795,7 +17826,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -20806,20 +17836,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -20830,12 +17862,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, 9);
-      for (i = 0; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j < 9; j++) {
-          vdops[j + 9 * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+          vdops[j + 9 * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -20845,6 +17879,19 @@ namespace wls
           for (int iRow{0}; iRow < nrows; iRow++) {
             vdops[k + 9 * iRow] = vdops[k + 9 * iRow] * b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j < 9; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + 9 * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(iv4[j] == 1) - s;
         }
       }
 
@@ -20874,51 +17921,16 @@ namespace wls
       int lenWs;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
       int u0;
       int u1;
-      boolean_T flag;
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
       } else {
@@ -20926,37 +17938,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (9 / lenWs * lenWs == 9);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int dim{0}; dim < nDims; dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+              b_wls->hs_inv.data[dim];
+          }
+        }
+      } else {
+        for (int dim{0}; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -20967,9 +17970,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(9, nrows_vdops);
-      u0 = nrows_vdops * 9;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = b_wls->izero_ + 9;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -20996,20 +18002,23 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if (ws.size(0) == 0) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                  [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                  iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) *
+                  iPoint) - 1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) *
+                  j];
               }
             }
           }
@@ -21026,12 +18035,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, 9);
-      for (i = 0; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j < 9; j++) {
-          vdops[j + 9 * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+          vdops[j + 9 * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -21041,6 +18052,19 @@ namespace wls
           for (int iRow{0}; iRow < nrows; iRow++) {
             vdops[k + 9 * iRow] = vdops[k + 9 * iRow] * b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j < 9; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + 9 * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(iv5[j] == 1) - s;
         }
       }
 
@@ -21074,7 +18098,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl_curl1(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &fs, ::coder::array<double, 2U> &vdops, double result_data[],
     int result_size[2])
@@ -21090,41 +18114,6 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_curl_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
@@ -21132,9 +18121,9 @@ namespace wls
       int grad_div_size_idx_1;
       int iPoint;
       int j;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -21164,67 +18153,32 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size_idx_1 - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -21235,9 +18189,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size_idx_1, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size_idx_1;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size_idx_1 + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -21251,7 +18208,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -21262,20 +18218,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -21286,13 +18244,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size_idx_1);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size_idx_1; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -21303,6 +18262,19 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
         }
       }
 
@@ -21346,14 +18318,13 @@ namespace wls
       int iPoint;
       int j;
       int lenWs;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
-      boolean_T flag;
 
       //  Each component has its own weight, so we need to compute all components
       switch (b_wls->us.size(1)) {
@@ -21382,41 +18353,9 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size_idx_0 - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
       } else {
@@ -21424,37 +18363,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (grad_div_size_idx_0 / lenWs * lenWs == grad_div_size_idx_0);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -21465,9 +18395,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size_idx_0, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size_idx_0;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size_idx_0 + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -21496,20 +18429,23 @@ namespace wls
             offset = (b_i - 1) * stride;
 
             //  Sum up monomials weighted by weights for each component
-            for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+            u1 = b_wls->ncols - b_wls->interp0;
+            for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
               j = b_wls->jpvt[iMonomial] - 1;
               if (ws.size(0) == 0) {
                 for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                    b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                    b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                  u0 = iMonomial + b_wls->interp0;
+                  b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->
+                    vdops[u0 + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
+                    iPoint) + b_wls->V.size(1) * j];
                 }
               } else {
                 for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                    b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                    [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                    iPoint) + b_wls->V.size(1) * j];
+                  u0 = iMonomial + b_wls->interp0;
+                  b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->
+                    vdops[u0 + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
+                    ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
+                    b_wls->V.size(1) * j];
                 }
               }
             }
@@ -21527,13 +18463,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size_idx_0);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size_idx_0; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -21544,6 +18481,41 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        boolean_T b;
+
+        //  In interp0 mode, we set the first entry based on partition of unity
+        b = true;
+        u1 = grad_div_size_idx_0 * grad_div_size_idx_1;
+        u0 = 0;
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          if (j >= u1) {
+            u0 = 0;
+            b = true;
+          } else if (b) {
+            b = false;
+            u0 = j % grad_div_size_idx_0 * grad_div_size_idx_1 + j /
+              grad_div_size_idx_0;
+          } else if (u0 > MAX_int32_T - grad_div_size_idx_1) {
+            u0 = j % grad_div_size_idx_0 * grad_div_size_idx_1 + j /
+              grad_div_size_idx_0;
+          } else {
+            u0 += grad_div_size_idx_1;
+            if (u0 > u1 - 1) {
+              u0 = (u0 - u1) + 1;
+            }
+          }
+
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(grad_div_data[u0] == 1) - s;
         }
       }
 
@@ -21618,7 +18590,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl_curl2(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int dim;
@@ -21626,9 +18598,9 @@ namespace wls
     int i;
     int iPoint;
     int j;
+    int nDiff;
     int nDims;
     int nOps;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -21638,45 +18610,9 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_curl_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
-    //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
      case 1:
       hess_size = 1;
@@ -21700,67 +18636,32 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
+    nDiff = hess_size - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int b_dim{0}; b_dim < nDims; b_dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+            b_wls->hs_inv.data[b_dim];
+        }
+      }
+    } else {
+      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -21771,9 +18672,12 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(hess_size, nrows_vdops);
-    u0 = nrows_vdops * hess_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = hess_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
@@ -21787,7 +18691,6 @@ namespace wls
     }
 
     //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp < nOps; iOp++) {
       signed char b_i;
 
@@ -21798,12 +18701,14 @@ namespace wls
         offset = (b_i - 1) * stride;
 
         //  Sum up monomials weighted by weights for each component
-        for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+        u1 = b_wls->ncols - b_wls->interp0;
+        for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
           j = b_wls->jpvt[iMonomial];
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * (j - 1)];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * (j - 1)];
           }
         }
       }
@@ -21813,12 +18718,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 nOps, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, hess_size);
-    for (i = 0; i < nrows_vdops; i++) {
-      for (j = 0; j < hess_size; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      for (j = 0; j <= nDiff; j++) {
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -21829,6 +18736,19 @@ namespace wls
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
       }
     }
 
@@ -21875,7 +18795,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_curl_curl3(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::array<double, 2U>
     &vdops)
   {
@@ -21884,41 +18804,6 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_curl_curl(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_curl_curl(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_grad_div, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
@@ -21927,9 +18812,9 @@ namespace wls
       int i;
       int iPoint;
       int j;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -21961,67 +18846,32 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size_idx_1 - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -22032,9 +18882,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size_idx_1, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size_idx_1;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size_idx_1 + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -22048,7 +18901,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -22059,20 +18911,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -22083,13 +18937,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size_idx_1);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size_idx_1; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -22100,6 +18955,19 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
         }
       }
 
@@ -22148,16 +19016,15 @@ namespace wls
       int iPoint;
       int j;
       int lenWs;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
       int u0;
       int u1;
-      boolean_T flag;
 
       //  Each component has its own weight, so we need to compute all components
       switch (b_wls->us.size(1)) {
@@ -22186,41 +19053,9 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size_idx_0 - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
       } else {
@@ -22228,37 +19063,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (grad_div_size_idx_0 / lenWs * lenWs == grad_div_size_idx_0);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -22269,9 +19095,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size_idx_0, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size_idx_0;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size_idx_0 + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -22300,20 +19129,23 @@ namespace wls
             offset = (b_i - 1) * stride;
 
             //  Sum up monomials weighted by weights for each component
-            for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+            u1 = b_wls->ncols - b_wls->interp0;
+            for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
               j = b_wls->jpvt[iMonomial] - 1;
               if (ws.size(0) == 0) {
                 for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                    b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                    b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                  u0 = iMonomial + b_wls->interp0;
+                  b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->
+                    vdops[u0 + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
+                    iPoint) + b_wls->V.size(1) * j];
                 }
               } else {
                 for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                    b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                    [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                    iPoint) + b_wls->V.size(1) * j];
+                  u0 = iMonomial + b_wls->interp0;
+                  b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->
+                    vdops[u0 + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
+                    ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
+                    b_wls->V.size(1) * j];
                 }
               }
             }
@@ -22331,13 +19163,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size_idx_0);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size_idx_0; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -22348,6 +19181,41 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        boolean_T b;
+
+        //  In interp0 mode, we set the first entry based on partition of unity
+        b = true;
+        u1 = grad_div_size_idx_0 * grad_div_size_idx_1;
+        u0 = 0;
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          if (j >= u1) {
+            u0 = 0;
+            b = true;
+          } else if (b) {
+            b = false;
+            u0 = j % grad_div_size_idx_0 * grad_div_size_idx_1 + j /
+              grad_div_size_idx_0;
+          } else if (u0 > MAX_int32_T - grad_div_size_idx_1) {
+            u0 = j % grad_div_size_idx_0 * grad_div_size_idx_1 + j /
+              grad_div_size_idx_0;
+          } else {
+            u0 += grad_div_size_idx_1;
+            if (u0 > u1 - 1) {
+              u0 = (u0 - u1) + 1;
+            }
+          }
+
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(grad_div_data[u0] == 1) - s;
         }
       }
 
@@ -22372,12 +19240,13 @@ namespace wls
   }
 
   static inline
-  void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_div1(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                     coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                     &vdops, double result_data[], int result_size[2])
   {
     int grad_size;
+    int i;
     int iOp;
     int iPoint;
     int iRow;
@@ -22386,7 +19255,6 @@ namespace wls
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -22394,35 +19262,8 @@ namespace wls
     int u0;
     int u1;
     signed char grad_data[3];
-    boolean_T flag;
 
     //  Compute variational divergence operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use sum(fs .* vdops, 'all').
-    //     result:    Computed solution of size 1-by-1 (scalar).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -22444,41 +19285,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -22487,37 +19295,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (grad_size / lenWs * lenWs == grad_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -22528,15 +19327,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -22547,20 +19348,22 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -22576,22 +19379,37 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
       for (int k{0}; k <= nDiff; k++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
       }
     }
 
@@ -22612,7 +19430,7 @@ namespace wls
       iFunc = 1;
       iOp = 0;
       for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           result_data[iOp] += fs[(iFunc + fs.size(1) * iRow) - 1] * vdops[iDiff
             + vdops.size(1) * iRow];
         }
@@ -22633,15 +19451,15 @@ namespace wls
   }
 
   static inline
-  void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_div2(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int grad_size;
+    int i;
     int iPoint;
     int j;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -22651,32 +19469,6 @@ namespace wls
     signed char grad_data[3];
 
     //  Compute variational divergence operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use sum(fs .* vdops, 'all').
-    //     result:    Computed solution of size 1-by-1 (scalar).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -22698,68 +19490,32 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -22770,16 +19526,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp <= nDiff; iOp++) {
       int offset;
 
@@ -22787,12 +19544,14 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial];
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-            vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-            iPoint) + b_wls->V.size(1) * (j - 1)];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+            b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+            b_wls->V.size(1) * (j - 1)];
         }
       }
     }
@@ -22801,12 +19560,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -22819,21 +19580,34 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_div3(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                     array<double, 2U> &vdops)
   {
     int grad_size;
+    int i;
     int iPoint;
     int iWeight;
     int j;
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -22841,35 +19615,8 @@ namespace wls
     int u0;
     int u1;
     signed char grad_data[3];
-    boolean_T flag;
 
     //  Compute variational divergence operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_div(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use sum(fs .* vdops, 'all').
-    //     result:    Computed solution of size 1-by-1 (scalar).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -22891,41 +19638,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -22934,37 +19648,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (grad_size / lenWs * lenWs == grad_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -22975,15 +19680,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -22994,20 +19701,22 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -23023,12 +19732,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -23041,128 +19752,62 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_func1(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &fs, ::coder::array<double, 1U>
                      &vdops, ::coder::array<double, 2U> &result)
   {
+    int i;
     int iPoint;
     int iRow;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
     int u0;
     int u1;
-    boolean_T flag;
 
     //  Compute variational WLS-fitting as weighted sum at quadrature points or at a single point.
-    //
-    //  [wls, vdops] = wls_var_func(wls, pnts) computes sum of fittings at quadrature
-    //               points (i.e., with unit weights). Can also pass a single point.
-    //  [wls, vdops] = wls_var_func(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_func(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should be the product
-    //                of the quadrature weight, Jacobian determinant, and value of a
-    //                weighting function (e.g., a test function or the derivative
-    //                of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_grad, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
+    nDims = quad_pnts.size(1) - 1;
 
-    flag = (1 / lenWs * lenWs == 1);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 0,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -23173,29 +19818,32 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u1 = 0; u1 < nrows_vdops; u1++) {
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
-    //  Skip padded zeros in the differential operator
-    //  Sum up monomials weighted by weights for each component
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u1 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
       int j;
       j = b_wls->jpvt[iMonomial] - 1;
       if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[iPoint
-            + b_wls->V.size(1) * j];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[iPoint + b_wls->V.size
+            (1) * j];
         }
       } else {
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-            iPoint] * b_wls->V[iPoint + b_wls->V.size(1) * j];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+            b_wls->V[iPoint + b_wls->V.size(1) * j];
         }
       }
     }
@@ -23204,18 +19852,31 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (iRow = 0; iRow <= nrows; iRow++) {
+      for (iRow = 0; iRow < nrows; iRow++) {
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
+    }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 1.0 - s;
     }
 
     if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
@@ -23230,7 +19891,7 @@ namespace wls
       //  Compute solution
       u1 = fs.size(1);
       for (int iFunc{0}; iFunc < u1; iFunc++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
             vdops[iRow];
         }
@@ -23239,12 +19900,12 @@ namespace wls
   }
 
   static inline
-  void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_func2(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 1U> &vdops)
   {
+    int i;
     int iPoint;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -23252,95 +19913,30 @@ namespace wls
     int u1;
 
     //  Compute variational WLS-fitting as weighted sum at quadrature points or at a single point.
-    //
-    //  [wls, vdops] = wls_var_func(wls, pnts) computes sum of fittings at quadrature
-    //               points (i.e., with unit weights). Can also pass a single point.
-    //  [wls, vdops] = wls_var_func(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_func(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should be the product
-    //                of the quadrature weight, Jacobian determinant, and value of a
-    //                weighting function (e.g., a test function or the derivative
-    //                of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_grad, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 0,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -23351,23 +19947,25 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
-    //  Skip padded zeros in the differential operator
-    //  Sum up monomials weighted by weights for each component
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u1 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
       int j;
       j = b_wls->jpvt[iMonomial];
       for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[iPoint
-          + b_wls->V.size(1) * (j - 1)];
+        u0 = iMonomial + b_wls->interp0;
+        b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[iPoint + b_wls->V.size(1)
+          * (j - 1)];
       }
     }
 
@@ -23375,11 +19973,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -23388,126 +19987,59 @@ namespace wls
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 1.0 - s;
+    }
   }
 
   static inline
-  void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_func3(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                      array<double, 1U> &vdops)
   {
+    int i;
     int iPoint;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
     int u0;
     int u1;
-    boolean_T flag;
 
     //  Compute variational WLS-fitting as weighted sum at quadrature points or at a single point.
-    //
-    //  [wls, vdops] = wls_var_func(wls, pnts) computes sum of fittings at quadrature
-    //               points (i.e., with unit weights). Can also pass a single point.
-    //  [wls, vdops] = wls_var_func(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_func(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should be the product
-    //                of the quadrature weight, Jacobian determinant, and value of a
-    //                weighting function (e.g., a test function or the derivative
-    //                of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_grad, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
+    nDims = quad_pnts.size(1) - 1;
 
-    flag = (1 / lenWs * lenWs == 1);
-
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 0,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -23518,29 +20050,32 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
-    //  Skip padded zeros in the differential operator
-    //  Sum up monomials weighted by weights for each component
-    for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+    u1 = b_wls->ncols - b_wls->interp0;
+    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
       int j;
       j = b_wls->jpvt[iMonomial] - 1;
       if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[iPoint
-            + b_wls->V.size(1) * j];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[iPoint + b_wls->V.size
+            (1) * j];
         }
       } else {
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-            iPoint] * b_wls->V[iPoint + b_wls->V.size(1) * j];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+            b_wls->V[iPoint + b_wls->V.size(1) * j];
         }
       }
     }
@@ -23549,11 +20084,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -23562,15 +20098,28 @@ namespace wls
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 1.0 - s;
+    }
   }
 
   static inline
-  void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad1(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                      &vdops, ::coder::array<double, 2U> &result)
   {
     int grad_size;
+    int i;
     int iOp;
     int iPoint;
     int iRow;
@@ -23579,7 +20128,6 @@ namespace wls
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -23587,36 +20135,8 @@ namespace wls
     int u0;
     int u1;
     signed char grad_data[3];
-    boolean_T flag;
 
     //  Compute variational gradient operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_grad(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (eg., a test function).
-    //                Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -23638,41 +20158,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -23681,37 +20168,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (grad_size / lenWs * lenWs == grad_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -23722,15 +20200,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -23741,20 +20221,22 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -23770,22 +20252,37 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
       for (int k{0}; k <= nDiff; k++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
       }
     }
 
@@ -23803,7 +20300,7 @@ namespace wls
       for (int iFunc{0}; iFunc < u1; iFunc++) {
         iOp = 0;
         for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-          for (iRow = 0; iRow <= nrows; iRow++) {
+          for (iRow = 0; iRow < nrows; iRow++) {
             result[iFunc + result.size(1) * iOp] = result[iFunc + result.size(1)
               * iOp] + fs[iFunc + fs.size(1) * iRow] * vdops[iDiff + vdops.size
               (1) * iRow];
@@ -23820,15 +20317,15 @@ namespace wls
   }
 
   static inline
-  void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad2(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int grad_size;
+    int i;
     int iPoint;
     int j;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -23838,33 +20335,6 @@ namespace wls
     signed char grad_data[3];
 
     //  Compute variational gradient operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_grad(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (eg., a test function).
-    //                Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -23886,68 +20356,32 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -23958,16 +20392,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp <= nDiff; iOp++) {
       int offset;
 
@@ -23975,12 +20410,14 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial];
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-            vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-            iPoint) + b_wls->V.size(1) * (j - 1)];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+            b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+            b_wls->V.size(1) * (j - 1)];
         }
       }
     }
@@ -23989,12 +20426,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -24007,21 +20446,34 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad3(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                      array<double, 2U> &vdops)
   {
     int grad_size;
+    int i;
     int iPoint;
     int iWeight;
     int j;
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -24029,36 +20481,8 @@ namespace wls
     int u0;
     int u1;
     signed char grad_data[3];
-    boolean_T flag;
 
     //  Compute variational gradient operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_grad(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (eg., a test function).
-    //                Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-1. To apply the
-    //                operator, use vdops' * fs
-    //     result:    Computed solution of size d-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_div, wls_var_curl, wls_var_hess,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       grad_size = 1;
@@ -24080,41 +20504,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = grad_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -24123,37 +20514,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (grad_size / lenWs * lenWs == grad_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 1,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -24164,15 +20546,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(grad_size, nrows_vdops);
-    u0 = nrows_vdops * grad_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = grad_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -24183,20 +20567,22 @@ namespace wls
       offset = (grad_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -24212,12 +20598,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, grad_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 grad_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, grad_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -24230,10 +20618,23 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad_div1(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &fs, ::coder::array<double, 2U> &vdops, double result_data[],
     int result_size[2])
@@ -24249,41 +20650,6 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_grad_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
@@ -24291,9 +20657,9 @@ namespace wls
       int grad_div_size;
       int iPoint;
       int j;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -24323,67 +20689,32 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -24394,9 +20725,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -24410,7 +20744,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -24421,20 +20754,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -24445,13 +20780,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -24462,6 +20798,19 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
         }
       }
 
@@ -24502,12 +20851,10 @@ namespace wls
       int lenWs;
       int nDiff;
       int nDims;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
-      boolean_T flag;
 
       //  Each component has its own weight, we need to compute all components
       switch (b_wls->us.size(1)) {
@@ -24533,41 +20880,8 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       nDiff = grad_div_size - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
@@ -24576,37 +20890,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (grad_div_size / lenWs * lenWs == grad_div_size);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -24617,15 +20922,17 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
 
       //  Omit zeros in the diff operators
-      //  Summing up rows in the differential operator
       iWeight = 1;
 
       //  Loop through the operators
@@ -24636,20 +20943,22 @@ namespace wls
         offset = (grad_div_data[iOp] - 1) * stride;
 
         //  Sum up monomials weighted by weights for each component
-        for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+        u1 = b_wls->ncols - b_wls->interp0;
+        for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
           j = b_wls->jpvt[iMonomial] - 1;
           if (ws.size(0) == 0) {
             for (iPoint = 0; iPoint <= npoints; iPoint++) {
-              b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V
-                [(offset + iPoint) + b_wls->V.size(1) * j];
+              u0 = iMonomial + b_wls->interp0;
+              b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+                b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                b_wls->V.size(1) * j];
             }
           } else {
             for (iPoint = 0; iPoint <= npoints; iPoint++) {
-              b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                iPoint) + b_wls->V.size(1) * j];
+              u0 = iMonomial + b_wls->interp0;
+              b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+                b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint)
+                - 1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           }
         }
@@ -24666,13 +20975,14 @@ namespace wls
                    grad_div_size);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, grad_div_size, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size);
-      for (i = 0; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j <= nDiff; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -24683,6 +20993,19 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = 0.0 - s;
         }
       }
     }
@@ -24741,7 +21064,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad_div2(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int dim;
@@ -24749,9 +21072,9 @@ namespace wls
     int i;
     int iPoint;
     int j;
+    int nDiff;
     int nDims;
     int nOps;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -24761,45 +21084,9 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_grad_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
-    //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
      case 1:
       hess_size = 1;
@@ -24823,67 +21110,32 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
+    nDiff = hess_size - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int b_dim{0}; b_dim < nDims; b_dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+            b_wls->hs_inv.data[b_dim];
+        }
+      }
+    } else {
+      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -24894,9 +21146,12 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(hess_size, nrows_vdops);
-    u0 = nrows_vdops * hess_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = hess_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
@@ -24910,7 +21165,6 @@ namespace wls
     }
 
     //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp < nOps; iOp++) {
       signed char b_i;
 
@@ -24921,12 +21175,14 @@ namespace wls
         offset = (b_i - 1) * stride;
 
         //  Sum up monomials weighted by weights for each component
-        for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+        u1 = b_wls->ncols - b_wls->interp0;
+        for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
           j = b_wls->jpvt[iMonomial];
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * (j - 1)];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * (j - 1)];
           }
         }
       }
@@ -24936,12 +21192,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 nOps, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, hess_size);
-    for (i = 0; i < nrows_vdops; i++) {
-      for (j = 0; j < hess_size; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      for (j = 0; j <= nDiff; j++) {
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -24952,6 +21210,19 @@ namespace wls
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
       }
     }
 
@@ -24994,7 +21265,7 @@ namespace wls
   }
 
   static inline
-  void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_grad_div3(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::array<double, 2U>
     &vdops)
   {
@@ -25003,41 +21274,6 @@ namespace wls
     signed char hess_data[9];
 
     //  Variational grad-div operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_grad_div(wls, quad_pnts, ws)
-    //  [wls, vdops, reslut] = wls_var_grad_div(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each quadrature point
-    //                of size n-by-c, where c is 0, 1 or d. In general, each
-    //                weight should be the product of the quadrature weight,
-    //                Jacobian determinant, and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //                Use n-by-0 for unit weight; n-by-1 indicates a single
-    //                weight for all entries at each point; n-by-d will be used
-    //                to scale each component of the operator, respectively.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-d).
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-(d^2).
-    //                To apply the operator in 2D, use
-    //                   [sum(fs(:,1:2) .* vdops(:,1:2), 'all');
-    //                    sum(fs(:,1:2) .* vdops(:,3:4), 'all')];
-    //                To apply the operator in 3D, use
-    //                   [sum(fs(:,1:3) .* vdops(:,1:3), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,4:6), 'all');
-    //                    sum(fs(:,1:3) .* vdops(:,7:9), 'all')];
-    //     result:    Computed solution of size d-by-1.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_lap, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     dim = b_wls->us.size(1);
 
     //  compute and reorganize vdops
@@ -25046,9 +21282,9 @@ namespace wls
       int i;
       int iPoint;
       int j;
+      int nDiff;
       int nDims;
       int nOps;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
@@ -25080,67 +21316,32 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
+      nDiff = grad_div_size - 1;
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-      assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (int b_dim{0}; b_dim < nDims; b_dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = (quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[b_dim]) *
+              b_wls->hs_inv.data[b_dim];
+          }
+        }
+      } else {
+        for (int b_dim{0}; b_dim <= nDims; b_dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[b_dim + b_wls->us.size(1) * iPoint] = quad_pnts[b_dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[b_dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -25151,9 +21352,12 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
@@ -25167,7 +21371,6 @@ namespace wls
       }
 
       //  Summing up rows in the differential operator
-      //  Loop through the operators
       for (int iOp{0}; iOp < nOps; iOp++) {
         signed char b_i;
 
@@ -25178,20 +21381,22 @@ namespace wls
           offset = (b_i - 1) * stride;
 
           //  Sum up monomials weighted by weights for each component
-          for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+          u1 = b_wls->ncols - b_wls->interp0;
+          for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
             j = b_wls->jpvt[iMonomial] - 1;
             if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                  b_wls->V.size(1) * j];
               }
             } else {
               for (iPoint = 0; iPoint <= npoints; iPoint++) {
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                  b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
-                  ws[ws.size(1) * iPoint] * b_wls->V[(offset + iPoint) +
-                  b_wls->V.size(1) * j];
+                u0 = iMonomial + b_wls->interp0;
+                b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0
+                  + b_wls->vdops.size(1) * iOp] + ws[ws.size(1) * iPoint] *
+                  b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             }
           }
@@ -25202,13 +21407,14 @@ namespace wls
       rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, nOps);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, nOps, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size);
-      for (i = 0; i < nrows_vdops; i++) {
-        for (j = 0; j < grad_div_size; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
+        for (j = 0; j <= nDiff; j++) {
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -25219,6 +21425,19 @@ namespace wls
             vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
               b_wls->rweights[iRow];
           }
+        }
+      }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = static_cast<double>(hess_data[j] == 1) - s;
         }
       }
 
@@ -25258,20 +21477,19 @@ namespace wls
       }
     } else {
       int grad_div_size;
+      int i;
       int iPoint;
       int iWeight;
       int j;
       int lenWs;
       int nDiff;
       int nDims;
-      int ncols;
       int npoints;
       int nrows;
       int nrows_vdops;
       int stride;
       int u0;
       int u1;
-      boolean_T flag;
 
       //  Each component has its own weight, we need to compute all components
       switch (b_wls->us.size(1)) {
@@ -25297,41 +21515,8 @@ namespace wls
       }
 
       //  Compute variational differential operators as weighted sum at quadrature points
-      //
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-      //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-      //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-      //
-      //  Parameters
-      //  ----------
-      //     wls:       A d-dimensional WlsObject, including work spaces.
-      //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-      //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-      //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-      //                (for Laplacian). In each row, diff_idx may be padded
-      //                with zeros for memory preallocation. The operators in a row
-      //                will be summed up before applying QR factoriztaion.
-      //     ws:        Weight at each quadrature point for each differential operator
-      //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-      //                product of the quadrature weight, Jacobian determinant,
-      //                and value of a weighting function (e.g., a test function
-      //                or the derivative of test function). Use empty for unit weight.
-      //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-      //                where s is 1 or d for scalar and vector-valued functions.
-      //
-      //  Returns
-      //  -------
-      //     wls:       Updated WlsObject
-      //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-      //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-      //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-      //
-      //  See also
-      //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-      //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
       npoints = quad_pnts.size(0) - 1;
-      ncols = b_wls->ncols;
-      nDims = quad_pnts.size(1);
+      nDims = quad_pnts.size(1) - 1;
       nDiff = grad_div_size - 1;
       if (ws.size(0) == 0) {
         lenWs = 1;
@@ -25340,37 +21525,28 @@ namespace wls
       }
 
       stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-      flag = (grad_div_size / lenWs * lenWs == grad_div_size);
 
-      //  Throw error if condition false
-      //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-      mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-      if (!flag) {
-        fprintf(stderr, "Runtime assertion error.\n");
-        fflush(stderr);
-      }
-
-      assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-      //  scale the coordinates; use wls.us as buffer
+      //  Scale the coordinates; use wls.us as buffer
       b_wls->us.set_size(stride, quad_pnts.size(1));
-      for (dim = 0; dim < nDims; dim++) {
-        for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+      if (b_wls->interp0 != 0) {
+        //  Coordinate system is centered at first node in interp0 mode
+        for (dim = 0; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+              b_wls->hs_inv.data[dim];
+          }
+        }
+      } else {
+        for (dim = 0; dim <= nDims; dim++) {
+          for (iPoint = 0; iPoint <= npoints; iPoint++) {
+            b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+              quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+          }
         }
       }
 
-      //  compute the confluent Vandermonde matrix and right-hand side
+      //  Compute the confluent Vandermonde matrix and right-hand side
       gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                  b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
       u0 = b_wls->ncols;
@@ -25381,15 +21557,17 @@ namespace wls
         nrows_vdops = u1;
       }
 
-      //  force each operator (rhs) to be stored contiguously
-      b_wls->vdops.set_size(grad_div_size, nrows_vdops);
-      u0 = nrows_vdops * grad_div_size;
+      //  Force wls.vdops to be varsize and each operator to be stored contiguously
+      m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+      u0 = nrows_vdops - b_wls->interp0;
+      u1 = grad_div_size + b_wls->izero_;
+      b_wls->vdops.set_size(u1, u0);
+      u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         b_wls->vdops[u1] = 0.0;
       }
 
       //  Omit zeros in the diff operators
-      //  Summing up rows in the differential operator
       iWeight = 1;
 
       //  Loop through the operators
@@ -25400,20 +21578,22 @@ namespace wls
         offset = (grad_div_data[iOp] - 1) * stride;
 
         //  Sum up monomials weighted by weights for each component
-        for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+        u1 = b_wls->ncols - b_wls->interp0;
+        for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
           j = b_wls->jpvt[iMonomial] - 1;
           if (ws.size(0) == 0) {
             for (iPoint = 0; iPoint <= npoints; iPoint++) {
-              b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V
-                [(offset + iPoint) + b_wls->V.size(1) * j];
+              u0 = iMonomial + b_wls->interp0;
+              b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+                b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+                b_wls->V.size(1) * j];
             }
           } else {
             for (iPoint = 0; iPoint <= npoints; iPoint++) {
-              b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
-                b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws
-                [(iWeight + ws.size(1) * iPoint) - 1] * b_wls->V[(offset +
-                iPoint) + b_wls->V.size(1) * j];
+              u0 = iMonomial + b_wls->interp0;
+              b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+                b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint)
+                - 1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           }
         }
@@ -25430,13 +21610,14 @@ namespace wls
                    grad_div_size);
       rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank,
                   b_wls->vdops, grad_div_size, b_wls->work);
-
-      //  Transpose the operators to column major
       vdops.set_size(nrows_vdops, grad_div_size);
-      for (int i{0}; i < nrows_vdops; i++) {
+
+      //  Transpose the operator for row-major
+      u1 = nrows_vdops - b_wls->interp0;
+      for (i = 0; i < u1; i++) {
         for (j = 0; j <= nDiff; j++) {
-          vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) *
-            j];
+          vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+            b_wls->vdops.size(1) * j];
         }
       }
 
@@ -25449,18 +21630,32 @@ namespace wls
           }
         }
       }
+
+      if (b_wls->interp0 != 0) {
+        //  In interp0 mode, we set the first entry based on partition of unity
+        for (j = 0; j <= nDiff; j++) {
+          double s;
+          s = 0.0;
+          for (i = 2; i <= nrows; i++) {
+            s += vdops[j + vdops.size(1) * (i - 1)];
+          }
+
+          vdops[j] = 0.0 - s;
+        }
+      }
     }
 
     //  compute output value
   }
 
   static inline
-  void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_hess1(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                      &vdops, ::coder::array<double, 2U> &result)
   {
     int hess_size;
+    int i;
     int iOp;
     int iPoint;
     int iRow;
@@ -25469,7 +21664,6 @@ namespace wls
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -25477,38 +21671,8 @@ namespace wls
     int u0;
     int u1;
     signed char hess_data[6];
-    boolean_T flag;
 
     //  Compute variational Hessian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_hess(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or length of operator (d*(d+1)/2.
-    //                Each weight should be the product of the quadrature weight,
-    //                Jacobian determinant and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size D-by-size(fs, 2), where D=d*(d+1)/2,
-    //                the size of tril(H), in the order of [dx^2; dxdy; dy^2] in
-    //                2D and [dx^2; dxdy; dy^2; dxdz; dydz; dz^2] in 3D.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       hess_size = 1;
@@ -25531,41 +21695,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = hess_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -25574,37 +21705,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (hess_size / lenWs * lenWs == hess_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -25615,15 +21737,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(hess_size, nrows_vdops);
-    u0 = nrows_vdops * hess_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = hess_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -25634,20 +21758,22 @@ namespace wls
       offset = (hess_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -25663,22 +21789,37 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, hess_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 hess_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, hess_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
       for (int k{0}; k <= nDiff; k++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] = vdops[k + vdops.size(1) * iRow] *
             b_wls->rweights[iRow];
         }
+      }
+    }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
       }
     }
 
@@ -25696,7 +21837,7 @@ namespace wls
       for (int iFunc{0}; iFunc < u1; iFunc++) {
         iOp = 0;
         for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-          for (iRow = 0; iRow <= nrows; iRow++) {
+          for (iRow = 0; iRow < nrows; iRow++) {
             result[iFunc + result.size(1) * iOp] = result[iFunc + result.size(1)
               * iOp] + fs[iFunc + fs.size(1) * iRow] * vdops[iDiff + vdops.size
               (1) * iRow];
@@ -25713,15 +21854,15 @@ namespace wls
   }
 
   static inline
-  void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_hess2(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
     int hess_size;
+    int i;
     int iPoint;
     int j;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -25731,35 +21872,6 @@ namespace wls
     signed char hess_data[6];
 
     //  Compute variational Hessian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_hess(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or length of operator (d*(d+1)/2.
-    //                Each weight should be the product of the quadrature weight,
-    //                Jacobian determinant and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size D-by-size(fs, 2), where D=d*(d+1)/2,
-    //                the size of tril(H), in the order of [dx^2; dxdy; dy^2] in
-    //                2D and [dx^2; dxdy; dy^2; dxdz; dydz; dz^2] in 3D.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       hess_size = 1;
@@ -25782,68 +21894,32 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = hess_size - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -25854,16 +21930,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(hess_size, nrows_vdops);
-    u0 = nrows_vdops * hess_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = hess_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
-    //  Loop through the operators
     for (int iOp{0}; iOp <= nDiff; iOp++) {
       int offset;
 
@@ -25871,12 +21948,14 @@ namespace wls
       offset = (hess_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial];
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-            vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-            iPoint) + b_wls->V.size(1) * (j - 1)];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+            b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+            b_wls->V.size(1) * (j - 1)];
         }
       }
     }
@@ -25885,12 +21964,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, hess_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 hess_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, hess_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -25903,21 +21984,34 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_hess3(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                      array<double, 2U> &vdops)
   {
     int hess_size;
+    int i;
     int iPoint;
     int iWeight;
     int j;
     int lenWs;
     int nDiff;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -25925,38 +22019,8 @@ namespace wls
     int u0;
     int u1;
     signed char hess_data[6];
-    boolean_T flag;
 
     //  Compute variational Hessian operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_hess(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_hess(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1, or length of operator (d*(d+1)/2.
-    //                Each weight should be the product of the quadrature weight,
-    //                Jacobian determinant and value of a weighting function
-    //                (eg., a test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator, use vdops' * fs.
-    //     result:    Computed solution of size D-by-size(fs, 2), where D=d*(d+1)/2,
-    //                the size of tril(H), in the order of [dx^2; dxdy; dy^2] in
-    //                2D and [dx^2; dxdy; dy^2; dxdz; dydz; dz^2] in 3D.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
     switch (b_wls->us.size(1)) {
      case 1:
       hess_size = 1;
@@ -25979,41 +22043,8 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     nDiff = hess_size - 1;
     if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
       lenWs = 1;
@@ -26022,37 +22053,28 @@ namespace wls
     }
 
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (hess_size / lenWs * lenWs == hess_size);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, 2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -26063,15 +22085,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(hess_size, nrows_vdops);
-    u0 = nrows_vdops * hess_size;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = hess_size + b_wls->izero_;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
     for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     iWeight = 1;
 
     //  Loop through the operators
@@ -26082,20 +22106,22 @@ namespace wls
       offset = (hess_data[iOp] - 1) * stride;
 
       //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + b_wls->V[(offset +
-              iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] = b_wls->
-              vdops[iMonomial + b_wls->vdops.size(1) * iOp] + ws[(iWeight +
-              ws.size(1) * iPoint) - 1] * b_wls->V[(offset + iPoint) +
-              b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0 + b_wls->vdops.size(1) * iOp] = b_wls->vdops[u0 +
+              b_wls->vdops.size(1) * iOp] + ws[(iWeight + ws.size(1) * iPoint) -
+              1] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -26111,12 +22137,14 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, hess_size);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 hess_size, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops, hess_size);
-    for (int i{0}; i < nrows_vdops; i++) {
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
       for (j = 0; j <= nDiff; j++) {
-        vdops[j + vdops.size(1) * i] = b_wls->vdops[i + b_wls->vdops.size(1) * j];
+        vdops[j + vdops.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i +
+          b_wls->vdops.size(1) * j];
       }
     }
 
@@ -26129,20 +22157,32 @@ namespace wls
         }
       }
     }
+
+    if (b_wls->interp0 != 0) {
+      //  In interp0 mode, we set the first entry based on partition of unity
+      for (j = 0; j <= nDiff; j++) {
+        double s;
+        s = 0.0;
+        for (i = 2; i <= nrows; i++) {
+          s += vdops[j + vdops.size(1) * (i - 1)];
+        }
+
+        vdops[j] = 0.0 - s;
+      }
+    }
   }
 
   static inline
-  void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_lap1(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                     coder::array<double, 2U> &fs, ::coder::array<double, 1U>
                     &vdops, ::coder::array<double, 2U> &result)
   {
+    int i;
     int iPoint;
     int iRow;
     int lap_size_idx_1;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -26150,37 +22190,8 @@ namespace wls
     int u0;
     int u1;
     signed char lap_data[3];
-    boolean_T flag;
 
     //  Compute variational (or vector) Laplacian as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_lap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       lap_size_idx_1 = 1;
@@ -26202,79 +22213,31 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
-
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (1 / lenWs * lenWs == 1);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -26285,14 +22248,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u1 = 0; u1 < nrows_vdops; u1++) {
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
       b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
       int offset;
 
@@ -26300,19 +22266,21 @@ namespace wls
       offset = (lap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset
-              + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-              iPoint] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+              b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -26322,18 +22290,31 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
-    nrows = b_wls->nrows - 1;
+    nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (iRow = 0; iRow <= nrows; iRow++) {
+      for (iRow = 0; iRow < nrows; iRow++) {
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
+    }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
     }
 
     if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
@@ -26348,7 +22329,7 @@ namespace wls
       //  Compute solution
       u1 = fs.size(1);
       for (int iFunc{0}; iFunc < u1; iFunc++) {
-        for (iRow = 0; iRow <= nrows; iRow++) {
+        for (iRow = 0; iRow < nrows; iRow++) {
           result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
             vdops[iRow];
         }
@@ -26357,14 +22338,14 @@ namespace wls
   }
 
   static inline
-  void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_lap2(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, ::coder::array<double, 1U> &vdops, int
                     result_size[2])
   {
+    int i;
     int iPoint;
     int lap_size_idx_1;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -26374,34 +22355,6 @@ namespace wls
     signed char lap_data[3];
 
     //  Compute variational (or vector) Laplacian as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_lap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       lap_size_idx_1 = 1;
@@ -26423,67 +22376,31 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(true, "");
-
-#else //MATLAB_MEX_FILE
-
-    assert(true);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -26494,14 +22411,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
       int offset;
 
@@ -26509,13 +22429,14 @@ namespace wls
       offset = (lap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial];
         for (iPoint = 0; iPoint <= npoints; iPoint++) {
-          b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset +
-            iPoint) + b_wls->V.size(1) * (j - 1)];
+          u0 = iMonomial + b_wls->interp0;
+          b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+            b_wls->V.size(1) * (j - 1)];
         }
       }
     }
@@ -26524,11 +22445,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -26536,6 +22458,18 @@ namespace wls
       for (int iRow{0}; iRow < nrows; iRow++) {
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
+    }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
     }
 
     result_size[1] = 0;
@@ -26543,15 +22477,14 @@ namespace wls
   }
 
   static inline
-  void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
+  void wls_var_lap3(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                     array<double, 1U> &vdops, int result_size[2])
   {
+    int i;
     int iPoint;
     int lap_size_idx_1;
-    int lenWs;
     int nDims;
-    int ncols;
     int npoints;
     int nrows;
     int nrows_vdops;
@@ -26559,37 +22492,8 @@ namespace wls
     int u0;
     int u1;
     signed char lap_data[3];
-    boolean_T flag;
 
     //  Compute variational (or vector) Laplacian as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts)
-    //  [wls, vdops] = wls_var_lap(wls, quad_pnts, ws)
-    //  [wls, vdops, result] = wls_var_lap(wls, quad_pnts, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d)
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0 or 1. Each weight should
-    //                be the product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (m-by-s),
-    //                where s is the number of scalar functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-d. To apply the
-    //                operator to compute vector Laplacian, use vdops' * fs.
-    //     result:    Computed solution of size 1-by-size(fs, 2).
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_vec_hess, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap, wls_var_kernel
-    //  The operators are row vectors, so they will be summed up before solve
     switch (b_wls->us.size(1)) {
      case 1:
       lap_size_idx_1 = 1;
@@ -26611,79 +22515,31 @@ namespace wls
     }
 
     //  Compute variational differential operators as weighted sum at quadrature points
-    //
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx)
-    //  [wls, vdops] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws)
-    //  [wls, vdops, result] = wls_var_kernel(wls, quad_pnts, order, diff_idx, ws, fs)
-    //
-    //  Parameters
-    //  ----------
-    //     wls:       A d-dimensional WlsObject, including work spaces.
-    //     quad_pnts: Local coordinates of the quadrature points (n-by-d).
-    //     order:     order of confluent Vandermonde matrix. Use -1 to indicate div.
-    //     diff_idx:  Differential operators of size nDiff-by-1 or 1-by-njDiff
-    //                (for Laplacian). In each row, diff_idx may be padded
-    //                with zeros for memory preallocation. The operators in a row
-    //                will be summed up before applying QR factoriztaion.
-    //     ws:        Weight at each quadrature point for each differential operator
-    //                (n-by-k), where k is 0, 1 or d. Each weight should be the
-    //                product of the quadrature weight, Jacobian determinant,
-    //                and value of a weighting function (e.g., a test function
-    //                or the derivative of test function). Use empty for unit weight.
-    //     fs:        Values corresponding to rows in CVM in wls object (n-by-s),
-    //                where s is 1 or d for scalar and vector-valued functions.
-    //
-    //  Returns
-    //  -------
-    //     wls:       Updated WlsObject
-    //     vdops:     The computed operator of size wls.nrows-by-size(diff_idx, 1).
-    //     result:    Computed solution. Its size is size(diff_idx, 1)-by-size(fs, 2)
-    //                if order is positive or size(diff_idx, 1)/d-by-size(fs, 2) otherwise.
-    //
-    //  See also
-    //     wls_init, wls_var_diff, wls_var_func, wls_var_grad, wls_var_div, wls_var_curl,
-    //     wls_var_hess, wls_var_lap, wls_var_grad_div, wls_var_curl_curl, wls_var_bilap
     npoints = quad_pnts.size(0) - 1;
-    ncols = b_wls->ncols;
-    nDims = quad_pnts.size(1);
-    if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-      lenWs = 1;
-    } else {
-      lenWs = ws.size(1);
-    }
-
+    nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
-    flag = (1 / lenWs * lenWs == 1);
 
-    //  Throw error if condition false
-    //  C++
-#ifndef NDEBUG
-#ifdef MATLAB_MEX_FILE
-
-    mxAssert(flag, "");
-
-#else //MATLAB_MEX_FILE
-
-    if (!flag) {
-      fprintf(stderr, "Runtime assertion error.\n");
-      fflush(stderr);
-    }
-
-    assert(flag);
-
-#endif //MATLAB_MEX_FILE
-#endif //NDEBUG
-
-    //  scale the coordinates; use wls.us as buffer
+    //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
-    for (int dim{0}; dim < nDims; dim++) {
-      for (iPoint = 0; iPoint <= npoints; iPoint++) {
-        b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
-          quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+    if (b_wls->interp0 != 0) {
+      //  Coordinate system is centered at first node in interp0 mode
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = (quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
+            b_wls->hs_inv.data[dim];
+        }
+      }
+    } else {
+      for (int dim{0}; dim <= nDims; dim++) {
+        for (iPoint = 0; iPoint <= npoints; iPoint++) {
+          b_wls->us[dim + b_wls->us.size(1) * iPoint] = quad_pnts[dim +
+            quad_pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
+        }
       }
     }
 
-    //  compute the confluent Vandermonde matrix and right-hand side
+    //  Compute the confluent Vandermonde matrix and right-hand side
     gen_vander(b_wls->us, quad_pnts.size(0), b_wls->degree, -2,
                b_wls->hs_inv.data, b_wls->hs_inv.size, b_wls->V);
     u0 = b_wls->ncols;
@@ -26694,14 +22550,17 @@ namespace wls
       nrows_vdops = u1;
     }
 
-    //  force each operator (rhs) to be stored contiguously
-    b_wls->vdops.set_size(1, nrows_vdops);
-    for (u0 = 0; u0 < nrows_vdops; u0++) {
-      b_wls->vdops[u0] = 0.0;
+    //  Force wls.vdops to be varsize and each operator to be stored contiguously
+    m2c_assert_msg(b_wls->izero_ == 0, "wls.izero_ must be equal to 0.");
+    u0 = nrows_vdops - b_wls->interp0;
+    u1 = b_wls->izero_ + 1;
+    b_wls->vdops.set_size(u1, u0);
+    u0 *= u1;
+    for (u1 = 0; u1 < u0; u1++) {
+      b_wls->vdops[u1] = 0.0;
     }
 
     //  Omit zeros in the diff operators
-    //  Summing up rows in the differential operator
     for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
       int offset;
 
@@ -26709,19 +22568,21 @@ namespace wls
       offset = (lap_data[jDiff] - 1) * stride;
 
       //  Skip padded zeros in the differential operator
-      //  Sum up monomials weighted by weights for each component
-      for (int iMonomial{0}; iMonomial < ncols; iMonomial++) {
+      u1 = b_wls->ncols - b_wls->interp0;
+      for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
         int j;
         j = b_wls->jpvt[iMonomial] - 1;
         if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + b_wls->V[(offset
-              + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + b_wls->V[(offset + iPoint) +
+              b_wls->V.size(1) * j];
           }
         } else {
           for (iPoint = 0; iPoint <= npoints; iPoint++) {
-            b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] + ws[ws.size(1) *
-              iPoint] * b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
+            u0 = iMonomial + b_wls->interp0;
+            b_wls->vdops[u0] = b_wls->vdops[u0] + ws[ws.size(1) * iPoint] *
+              b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         }
       }
@@ -26731,11 +22592,12 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols, b_wls->rank, b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows, b_wls->ncols, b_wls->rank, b_wls->vdops,
                 1, b_wls->work);
-
-    //  Transpose the operators to column major
     vdops.set_size(nrows_vdops);
-    for (int i{0}; i < nrows_vdops; i++) {
-      vdops[i] = b_wls->vdops[i];
+
+    //  Transpose the operator for row-major
+    u1 = nrows_vdops - b_wls->interp0;
+    for (i = 0; i < u1; i++) {
+      vdops[i + b_wls->interp0] = b_wls->vdops[i];
     }
 
     nrows = b_wls->nrows;
@@ -26743,6 +22605,18 @@ namespace wls
       for (int iRow{0}; iRow < nrows; iRow++) {
         vdops[iRow] = vdops[iRow] * b_wls->rweights[iRow];
       }
+    }
+
+    if (b_wls->interp0 != 0) {
+      double s;
+
+      //  In interp0 mode, we set the first entry based on partition of unity
+      s = 0.0;
+      for (i = 2; i <= nrows; i++) {
+        s += vdops[i - 1];
+      }
+
+      vdops[0] = 0.0 - s;
     }
 
     result_size[1] = 0;
