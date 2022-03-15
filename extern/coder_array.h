@@ -116,6 +116,14 @@ class data_ptr {
             data_ = new_data;
             capacity_ = _n;
             owner_ = true;
+        } else if (_n == 0) {
+            // X. Jiao: Deallocate array if capacity is zero
+            if (owner_) {
+                CODER_DELETE(data_);
+            }
+            data_ = NULL;
+            capacity_ = _n;
+            owner_ = true;
         }
     }
     void resize(SZ _n) {
