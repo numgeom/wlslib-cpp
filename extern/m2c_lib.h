@@ -57,6 +57,7 @@
     if (!omp_in_parallel()) { \
         std::fprintf(stderr, "%s: ", warnId); \
         std::fprintf(stderr, __VA_ARGS__); \
+        std::fprintf(stderr, "\n"); \
         std::fflush(stderr); \
     } else {\
         _Pragma("omp critical") \
@@ -73,6 +74,7 @@
 #define m2cWarnMsgIdAndTxt(warnId, ...) { \
     std::fprintf(stderr, "%s: ", warnId); \
     std::fprintf(stderr, __VA_ARGS__); \
+    std::fprintf(stderr, "\n"); \
     std::fflush(stderr); \
 }
 #endif // _OPENMP
@@ -89,14 +91,16 @@
                 std::fprintf(stderr, "Thread %d: ", omp_get_thread_num()); \
             std::fprintf(stderr, "Error: "); \
             std::fprintf(stderr, "%s\n", message); \
+            std::fflush(stderr); \
         } \
     } \
-    throw std::runtime_error(errId); \
+    throw std::runtime_error("unnamedRuntimeError"); \
 }
 #else
 #define m2cErrMsgTxt(message) { \
     std::fprintf(stderr, "%s\n", message); \
     std::fflush(stderr); \
+    throw std::runtime_error("unnamedRuntimeError"); \
 }
 #endif // _OPENMP
 
@@ -106,6 +110,7 @@
     if (!omp_in_parallel()) {\
         std::fprintf(stderr, "%s: ", errId); \
         std::fprintf(stderr, __VA_ARGS__); \
+        std::fprintf(stderr, "\n"); \
         std::fflush(stderr); \
     } else { \
         _Pragma("omp critical") \
@@ -124,7 +129,9 @@
 #define m2cErrMsgIdAndTxt(errId, ...) { \
     std::fprintf(stderr, "%s: ", errId); \
     std::fprintf(stderr, __VA_ARGS__); \
+    std::fprintf(stderr, "\n"); \
     std::fflush(stderr); \
+    throw std::runtime_error(errId); \
 }
 #endif // _OPENMP
 
@@ -148,9 +155,10 @@
     } \
 }
 #else // _OPENMP
-#define m2cAssert(cond, message) { \
+#define m2cAssert(cond, message) \
+    if (!(cond)) { \
         std::fprintf(stderr, "Assertion failed (%s) at line %d of file '%s'. %s\n", \
-            #cond, __LINE__, __FILE__, message);\
+            #cond, __LINE__, __FILE__, message); \
         throw std::logic_error(std::string("Assertion failed (") + #cond + "). " + message); \
     }
 #endif // _OPENMP
