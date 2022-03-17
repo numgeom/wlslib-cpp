@@ -1,4 +1,4 @@
-/* Copyright 2019 The Mathworks, Inc. */
+/* Copyright 2019-2021 The MathWorks, Inc. */
 /* Copied from
  * fullfile(matlabroot,'extern','include','coder','coder_array','coder_array_rtw_cpp11.h') */
 
@@ -114,6 +114,14 @@ class data_ptr {
                 CODER_DELETE(data_);
             }
             data_ = new_data;
+            capacity_ = _n;
+            owner_ = true;
+        } else if (_n == 0) {
+            // X. Jiao: Deallocate array if capacity is zero
+            if (owner_) {
+                CODER_DELETE(data_);
+            }
+            data_ = NULL;
             capacity_ = _n;
             owner_ = true;
         }
@@ -490,9 +498,6 @@ class array_base {
     using value_type = T;
     using size_type = SZ;
 
-    // resolve deprecated implicit copy constructor warning (X. Jiao)
-    array_base(const array_base &) = default;
-
     array_base() {
         (void)::memset(size_, 0, sizeof(SZ) * N);
     }
@@ -501,6 +506,8 @@ class array_base {
         : data_(_data, coder::detail::numel<N>::compute(_sz)) {
         (void)std::copy(_sz, _sz + N, size_);
     }
+
+    array_base(array_base const&) = default;
 
     array_base& operator=(array_base const& _other) {
         data_.copy(_other.data_);
@@ -539,6 +546,10 @@ class array_base {
     }
 
   public:
+    void reserve(SZ _n) {
+        ensureCapacity(_n);
+    }
+
     template <typename... Dims>
     void set_size(Dims... dims) {
         coder::detail::match_dimensions<N == sizeof...(dims)>::check();

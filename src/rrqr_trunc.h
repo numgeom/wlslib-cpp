@@ -1,3 +1,4 @@
+// Copyright 2022 The NumGeom Group, Stony Brook University
 //
 // rrqr_trunc.h
 //
@@ -18,6 +19,10 @@ namespace wls {
 static inline boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag,
                             int *n1, int rank, ::coder::array<int, 1U> &p,
                             ::coder::array<int, 2U> &work);
+
+static inline void rrqr_trunc_initialize();
+
+static inline void rrqr_trunc_terminate();
 
 } // namespace wls
 
