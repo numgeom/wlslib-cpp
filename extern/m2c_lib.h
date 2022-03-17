@@ -142,6 +142,7 @@
     if (!omp_in_parallel()) {\
         std::fprintf(stderr, "Assertion failed (%s) at line %d of file '%s'. %s\n", \
             #cond, __LINE__, __FILE__, message);\
+        std::fflush(stderr); \
         throw std::logic_error(std::string("Assertion failed (") + #cond + "). " + message);\
     } else if (!(cond)) {\
         _Pragma("omp critical") \
@@ -150,17 +151,20 @@
                 std::fprintf(stderr, "Thread %d: ", omp_get_thread_num()); \
             std::fprintf(stderr, "Assertion failed (%s) at line %d of file '%s'. %s\n", \
                 #cond, __LINE__, __FILE__, message); \
+            std::fflush(stderr); \
         } \
         throw std::logic_error(std::string("Assertion failed (") + #cond + "). " + message);\
     } \
 }
 #else // _OPENMP
-#define m2cAssert(cond, message) \
+#define m2cAssert(cond, message) { \
     if (!(cond)) { \
         std::fprintf(stderr, "Assertion failed (%s) at line %d of file '%s'. %s\n", \
             #cond, __LINE__, __FILE__, message); \
+        std::fflush(stderr); \
         throw std::logic_error(std::string("Assertion failed (") + #cond + "). " + message); \
     }
+}
 #endif // _OPENMP
 #else // NDEBUG
 #define m2cAssert(cond, message) ((void)0)
