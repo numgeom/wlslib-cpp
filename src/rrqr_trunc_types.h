@@ -1,3 +1,4 @@
+// Copyright 2022 The NumGeom Group, Stony Brook University
 //
 // rrqr_trunc_types.h
 //

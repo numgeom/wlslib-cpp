@@ -1,7 +1,8 @@
+// Copyright 2022 The NumGeom Group, Stony Brook University
 //
 // wls_internal_types.h
 //
-// Code generation for function 'wls_init1'
+// Code generation for function 'wls_init'
 //
 
 #ifndef WLS_INTERNAL_TYPES_H
@@ -14,7 +15,6 @@
 
 // Type Definitions
 namespace wls {
-
 struct WlsObject {
   int npoints;
   int degree;
