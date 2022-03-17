@@ -52,36 +52,32 @@ namespace wls
     int l, int r);
   static inline
   void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
-    degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
-    coder::array<double, 2U> &V);
-  static inline
-  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
     degree, int order, const ::coder::array<double, 1U> &weights, ::coder::array<
     double, 2U> &V);
   static inline
   void gen_vander(const double us_data[], const int us_size[2], int
     degree, ::coder::array<double, 2U> &V);
   static inline
-  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 2U>
+  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
+    degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
+    coder::array<double, 2U> &V);
+  static inline
+  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 1U>
     &dag);
-  static inline
-  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
-    ::coder::array<double, 2U> &V);
-  static inline
-  void gen_vander_2d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V);
   static inline
   void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
     array<double, 2U> &V);
   static inline
-  void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
-    &dag);
+  void gen_vander_2d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V);
   static inline
-  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
+  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
     ::coder::array<double, 2U> &V);
+  static inline
+  void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
+    &dag);
   static inline
   void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
@@ -89,6 +85,10 @@ namespace wls
   static inline
   void gen_vander_3d(const double us_data[], int degree, ::coder::array<
     double, 2U> &V);
+  static inline
+  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
+    int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
+    ::coder::array<double, 2U> &V);
   static inline
   void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag);
@@ -99,8 +99,8 @@ namespace wls
     array<unsigned char, 2U> &dag);
   static inline
   void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-    int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
-    1U> &work);
+    int rank, ::coder::array<double, 2U> &bs, int nrhs, const ::coder::array<
+    double, 1U> &work);
   static inline
   void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
     ::coder::array<double, 2U> &bs, int nrhs);
@@ -234,6 +234,238 @@ namespace wls
 
   static inline
   void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
+    degree, int order, const ::coder::array<double, 1U> &weights, ::coder::array<
+    double, 2U> &V)
+  {
+    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
+    switch (us.size(1)) {
+     case 1:
+      {
+        int b_n;
+        int i;
+        int n;
+        int nrblks;
+        int r;
+        int stride;
+        boolean_T b;
+        boolean_T b1;
+
+        //  Generate (confluent) Vandermonde matrix in 1D.
+        m2cAssert(us.size(1) == 1, "");
+
+        //  Handle input arguments
+        m2cAssert(npoints <= us.size(0), "Input us is too small.");
+
+        m2cAssert(degree >= 0, "Degree must be nonnegative");
+        if ((order < -4) || (order == -3)) {
+          m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                            "Order %d must be 0, 1, 2, -1, -2, or -4", order);
+        }
+
+        stride = us.size(0);
+        nrblks = order + 1;
+
+        //  Number of row blocks
+        switch (order) {
+         case -1:
+          nrblks = 2;
+          break;
+
+         case -2:
+          nrblks = 3;
+          break;
+
+         case -4:
+          nrblks = 4;
+          break;
+        }
+
+        n = (degree + 1);
+
+        b_n = (us.size(0) * nrblks);
+        V.set_size(n, b_n);
+
+        //  Compute rows corresponding to function values
+        if (weights.size(0) == 0) {
+          if (degree != 0) {
+            b = true;
+            b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+            i = us.size(1) * us.size(0);
+            b_n = 0;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              if (b1 || (iPnt >= i)) {
+                b_n = 0;
+                b = true;
+              } else if (b) {
+                b = false;
+                b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+              } else {
+                n = us.size(1) * us.size(0) - 1;
+                if (b_n > MAX_int32_T - us.size(1)) {
+                  b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+                } else {
+                  b_n += us.size(1);
+                  if (b_n > n) {
+                    b_n -= n;
+                  }
+                }
+              }
+
+              V[iPnt] = 1.0;
+              V[iPnt + V.size(1)] = us[b_n];
+            }
+          } else {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[iPnt] = 1.0;
+            }
+          }
+        } else if (degree != 0) {
+          b = true;
+          b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+          i = us.size(1) * us.size(0);
+          b_n = 0;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            if (b1 || (iPnt >= i)) {
+              b_n = 0;
+              b = true;
+            } else if (b) {
+              b = false;
+              b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+            } else {
+              n = us.size(1) * us.size(0) - 1;
+              if (b_n > MAX_int32_T - us.size(1)) {
+                b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+              } else {
+                b_n += us.size(1);
+                if (b_n > n) {
+                  b_n -= n;
+                }
+              }
+            }
+
+            V[iPnt] = weights[iPnt];
+            V[iPnt + V.size(1)] = us[b_n] * weights[iPnt];
+          }
+        } else {
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[iPnt] = weights[iPnt];
+          }
+        }
+
+        b_n = order;
+        if (order > 0) {
+          b_n = 0;
+        }
+
+        i = (degree + b_n) + 1;
+        for (int ii{2}; ii <= i; ii++) {
+          b = true;
+          b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+          b_n = us.size(1) * us.size(0);
+          n = 0;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            if (b1 || (iPnt >= b_n)) {
+              n = 0;
+              b = true;
+            } else if (b) {
+              b = false;
+              n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+            } else {
+              int i1;
+              i1 = us.size(1) * us.size(0) - 1;
+              if (n > MAX_int32_T - us.size(1)) {
+                n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+              } else {
+                n += us.size(1);
+                if (n > i1) {
+                  n -= i1;
+                }
+              }
+            }
+
+            V[iPnt + V.size(1) * (ii - 1)] = V[iPnt + V.size(1) * (ii - 2)] *
+              us[n];
+          }
+        }
+
+        //  Add row blocks corresponding to kth derivatives
+        r = us.size(0);
+        if (order >= 0) {
+          for (int k{0}; k < order; k++) {
+            for (int j{0}; j <= k; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(r + iPnt) + V.size(1) * j] = 0.0;
+              }
+            }
+
+            for (int j{k + 1}; j <= degree; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)]
+                  * static_cast<double>(j);
+              }
+            }
+
+            r += stride;
+          }
+        } else {
+           //      computing negative orders
+          if (-order > 2) {
+            i = 2;
+          } else {
+            i = -order;
+          }
+
+          for (int k{0}; k < i; k++) {
+            for (int j{0}; j <= k; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(r + iPnt) + V.size(1) * j] = 0.0;
+              }
+            }
+
+            for (int j{k + 1}; j <= degree; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)]
+                  * static_cast<double>(j);
+              }
+            }
+
+            r += stride;
+          }
+ 
+          //      Calculate Biharmonic if order = -4
+          if (order == -4) {
+            for (int j{0}; j < 4; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(r + iPnt) + V.size(1) * j] = 0.0;
+              }
+            }
+
+            for (int j{2}; j <= degree; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 2)]
+                  * static_cast<double>(j) * (static_cast<double>(j) - 1.0);
+              }
+            }
+          }
+        }
+      }
+      break;
+
+     case 2:
+      gen_vander_2d(us, npoints, degree, order, weights, V);
+      break;
+
+     default:
+      gen_vander_3d(us, npoints, degree, order, weights, V);
+      break;
+    }
+  }
+
+  static inline
+  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
     degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
     coder::array<double, 2U> &V)
   {
@@ -245,10 +477,8 @@ namespace wls
         int b_n;
         int b_npoints;
         int i;
-        int i1;
         int n;
         int nrblks;
-        int nrows;
         int r;
         int stride;
         boolean_T b;
@@ -295,41 +525,38 @@ namespace wls
           break;
         }
 
-        nrows = us.size(0) * nrblks;
-        if ((V.size(1) != nrows) || (V.size(0) != degree + 1)) {
-          b_n = (degree + 1);
+        n = (degree + 1);
 
-          n = (nrows);
-          V.set_size(b_n, n);
-        }
+        b_n = (us.size(0) * nrblks);
+        V.set_size(n, b_n);
 
         //  Compute rows corresponding to function values
         if (degree != 0) {
           b = true;
           b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
           i = us.size(1) * us.size(0);
-          i1 = 0;
+          b_n = 0;
           for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
             if (b1 || (iPnt >= i)) {
-              i1 = 0;
+              b_n = 0;
               b = true;
             } else if (b) {
               b = false;
-              i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+              b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
             } else {
               n = us.size(1) * us.size(0) - 1;
-              if (i1 > MAX_int32_T - us.size(1)) {
-                i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+              if (b_n > MAX_int32_T - us.size(1)) {
+                b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
               } else {
-                i1 += us.size(1);
-                if (i1 > n) {
-                  i1 -= n;
+                b_n += us.size(1);
+                if (b_n > n) {
+                  b_n -= n;
                 }
               }
             }
 
             V[iPnt] = 1.0;
-            V[iPnt + V.size(1)] = us[i1];
+            V[iPnt + V.size(1)] = us[b_n];
           }
         } else {
           for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
@@ -337,32 +564,33 @@ namespace wls
           }
         }
 
-        n = order;
+        b_n = order;
         if (order > 0) {
-          n = 0;
+          b_n = 0;
         }
 
-        i = (degree + n) + 1;
+        i = (degree + b_n) + 1;
         for (int ii{2}; ii <= i; ii++) {
           b = true;
           b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-          i1 = us.size(1) * us.size(0);
+          b_n = us.size(1) * us.size(0);
           n = 0;
           for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            if (b1 || (iPnt >= i1)) {
+            if (b1 || (iPnt >= b_n)) {
               n = 0;
               b = true;
             } else if (b) {
               b = false;
               n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
             } else {
-              b_n = us.size(1) * us.size(0) - 1;
+              int i1;
+              i1 = us.size(1) * us.size(0) - 1;
               if (n > MAX_int32_T - us.size(1)) {
                 n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
               } else {
                 n += us.size(1);
-                if (n > b_n) {
-                  n -= b_n;
+                if (n > i1) {
+                  n -= i1;
                 }
               }
             }
@@ -386,8 +614,9 @@ namespace wls
               double s;
               s = h_inv_ * static_cast<double>(j);
               for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
-                i = r + iPnt;
-                V[i + V.size(1) * j] = V[(i - stride) + V.size(1) * (j - 1)] * s;
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)]
+                  * s;
               }
             }
 
@@ -413,9 +642,9 @@ namespace wls
             for (int j{k + 1}; j <= degree; j++) {
               s = h_inv_ * static_cast<double>(j);
               for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
-                i1 = r + iPnt;
-                V[i1 + V.size(1) * j] = V[(i1 - stride) + V.size(1) * (j - 1)] *
-                  s;
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)]
+                  * s;
               }
             }
 
@@ -433,9 +662,9 @@ namespace wls
             for (int j{2}; j <= degree; j++) {
               s = h_inv_ * static_cast<double>(j);
               for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
-                i = r + iPnt;
-                V[i + V.size(1) * j] = V[(i - stride) + V.size(1) * (j - 2)] * s
-                  * (s - 1.0);
+                b_n = r + iPnt;
+                V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 2)]
+                  * s * (s - 1.0);
               }
             }
           }
@@ -454,242 +683,6 @@ namespace wls
   }
 
   static inline
-  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
-    degree, int order, const ::coder::array<double, 1U> &weights, ::coder::array<
-    double, 2U> &V)
-  {
-    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    switch (us.size(1)) {
-     case 1:
-      {
-        int b_n;
-        int i;
-        int i1;
-        int n;
-        int nrblks;
-        int nrows;
-        int r;
-        int stride;
-        boolean_T b;
-        boolean_T b1;
-
-        //  Generate (confluent) Vandermonde matrix in 1D.
-        m2cAssert(us.size(1) == 1, "");
-
-        //  Handle input arguments
-        m2cAssert(npoints <= us.size(0), "Input us is too small.");
-
-        m2cAssert(degree >= 0, "Degree must be nonnegative");
-        if ((order < -4) || (order == -3)) {
-          m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                            "Order %d must be 0, 1, 2, -1, -2, or -4", order);
-        }
-
-        stride = us.size(0);
-        nrblks = order + 1;
-
-        //  Number of row blocks
-        switch (order) {
-         case -1:
-          nrblks = 2;
-          break;
-
-         case -2:
-          nrblks = 3;
-          break;
-
-         case -4:
-          nrblks = 4;
-          break;
-        }
-
-        nrows = us.size(0) * nrblks;
-        if ((V.size(1) != nrows) || (V.size(0) != degree + 1)) {
-          b_n = (degree + 1);
-
-          n = (nrows);
-          V.set_size(b_n, n);
-        }
-
-        //  Compute rows corresponding to function values
-        if (weights.size(0) == 0) {
-          if (degree != 0) {
-            b = true;
-            b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-            i = us.size(1) * us.size(0);
-            i1 = 0;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              if (b1 || (iPnt >= i)) {
-                i1 = 0;
-                b = true;
-              } else if (b) {
-                b = false;
-                i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-              } else {
-                n = us.size(1) * us.size(0) - 1;
-                if (i1 > MAX_int32_T - us.size(1)) {
-                  i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-                } else {
-                  i1 += us.size(1);
-                  if (i1 > n) {
-                    i1 -= n;
-                  }
-                }
-              }
-
-              V[iPnt] = 1.0;
-              V[iPnt + V.size(1)] = us[i1];
-            }
-          } else {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[iPnt] = 1.0;
-            }
-          }
-        } else if (degree != 0) {
-          b = true;
-          b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-          i = us.size(1) * us.size(0);
-          i1 = 0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            if (b1 || (iPnt >= i)) {
-              i1 = 0;
-              b = true;
-            } else if (b) {
-              b = false;
-              i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-            } else {
-              n = us.size(1) * us.size(0) - 1;
-              if (i1 > MAX_int32_T - us.size(1)) {
-                i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-              } else {
-                i1 += us.size(1);
-                if (i1 > n) {
-                  i1 -= n;
-                }
-              }
-            }
-
-            V[iPnt] = weights[iPnt];
-            V[iPnt + V.size(1)] = us[i1] * weights[iPnt];
-          }
-        } else {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[iPnt] = weights[iPnt];
-          }
-        }
-
-        n = order;
-        if (order > 0) {
-          n = 0;
-        }
-
-        i = (degree + n) + 1;
-        for (int ii{2}; ii <= i; ii++) {
-          b = true;
-          b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-          i1 = us.size(1) * us.size(0);
-          n = 0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            if (b1 || (iPnt >= i1)) {
-              n = 0;
-              b = true;
-            } else if (b) {
-              b = false;
-              n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-            } else {
-              b_n = us.size(1) * us.size(0) - 1;
-              if (n > MAX_int32_T - us.size(1)) {
-                n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-              } else {
-                n += us.size(1);
-                if (n > b_n) {
-                  n -= b_n;
-                }
-              }
-            }
-
-            V[iPnt + V.size(1) * (ii - 1)] = V[iPnt + V.size(1) * (ii - 2)] *
-              us[n];
-          }
-        }
-
-        //  Add row blocks corresponding to kth derivatives
-        r = us.size(0);
-        if (order >= 0) {
-          for (int k{0}; k < order; k++) {
-            for (int j{0}; j <= k; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(r + iPnt) + V.size(1) * j] = 0.0;
-              }
-            }
-
-            for (int j{k + 1}; j <= degree; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i = r + iPnt;
-                V[i + V.size(1) * j] = V[(i - stride) + V.size(1) * (j - 1)] *
-                  static_cast<double>(j);
-              }
-            }
-
-            r += stride;
-          }
-        } else {
-           //      computing negative orders
-          if (-order > 2) {
-            i = 2;
-          } else {
-            i = -order;
-          }
-
-          for (int k{0}; k < i; k++) {
-            for (int j{0}; j <= k; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(r + iPnt) + V.size(1) * j] = 0.0;
-              }
-            }
-
-            for (int j{k + 1}; j <= degree; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = r + iPnt;
-                V[i1 + V.size(1) * j] = V[(i1 - stride) + V.size(1) * (j - 1)] *
-                  static_cast<double>(j);
-              }
-            }
-
-            r += stride;
-          }
- 
-          //      Calculate Biharmonic if order = -4
-          if (order == -4) {
-            for (int j{0}; j < 4; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(r + iPnt) + V.size(1) * j] = 0.0;
-              }
-            }
-
-            for (int j{2}; j <= degree; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i = r + iPnt;
-                V[i + V.size(1) * j] = V[(i - stride) + V.size(1) * (j - 2)] *
-                  static_cast<double>(j) * (static_cast<double>(j) - 1.0);
-              }
-            }
-          }
-        }
-      }
-      break;
-
-     case 2:
-      gen_vander_2d(us, npoints, degree, order, weights, V);
-      break;
-
-     default:
-      gen_vander_3d(us, npoints, degree, order, weights, V);
-      break;
-    }
-  }
-
-  static inline
   void gen_vander(const double us_data[], const int us_size[2], int
     degree, ::coder::array<double, 2U> &V)
   {
@@ -697,6 +690,7 @@ namespace wls
     switch (us_size[1]) {
      case 1:
       {
+        int b_n;
         int n;
 
         //  Generate (confluent) Vandermonde matrix in 1D.
@@ -704,14 +698,10 @@ namespace wls
 
         //  Handle input arguments
         //  Number of row blocks
-        if ((V.size(1) != 1) || (V.size(0) != degree + 1)) {
-          int b_n;
+        n = (degree + 1);
 
-          n = (degree + 1);
-
-          b_n = (1);
-          V.set_size(n, b_n);
-        }
+        b_n = (1);
+        V.set_size(n, b_n);
 
         //  Compute rows corresponding to function values
         V[0] = 1.0;
@@ -736,82 +726,1036 @@ namespace wls
   }
 
   static inline
-  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 2U>
+  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 1U>
     &dag)
   {
-    int u0;
-    int u1;
-
     //  Build a dag for Vandermonde matrix in 1D.
-    if ((dag.size(0) == 0) || (dag.size(1) == 0)) {
-      u1 = 0;
-    } else {
-      u0 = dag.size(0);
-      u1 = dag.size(1);
-      if (u0 >= u1) {
-        u1 = u0;
-      }
-    }
-
-    m2cAssert(u1 >= degree + 2, "DAG must be preallocated.");
+    dag.set_size(degree + 2);
     for (int i{0}; i < degree; i++) {
-      u1 = dag.size(0);
-      dag[i % u1 * dag.size(1) + i / u1] = 1U;
+      dag[i] = 1U;
     }
 
-    u1 = dag.size(0);
-    dag[degree % u1 * dag.size(1) + degree / u1] = 0U;
+    dag[degree] = 0U;
 
     //  a leaf has no child
-    u1 = dag.size(1) * dag.size(0) - 1;
-    u0 = dag.size(0);
-    dag[u1 % u0 * dag.size(1) + u1 / u0] = static_cast<unsigned char>(degree +
-      127);
+    dag[dag.size(0) - 1] = static_cast<unsigned char>(degree + 127);
   }
 
   static inline
-  void gen_vander_2d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
+  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
+    int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
+    array<double, 2U> &V)
   {
+    int b_degree;
+    int b_n;
     int c;
+    int deg;
+    int i;
     int n;
-    int ncols;
+    int nrblks;
+    int stride;
+    int x_tmp_tmp;
 
     //  Generate generalized/confluent Vandermonde matrix in 2D.
-    ncols = (degree + 1) * (degree + 2) / 2;
+    if (npoints > us.size(0)) {
+      m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
+    }
+
+    if ((order < -4) || (order == -3)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                        "Order %d must be 0, 1, 2, -1, -2, or -4", order);
+    }
+
+    stride = us.size(0);
+    nrblks = (order + 1) * (order + 2) / 2;
+
+    //  Number of row blocks
+    switch (order) {
+     case -1:
+      nrblks = 3;
+      break;
+
+     case -2:
+      nrblks = 5;
+      break;
+
+     case -4:
+      if (degree > 0) {
+        nrblks = 8;
+      } else {
+        nrblks = 11;
+      }
+      break;
+    }
 
     //  Allocate storage for V
-    if ((V.size(1) != 1) || (V.size(0) != ncols)) {
-      int b_n;
-
-      n = (ncols);
-
-      b_n = (1);
-      V.set_size(n, b_n);
+    if (degree >= 0) {
+      b_degree = (degree + 1) * (degree + 2) / 2;
+    } else {
+      b_degree = (1 - degree) * (1 - degree);
     }
+
+    n = (b_degree);
+
+    b_n = (us.size(0) * nrblks);
+    V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
-    V[0] = 1.0;
-    V[V.size(1)] = us_data[0];
-    V[V.size(1) * 2] = us_data[1];
-    c = 3;
-    if (degree < 0) {
-      n = -degree;
+    if (weights.size(0) == 0) {
+      if (degree != 0) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt] = 1.0;
+          V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+          V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
+        }
+      } else {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt] = 1.0;
+        }
+      }
+    } else if (degree != 0) {
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = weights[iPnt];
+        V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
+        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
+      }
     } else {
-      n = degree;
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = weights[iPnt];
+      }
     }
 
-    for (int deg{2}; deg <= n; deg++) {
+    c = 3;
+    n = order;
+    if (order > 0) {
+      n = 0;
+    }
+
+    x_tmp_tmp = -degree;
+    b_n = -degree;
+    if (-degree > 0) {
+      b_n = 1;
+    } else if (-degree < 0) {
+      b_n = -1;
+    }
+
+    b_n *= n;
+    if (degree < 0) {
+      b_degree = -degree;
+    } else {
+      b_degree = degree;
+    }
+
+    if (b_n < 0) {
+      b_n = 0;
+    }
+
+    i = b_degree - b_n;
+    for (deg = 2; deg <= i; deg++) {
       for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] * us[us.size
+            (1) * iPnt];
+        }
+
         c++;
       }
 
-      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * ((c - deg) - 1)] *
+          us[us.size(1) * iPnt + 1];
+      }
+
       c++;
     }
 
     //  Compute the bi-degree terms if degree<0
+    i = 1 - n;
+    for (deg = x_tmp_tmp; deg >= i; deg--) {
+      for (int k{0}; k < deg; k++) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] * us[us.size
+            (1) * iPnt];
+        }
+
+        c++;
+      }
+    }
+
+    //  compute higher order confluent Vandermonde matrix blocks incrementally
+    if (order != 0) {
+      double scaleu;
+      double scalev;
+      int offset;
+
+      //  This is an optimized version of update_vander_ordern for first-order CVM
+      m2cAssert(degree != 0, "");
+
+      //  Compute derivative with respect to u
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+      }
+
+      c = 3;
+      n = order + 1;
+      if (n > 0) {
+        n = 0;
+      }
+
+      b_n = -degree;
+      if (-degree > 0) {
+        b_n = 1;
+      } else if (-degree < 0) {
+        b_n = -1;
+      }
+
+      b_n *= n;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+
+      if (b_n < 0) {
+        b_n = 0;
+      }
+
+      i = b_degree - b_n;
+      for (deg = 2; deg <= i; deg++) {
+        scaleu = deg;
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] *
+            static_cast<double>(deg);
+        }
+
+        c++;
+        for (int j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)]
+              * scaleu;
+          }
+
+          c++;
+        }
+
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+
+        c++;
+      }
+
+      //  Compute the bi-degree terms if degree<0
+      for (int len{x_tmp_tmp}; len >= n; len--) {
+        scaleu = 1 - degree;
+        for (int k{0}; k < len; k++) {
+          scaleu--;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - len)]
+              * scaleu;
+          }
+
+          c++;
+        }
+      }
+
+      //  Compute derivative with respect to v
+      offset = us.size(0) + us.size(0);
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        b_n = offset + iPnt;
+        V[b_n] = 0.0;
+        V[b_n + V.size(1)] = 0.0;
+        V[b_n + V.size(1) * 2] = V[iPnt];
+      }
+
+      c = 3;
+      b_n = -degree;
+      if (-degree > 0) {
+        b_n = 1;
+      } else if (-degree < 0) {
+        b_n = -1;
+      }
+
+      b_n *= n;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+
+      if (b_n < 0) {
+        b_n = 0;
+      }
+
+      i = b_degree - b_n;
+      for (deg = 2; deg <= i; deg++) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+
+        c++;
+        for (int j{0}; j < deg; j++) {
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * ((c - deg)
+              - 1)] * (static_cast<double>(j) + 1.0);
+          }
+
+          c++;
+        }
+      }
+
+      //  Compute the bi-degree terms if degree<0
+      deg = -degree;
+      for (int len{x_tmp_tmp}; len >= n; len--) {
+        deg++;
+        scalev = (deg + degree) - 1;
+        for (int k{0}; k < len; k++) {
+          scalev++;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * ((c - len)
+              - 1)] * scalev;
+          }
+
+          c++;
+        }
+      }
+ 
+      //      compute regular orders if order > 0
+      if (order > 0) {
+        for (int dd{2}; dd <= order; dd++) {
+          int offset_prev;
+
+          //  Compute order-N CVM row blocks from order-(N-1) CVM.
+          m2cAssert(degree != 0, "");
+          b_degree = dd * (dd + 1) / 2;
+          offset = b_degree * stride;
+          offset_prev = (dd - 1) * dd / 2 * stride;
+
+          //  Compute derivative with respect to u
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          for (int b_i{0}; b_i < dd; b_i++) {
+            //  Initialize block to zero
+            n = offset + 1;
+            b_n = offset + npoints;
+            for (int col{0}; col < b_degree; col++) {
+              for (int row{n}; row <= b_n; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+
+            c = b_degree;
+            for (deg = dd; deg <= i; deg++) {
+              scaleu = deg + 1;
+              n = deg - 1;
+              for (int j{0}; j <= n; j++) {
+                scaleu--;
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
+                    V.size(1) * (c - deg)] * scaleu;
+                }
+
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            //  Compute the bi-degree terms if degree<0
+            for (int len{x_tmp_tmp}; len >= 0; len--) {
+              scaleu = 1 - degree;
+              for (int k{0}; k < len; k++) {
+                scaleu--;
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
+                    V.size(1) * (c - len)] * scaleu;
+                }
+
+                c++;
+              }
+            }
+
+            offset += stride;
+            offset_prev += stride;
+          }
+
+          //  Compute derivative with respect to v
+          i = offset + 1;
+          n = offset + npoints;
+          for (int col{0}; col < b_degree; col++) {
+            for (int row{i}; row <= n; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+
+          c = b_degree;
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          for (deg = dd; deg <= i; deg++) {
+            n = dd - 1;
+            for (int j{0}; j <= n; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int j{dd}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride) +
+                  iPnt) + V.size(1) * ((c - deg) - 1)] * static_cast<double>(j);
+              }
+
+              c++;
+            }
+          }
+
+          //  Compute the bi-degree terms if degree<0
+          deg = -degree;
+          for (int len{x_tmp_tmp}; len >= 0; len--) {
+            deg++;
+            scalev = (deg + degree) - 1;
+            for (int k{0}; k < len; k++) {
+              scalev++;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride) +
+                  iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
+              }
+
+              c++;
+            }
+          }
+        }
+      } else if (order < -1) {
+         //          compute efficient laplacian and bi-laplacian
+        switch (order) {
+         case -2:
+          {
+            int offset_prev;
+
+            //  Compute order-N CVM row blocks from order-(N-1) CVM.
+            m2cAssert(degree != 0, "");
+            offset = 3 * us.size(0);
+            offset_prev = us.size(0);
+
+            //  Compute derivative with respect to u
+            if (degree < 0) {
+              i = -degree;
+            } else {
+              i = degree;
+            }
+
+            //  Initialize block to zero
+            n = offset + 1;
+            b_n = offset + npoints;
+            for (int col{0}; col < 3; col++) {
+              for (int row{n}; row <= b_n; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+
+            c = 3;
+            for (deg = 2; deg <= i; deg++) {
+              scaleu = deg + 1;
+              n = deg - 1;
+              for (int j{0}; j <= n; j++) {
+                scaleu--;
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
+                    V.size(1) * (c - deg)] * scaleu;
+                }
+
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            //  Compute the bi-degree terms if degree<0
+            for (int len{x_tmp_tmp}; len >= -2; len--) {
+              scaleu = 1 - degree;
+              for (int k{0}; k < len; k++) {
+                scaleu--;
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
+                    V.size(1) * (c - len)] * scaleu;
+                }
+
+                c++;
+              }
+            }
+
+            offset += us.size(0);
+
+            //  Compute derivative with respect to v
+            offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+            i = offset + 1;
+            n = offset + npoints;
+            for (int col{0}; col < 3; col++) {
+              for (int row{i}; row <= n; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+
+            c = 3;
+            if (degree < 0) {
+              i = -degree;
+            } else {
+              i = degree;
+            }
+
+            for (deg = 2; deg <= i; deg++) {
+              for (int j{0}; j < 2; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int j{2}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride)
+                    + iPnt) + V.size(1) * ((c - deg) - 1)] * static_cast<double>
+                    (j);
+                }
+
+                c++;
+              }
+            }
+
+            //  Compute the bi-degree terms if degree<0
+            deg = -degree;
+            for (int len{x_tmp_tmp}; len >= -2; len--) {
+              deg++;
+              scalev = (deg + degree) - 1;
+              for (int k{0}; k < len; k++) {
+                scalev++;
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride)
+                    + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
+                }
+
+                c++;
+              }
+            }
+          }
+          break;
+
+         case -4:
+          {
+            if (degree > 0) {
+              int offset_prev;
+
+              //  Compute order-N CVM row blocks from order-(N-1) CVM.
+              m2cAssert(true, "");
+              offset = 3 * us.size(0);
+
+              //  Compute derivative with respect to u
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 3; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 3;
+              for (deg = 2; deg <= degree; deg++) {
+                scaleu = deg + 1;
+                i = deg - 1;
+                for (int j{0}; j <= i; j++) {
+                  scaleu--;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(us.size(0) + iPnt) +
+                      V.size(1) * (c - deg)] * scaleu;
+                  }
+
+                  c++;
+                }
+
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              offset += us.size(0);
+
+              //  Compute derivative with respect to v
+              offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 3; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 3;
+              for (deg = 2; deg <= degree; deg++) {
+                for (int j{0}; j < 2; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                for (int j{2}; j <= deg; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
+                      static_cast<double>(j);
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              offset = 5 * us.size(0);
+              offset_prev = 3 * us.size(0);
+
+              m2cAssert(degree >= 4, "");
+
+              //  compute du^4 and du^2*dv^2
+              for (int terms{0}; terms < 2; terms++) {
+                i = offset + 1;
+                n = offset + npoints;
+                for (int col{0}; col < 10; col++) {
+                  for (int row{i}; row <= n; row++) {
+                    V[(row + V.size(1) * col) - 1] = 0.0;
+                  }
+                }
+
+                c = 10;
+                for (deg = 4; deg <= degree; deg++) {
+                  scaleu = deg + 1;
+                  i = deg - 1;
+                  for (int j{0}; j <= i; j++) {
+                    scaleu--;
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                        + V.size(1) * ((c - (deg << 1)) + 1)] * scaleu * (scaleu
+                        - 1.0);
+                    }
+
+                    c++;
+                  }
+
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                offset += stride;
+                offset_prev += stride;
+              }
+
+              //  compute dv^4
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 10; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 10;
+              for (deg = 4; deg <= degree; deg++) {
+                for (int j{0}; j < 4; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                for (int j{4}; j <= deg; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - (deg << 1)) - 1)] *
+                      static_cast<double>(j) * (static_cast<double>(j) - 1.0);
+                  }
+
+                  c++;
+                }
+              }
+            } else {
+              int offset_prev;
+
+              //  Compute order-N CVM row blocks from order-(N-1) CVM.
+              m2cAssert(degree != 0, "");
+              offset = 3 * us.size(0);
+              offset_prev = us.size(0);
+
+              //  Compute derivative with respect to u
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              //  Initialize block to zero
+              n = offset + 1;
+              b_n = offset + npoints;
+              for (int col{0}; col < 3; col++) {
+                for (int row{n}; row <= b_n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 3;
+              for (deg = 2; deg <= i; deg++) {
+                scaleu = deg + 1;
+                n = deg - 1;
+                for (int j{0}; j <= n; j++) {
+                  scaleu--;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                      + V.size(1) * (c - deg)] * scaleu;
+                  }
+
+                  c++;
+                }
+
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              for (int len{x_tmp_tmp}; len >= -2; len--) {
+                scaleu = 1 - degree;
+                for (int k{0}; k < len; k++) {
+                  scaleu--;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                      + V.size(1) * (c - len)] * scaleu;
+                  }
+
+                  c++;
+                }
+              }
+
+              offset += us.size(0);
+
+              //  Compute derivative with respect to v
+              offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 3; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 3;
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              for (deg = 2; deg <= i; deg++) {
+                for (int j{0}; j < 2; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                for (int j{2}; j <= deg; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
+                      static_cast<double>(j);
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              deg = -degree;
+              for (int len{x_tmp_tmp}; len >= -2; len--) {
+                deg++;
+                scalev = (deg + degree) - 1;
+                for (int k{0}; k < len; k++) {
+                  scalev++;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute order-N CVM row blocks from order-(N-1) CVM.
+              m2cAssert(degree != 0, "");
+              offset = 5 * us.size(0);
+              offset_prev = 3 * us.size(0);
+
+              //  Compute derivative with respect to u
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              for (int b_i{0}; b_i < 2; b_i++) {
+                //  Initialize block to zero
+                n = offset + 1;
+                b_n = offset + npoints;
+                for (int col{0}; col < 6; col++) {
+                  for (int row{n}; row <= b_n; row++) {
+                    V[(row + V.size(1) * col) - 1] = 0.0;
+                  }
+                }
+
+                c = 6;
+                for (deg = 3; deg <= i; deg++) {
+                  scaleu = deg + 1;
+                  n = deg - 1;
+                  for (int j{0}; j <= n; j++) {
+                    scaleu--;
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                        + V.size(1) * (c - deg)] * scaleu;
+                    }
+
+                    c++;
+                  }
+
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                //  Compute the bi-degree terms if degree<0
+                for (int len{x_tmp_tmp}; len >= -3; len--) {
+                  scaleu = 1 - degree;
+                  for (int k{0}; k < len; k++) {
+                    scaleu--;
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                        + V.size(1) * (c - len)] * scaleu;
+                    }
+
+                    c++;
+                  }
+                }
+
+                offset += stride;
+                offset_prev += stride;
+              }
+
+              //  Compute derivative with respect to v
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 6; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 6;
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              for (deg = 3; deg <= i; deg++) {
+                for (int j{0}; j < 3; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                for (int j{3}; j <= deg; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
+                      static_cast<double>(j);
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              deg = -degree;
+              for (int len{x_tmp_tmp}; len >= -3; len--) {
+                deg++;
+                scalev = (deg + degree) - 1;
+                for (int k{0}; k < len; k++) {
+                  scalev++;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute order-N CVM row blocks from order-(N-1) CVM.
+              m2cAssert(degree != 0, "");
+              offset = us.size(0) << 3;
+              offset_prev = 5 * us.size(0);
+
+              //  Compute derivative with respect to u
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              for (int b_i{0}; b_i < 2; b_i++) {
+                //  Initialize block to zero
+                n = offset + 1;
+                b_n = offset + npoints;
+                for (int col{0}; col < 10; col++) {
+                  for (int row{n}; row <= b_n; row++) {
+                    V[(row + V.size(1) * col) - 1] = 0.0;
+                  }
+                }
+
+                c = 10;
+                for (deg = 4; deg <= i; deg++) {
+                  scaleu = deg + 1;
+                  n = deg - 1;
+                  for (int j{0}; j <= n; j++) {
+                    scaleu--;
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                        + V.size(1) * (c - deg)] * scaleu;
+                    }
+
+                    c++;
+                  }
+
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                //  Compute the bi-degree terms if degree<0
+                for (int len{x_tmp_tmp}; len >= -4; len--) {
+                  scaleu = 1 - degree;
+                  for (int k{0}; k < len; k++) {
+                    scaleu--;
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
+                        + V.size(1) * (c - len)] * scaleu;
+                    }
+
+                    c++;
+                  }
+                }
+
+                offset += stride;
+                offset_prev += stride;
+              }
+
+              //  Compute derivative with respect to v
+              offset_prev += us.size(0);
+              i = offset + 1;
+              n = offset + npoints;
+              for (int col{0}; col < 10; col++) {
+                for (int row{i}; row <= n; row++) {
+                  V[(row + V.size(1) * col) - 1] = 0.0;
+                }
+              }
+
+              c = 10;
+              if (degree < 0) {
+                i = -degree;
+              } else {
+                i = 0;
+              }
+
+              for (deg = 4; deg <= i; deg++) {
+                for (int j{0}; j < 4; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                }
+
+                for (int j{4}; j <= deg; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
+                      static_cast<double>(j);
+                  }
+
+                  c++;
+                }
+              }
+
+              //  Compute the bi-degree terms if degree<0
+              deg = -degree;
+              for (int len{x_tmp_tmp}; len >= -4; len--) {
+                deg++;
+                scalev = (deg + degree) - 1;
+                for (int k{0}; k < len; k++) {
+                  scalev++;
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
+                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+          break;
+
+         default:
+          m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
+          break;
+        }
+      }
+    }
   }
 
   static inline
@@ -826,9 +1770,7 @@ namespace wls
     int c;
     int deg;
     int n;
-    int ncols;
     int nrblks;
-    int nrows;
     int stride;
     int x_tmp_tmp;
 
@@ -874,20 +1816,17 @@ namespace wls
       break;
     }
 
-    if (degree >= 0) {
-      ncols = (degree + 1) * (degree + 2) / 2;
-    } else {
-      ncols = (1 - degree) * (1 - degree);
-    }
-
     //  Allocate storage for V
-    nrows = us.size(0) * nrblks;
-    if ((V.size(1) != nrows) || (V.size(0) != ncols)) {
-      n = (ncols);
-
-      b_n = (nrows);
-      V.set_size(n, b_n);
+    if (degree >= 0) {
+      b_degree = (degree + 1) * (degree + 2) / 2;
+    } else {
+      b_degree = (1 - degree) * (1 - degree);
     }
+
+    n = (b_degree);
+
+    b_n = (us.size(0) * nrblks);
+    V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
     if (degree != 0) {
@@ -970,10 +1909,10 @@ namespace wls
 
       //  Compute derivative with respect to u
       for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = stride + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = V[iPnt] * hs_inv__idx_0;
-        V[b_degree + V.size(1) * 2] = 0.0;
+        b_n = stride + iPnt;
+        V[b_n] = 0.0;
+        V[b_n + V.size(1)] = V[iPnt] * hs_inv__idx_0;
+        V[b_n + V.size(1) * 2] = 0.0;
       }
 
       c = 3;
@@ -1043,10 +1982,10 @@ namespace wls
       //  Compute derivative with respect to v
       offset = us.size(0) + us.size(0);
       for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv__idx_1;
+        b_n = offset + iPnt;
+        V[b_n] = 0.0;
+        V[b_n + V.size(1)] = 0.0;
+        V[b_n + V.size(1) * 2] = V[iPnt] * hs_inv__idx_1;
       }
 
       c = 3;
@@ -1839,1025 +2778,41 @@ namespace wls
   }
 
   static inline
-  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
-    array<double, 2U> &V)
+  void gen_vander_2d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
   {
-    int b_degree;
     int b_n;
     int c;
-    int deg;
-    int i;
     int n;
-    int ncols;
-    int nrblks;
-    int nrows;
-    int stride;
-    int x_tmp_tmp;
 
     //  Generate generalized/confluent Vandermonde matrix in 2D.
-    if (npoints > us.size(0)) {
-      m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
-    }
+    n = ((degree + 1) * (degree + 2) / 2);
 
-    if ((order < -4) || (order == -3)) {
-      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                        "Order %d must be 0, 1, 2, -1, -2, or -4", order);
-    }
-
-    stride = us.size(0);
-    nrblks = (order + 1) * (order + 2) / 2;
-
-    //  Number of row blocks
-    switch (order) {
-     case -1:
-      nrblks = 3;
-      break;
-
-     case -2:
-      nrblks = 5;
-      break;
-
-     case -4:
-      if (degree > 0) {
-        nrblks = 8;
-      } else {
-        nrblks = 11;
-      }
-      break;
-    }
-
-    if (degree >= 0) {
-      ncols = (degree + 1) * (degree + 2) / 2;
-    } else {
-      ncols = (1 - degree) * (1 - degree);
-    }
-
-    //  Allocate storage for V
-    nrows = us.size(0) * nrblks;
-    if ((V.size(1) != nrows) || (V.size(0) != ncols)) {
-      n = (ncols);
-
-      b_n = (nrows);
-      V.set_size(n, b_n);
-    }
+    b_n = (1);
+    V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
-    if (weights.size(0) == 0) {
-      if (degree != 0) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt] = 1.0;
-          V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-          V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-        }
-      } else {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt] = 1.0;
-        }
-      }
-    } else if (degree != 0) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = weights[iPnt];
-        V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
-        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
-      }
-    } else {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = weights[iPnt];
-      }
-    }
-
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
     c = 3;
-    n = order;
-    if (order > 0) {
-      n = 0;
-    }
-
-    x_tmp_tmp = -degree;
-    b_n = -degree;
-    if (-degree > 0) {
-      b_n = 1;
-    } else if (-degree < 0) {
-      b_n = -1;
-    }
-
-    b_n *= n;
     if (degree < 0) {
-      b_degree = -degree;
+      n = -degree;
     } else {
-      b_degree = degree;
+      n = degree;
     }
 
-    if (b_n < 0) {
-      b_n = 0;
-    }
-
-    i = b_degree - b_n;
-    for (deg = 2; deg <= i; deg++) {
+    for (int deg{2}; deg <= n; deg++) {
       for (int j{0}; j < deg; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] * us[us.size
-            (1) * iPnt];
-        }
-
+        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
         c++;
       }
 
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * ((c - deg) - 1)] *
-          us[us.size(1) * iPnt + 1];
-      }
-
+      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
       c++;
     }
 
     //  Compute the bi-degree terms if degree<0
-    i = 1 - n;
-    for (deg = x_tmp_tmp; deg >= i; deg--) {
-      for (int k{0}; k < deg; k++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] * us[us.size
-            (1) * iPnt];
-        }
-
-        c++;
-      }
-    }
-
-    //  compute higher order confluent Vandermonde matrix blocks incrementally
-    if (order != 0) {
-      double scaleu;
-      double scalev;
-      int offset;
-
-      //  This is an optimized version of update_vander_ordern for first-order CVM
-      m2cAssert(degree != 0, "");
-
-      //  Compute derivative with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-      }
-
-      c = 3;
-      n = order + 1;
-      if (n > 0) {
-        n = 0;
-      }
-
-      b_n = -degree;
-      if (-degree > 0) {
-        b_n = 1;
-      } else if (-degree < 0) {
-        b_n = -1;
-      }
-
-      b_n *= n;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-
-      if (b_n < 0) {
-        b_n = 0;
-      }
-
-      i = b_degree - b_n;
-      for (deg = 2; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)] *
-            static_cast<double>(deg);
-        }
-
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - deg)]
-              * scaleu;
-          }
-
-          c++;
-        }
-
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-
-        c++;
-      }
-
-      //  Compute the bi-degree terms if degree<0
-      for (int len{x_tmp_tmp}; len >= n; len--) {
-        scaleu = 1 - degree;
-        for (int k{0}; k < len; k++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - len)]
-              * scaleu;
-          }
-
-          c++;
-        }
-      }
-
-      //  Compute derivative with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        i = offset + iPnt;
-        V[i] = 0.0;
-        V[i + V.size(1)] = 0.0;
-        V[i + V.size(1) * 2] = V[iPnt];
-      }
-
-      c = 3;
-      b_n = -degree;
-      if (-degree > 0) {
-        b_n = 1;
-      } else if (-degree < 0) {
-        b_n = -1;
-      }
-
-      b_n *= n;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-
-      if (b_n < 0) {
-        b_n = 0;
-      }
-
-      i = b_degree - b_n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-
-        c++;
-        for (int j{0}; j < deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * ((c - deg)
-              - 1)] * (static_cast<double>(j) + 1.0);
-          }
-
-          c++;
-        }
-      }
-
-      //  Compute the bi-degree terms if degree<0
-      deg = -degree;
-      for (int len{x_tmp_tmp}; len >= n; len--) {
-        deg++;
-        scalev = (deg + degree) - 1;
-        for (int k{0}; k < len; k++) {
-          scalev++;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * ((c - len)
-              - 1)] * scalev;
-          }
-
-          c++;
-        }
-      }
- 
-      //      compute regular orders if order > 0
-      if (order > 0) {
-        for (int dd{2}; dd <= order; dd++) {
-          int offset_prev;
-
-          //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          m2cAssert(degree != 0, "");
-          b_degree = dd * (dd + 1) / 2;
-          offset = b_degree * stride;
-          offset_prev = (dd - 1) * dd / 2 * stride;
-
-          //  Compute derivative with respect to u
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          for (int b_i{0}; b_i < dd; b_i++) {
-            //  Initialize block to zero
-            n = offset + 1;
-            b_n = offset + npoints;
-            for (int col{0}; col < b_degree; col++) {
-              for (int row{n}; row <= b_n; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-
-            c = b_degree;
-            for (deg = dd; deg <= i; deg++) {
-              scaleu = deg + 1;
-              n = deg - 1;
-              for (int j{0}; j <= n; j++) {
-                scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
-                    V.size(1) * (c - deg)] * scaleu;
-                }
-
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= 0; len--) {
-              scaleu = 1 - degree;
-              for (int k{0}; k < len; k++) {
-                scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
-                    V.size(1) * (c - len)] * scaleu;
-                }
-
-                c++;
-              }
-            }
-
-            offset += stride;
-            offset_prev += stride;
-          }
-
-          //  Compute derivative with respect to v
-          i = offset + 1;
-          n = offset + npoints;
-          for (int col{0}; col < b_degree; col++) {
-            for (int row{i}; row <= n; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-
-          c = b_degree;
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          for (deg = dd; deg <= i; deg++) {
-            n = dd - 1;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int j{dd}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride) +
-                  iPnt) + V.size(1) * ((c - deg) - 1)] * static_cast<double>(j);
-              }
-
-              c++;
-            }
-          }
-
-          //  Compute the bi-degree terms if degree<0
-          deg = -degree;
-          for (int len{x_tmp_tmp}; len >= 0; len--) {
-            deg++;
-            scalev = (deg + degree) - 1;
-            for (int k{0}; k < len; k++) {
-              scalev++;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride) +
-                  iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
-              }
-
-              c++;
-            }
-          }
-        }
-      } else if (order < -1) {
-         //          compute efficient laplacian and bi-laplacian
-        switch (order) {
-         case -2:
-          {
-            int offset_prev;
-
-            //  Compute order-N CVM row blocks from order-(N-1) CVM.
-            m2cAssert(degree != 0, "");
-            offset = 3 * us.size(0);
-            offset_prev = us.size(0);
-
-            //  Compute derivative with respect to u
-            if (degree < 0) {
-              i = -degree;
-            } else {
-              i = degree;
-            }
-
-            //  Initialize block to zero
-            n = offset + 1;
-            b_n = offset + npoints;
-            for (int col{0}; col < 3; col++) {
-              for (int row{n}; row <= b_n; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-
-            c = 3;
-            for (deg = 2; deg <= i; deg++) {
-              scaleu = deg + 1;
-              n = deg - 1;
-              for (int j{0}; j <= n; j++) {
-                scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
-                    V.size(1) * (c - deg)] * scaleu;
-                }
-
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= -2; len--) {
-              scaleu = 1 - degree;
-              for (int k{0}; k < len; k++) {
-                scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt) +
-                    V.size(1) * (c - len)] * scaleu;
-                }
-
-                c++;
-              }
-            }
-
-            offset += us.size(0);
-
-            //  Compute derivative with respect to v
-            offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-            i = offset + 1;
-            n = offset + npoints;
-            for (int col{0}; col < 3; col++) {
-              for (int row{i}; row <= n; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-
-            c = 3;
-            if (degree < 0) {
-              i = -degree;
-            } else {
-              i = degree;
-            }
-
-            for (deg = 2; deg <= i; deg++) {
-              for (int j{0}; j < 2; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int j{2}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride)
-                    + iPnt) + V.size(1) * ((c - deg) - 1)] * static_cast<double>
-                    (j);
-                }
-
-                c++;
-              }
-            }
-
-            //  Compute the bi-degree terms if degree<0
-            deg = -degree;
-            for (int len{x_tmp_tmp}; len >= -2; len--) {
-              deg++;
-              scalev = (deg + degree) - 1;
-              for (int k{0}; k < len; k++) {
-                scalev++;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev - stride)
-                    + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
-                }
-
-                c++;
-              }
-            }
-          }
-          break;
-
-         case -4:
-          {
-            if (degree > 0) {
-              int offset_prev;
-
-              //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              m2cAssert(true, "");
-              offset = 3 * us.size(0);
-
-              //  Compute derivative with respect to u
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 3; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 3;
-              for (deg = 2; deg <= degree; deg++) {
-                scaleu = deg + 1;
-                i = deg - 1;
-                for (int j{0}; j <= i; j++) {
-                  scaleu--;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(us.size(0) + iPnt) +
-                      V.size(1) * (c - deg)] * scaleu;
-                  }
-
-                  c++;
-                }
-
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              offset += us.size(0);
-
-              //  Compute derivative with respect to v
-              offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 3; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 3;
-              for (deg = 2; deg <= degree; deg++) {
-                for (int j{0}; j < 2; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                for (int j{2}; j <= deg; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
-                      static_cast<double>(j);
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              offset = 5 * us.size(0);
-              offset_prev = 3 * us.size(0);
-
-              m2cAssert(degree >= 4, "");
-
-              //  compute du^4 and du^2*dv^2
-              for (int terms{0}; terms < 2; terms++) {
-                i = offset + 1;
-                n = offset + npoints;
-                for (int col{0}; col < 10; col++) {
-                  for (int row{i}; row <= n; row++) {
-                    V[(row + V.size(1) * col) - 1] = 0.0;
-                  }
-                }
-
-                c = 10;
-                for (deg = 4; deg <= degree; deg++) {
-                  scaleu = deg + 1;
-                  i = deg - 1;
-                  for (int j{0}; j <= i; j++) {
-                    scaleu--;
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                        + V.size(1) * ((c - (deg << 1)) + 1)] * scaleu * (scaleu
-                        - 1.0);
-                    }
-
-                    c++;
-                  }
-
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                offset += stride;
-                offset_prev += stride;
-              }
-
-              //  compute dv^4
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 10; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 10;
-              for (deg = 4; deg <= degree; deg++) {
-                for (int j{0}; j < 4; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                for (int j{4}; j <= deg; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - (deg << 1)) - 1)] *
-                      static_cast<double>(j) * (static_cast<double>(j) - 1.0);
-                  }
-
-                  c++;
-                }
-              }
-            } else {
-              int offset_prev;
-
-              //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              m2cAssert(degree != 0, "");
-              offset = 3 * us.size(0);
-              offset_prev = us.size(0);
-
-              //  Compute derivative with respect to u
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              //  Initialize block to zero
-              n = offset + 1;
-              b_n = offset + npoints;
-              for (int col{0}; col < 3; col++) {
-                for (int row{n}; row <= b_n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 3;
-              for (deg = 2; deg <= i; deg++) {
-                scaleu = deg + 1;
-                n = deg - 1;
-                for (int j{0}; j <= n; j++) {
-                  scaleu--;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                      + V.size(1) * (c - deg)] * scaleu;
-                  }
-
-                  c++;
-                }
-
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              for (int len{x_tmp_tmp}; len >= -2; len--) {
-                scaleu = 1 - degree;
-                for (int k{0}; k < len; k++) {
-                  scaleu--;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                      + V.size(1) * (c - len)] * scaleu;
-                  }
-
-                  c++;
-                }
-              }
-
-              offset += us.size(0);
-
-              //  Compute derivative with respect to v
-              offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 3; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 3;
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              for (deg = 2; deg <= i; deg++) {
-                for (int j{0}; j < 2; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                for (int j{2}; j <= deg; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
-                      static_cast<double>(j);
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              deg = -degree;
-              for (int len{x_tmp_tmp}; len >= -2; len--) {
-                deg++;
-                scalev = (deg + degree) - 1;
-                for (int k{0}; k < len; k++) {
-                  scalev++;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              m2cAssert(degree != 0, "");
-              offset = 5 * us.size(0);
-              offset_prev = 3 * us.size(0);
-
-              //  Compute derivative with respect to u
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              for (int b_i{0}; b_i < 2; b_i++) {
-                //  Initialize block to zero
-                n = offset + 1;
-                b_n = offset + npoints;
-                for (int col{0}; col < 6; col++) {
-                  for (int row{n}; row <= b_n; row++) {
-                    V[(row + V.size(1) * col) - 1] = 0.0;
-                  }
-                }
-
-                c = 6;
-                for (deg = 3; deg <= i; deg++) {
-                  scaleu = deg + 1;
-                  n = deg - 1;
-                  for (int j{0}; j <= n; j++) {
-                    scaleu--;
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                        + V.size(1) * (c - deg)] * scaleu;
-                    }
-
-                    c++;
-                  }
-
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                //  Compute the bi-degree terms if degree<0
-                for (int len{x_tmp_tmp}; len >= -3; len--) {
-                  scaleu = 1 - degree;
-                  for (int k{0}; k < len; k++) {
-                    scaleu--;
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                        + V.size(1) * (c - len)] * scaleu;
-                    }
-
-                    c++;
-                  }
-                }
-
-                offset += stride;
-                offset_prev += stride;
-              }
-
-              //  Compute derivative with respect to v
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 6; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 6;
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              for (deg = 3; deg <= i; deg++) {
-                for (int j{0}; j < 3; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                for (int j{3}; j <= deg; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
-                      static_cast<double>(j);
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              deg = -degree;
-              for (int len{x_tmp_tmp}; len >= -3; len--) {
-                deg++;
-                scalev = (deg + degree) - 1;
-                for (int k{0}; k < len; k++) {
-                  scalev++;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute order-N CVM row blocks from order-(N-1) CVM.
-              m2cAssert(degree != 0, "");
-              offset = us.size(0) << 3;
-              offset_prev = 5 * us.size(0);
-
-              //  Compute derivative with respect to u
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              for (int b_i{0}; b_i < 2; b_i++) {
-                //  Initialize block to zero
-                n = offset + 1;
-                b_n = offset + npoints;
-                for (int col{0}; col < 10; col++) {
-                  for (int row{n}; row <= b_n; row++) {
-                    V[(row + V.size(1) * col) - 1] = 0.0;
-                  }
-                }
-
-                c = 10;
-                for (deg = 4; deg <= i; deg++) {
-                  scaleu = deg + 1;
-                  n = deg - 1;
-                  for (int j{0}; j <= n; j++) {
-                    scaleu--;
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                        + V.size(1) * (c - deg)] * scaleu;
-                    }
-
-                    c++;
-                  }
-
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                //  Compute the bi-degree terms if degree<0
-                for (int len{x_tmp_tmp}; len >= -4; len--) {
-                  scaleu = 1 - degree;
-                  for (int k{0}; k < len; k++) {
-                    scaleu--;
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(offset + iPnt) + V.size(1) * c] = V[(offset_prev + iPnt)
-                        + V.size(1) * (c - len)] * scaleu;
-                    }
-
-                    c++;
-                  }
-                }
-
-                offset += stride;
-                offset_prev += stride;
-              }
-
-              //  Compute derivative with respect to v
-              offset_prev += us.size(0);
-              i = offset + 1;
-              n = offset + npoints;
-              for (int col{0}; col < 10; col++) {
-                for (int row{i}; row <= n; row++) {
-                  V[(row + V.size(1) * col) - 1] = 0.0;
-                }
-              }
-
-              c = 10;
-              if (degree < 0) {
-                i = -degree;
-              } else {
-                i = 0;
-              }
-
-              for (deg = 4; deg <= i; deg++) {
-                for (int j{0}; j < 4; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                }
-
-                for (int j{4}; j <= deg; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - deg) - 1)] *
-                      static_cast<double>(j);
-                  }
-
-                  c++;
-                }
-              }
-
-              //  Compute the bi-degree terms if degree<0
-              deg = -degree;
-              for (int len{x_tmp_tmp}; len >= -4; len--) {
-                deg++;
-                scalev = (deg + degree) - 1;
-                for (int k{0}; k < len; k++) {
-                  scalev++;
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((offset_prev -
-                      stride) + iPnt) + V.size(1) * ((c - len) - 1)] * scalev;
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-          break;
-
-         default:
-          m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
-          break;
-        }
-      }
-    }
   }
 
   static inline
@@ -2875,8 +2830,7 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree);
     }
 
-    m2cAssert(dag.size(1) * dag.size(0) >= (b_degree << 1) + 1,
-              "DAG must be preallocated.");
+    dag.set_size(b_degree + 1, 2);
     if (degree != 0) {
       dag[0] = 1U;
 
@@ -2899,24 +2853,21 @@ namespace wls
     }
 
     for (int deg{2}; deg <= b_degree; deg++) {
-      dag[dag.size(1) * ((c - deg) + 1)] = static_cast<unsigned char>(deg);
+      dag[2 * ((c - deg) + 1)] = static_cast<unsigned char>(deg);
 
       //  x-child
       c += 2;
       for (j = 2; j <= deg; j++) {
-        dag[dag.size(1) * (((c + j) - deg) - 2)] = static_cast<unsigned char>
-          (deg);
+        dag[2 * (((c + j) - deg) - 2)] = static_cast<unsigned char>(deg);
 
         //  x-child
-        dag[dag.size(1) * (((c + j) - deg) - 3) + 1] = static_cast<unsigned char>
-          (deg + 1);
+        dag[2 * (((c + j) - deg) - 3) + 1] = static_cast<unsigned char>(deg + 1);
 
         //  y-child
       }
 
       c = (c + deg) - 1;
-      dag[dag.size(1) * ((c - deg) - 1) + 1] = static_cast<unsigned char>(deg +
-        1);
+      dag[2 * ((c - deg) - 1) + 1] = static_cast<unsigned char>(deg + 1);
 
       //  y-child
     }
@@ -2925,8 +2876,8 @@ namespace wls
     if (degree > 0) {
       c -= degree;
       for (j = 0; j <= degree; j++) {
-        dag[dag.size(1) * c] = 0U;
-        dag[dag.size(1) * c + 1] = 0U;
+        dag[2 * c] = 0U;
+        dag[2 * c + 1] = 0U;
 
         //  no children
         c++;
@@ -2936,108 +2887,48 @@ namespace wls
       b_degree = -degree;
       for (int deg{b_degree}; deg >= 1; deg--) {
         j = c - deg;
-        dag[dag.size(1) * j] = 0U;
+        dag[2 * j] = 0U;
 
         //  no x-child
-        dag[dag.size(1) * j + 1] = static_cast<unsigned char>(deg + 1);
+        dag[2 * j + 1] = static_cast<unsigned char>(deg + 1);
 
         //  y-child
-        dag[dag.size(1) * (j + 1)] = static_cast<unsigned char>(deg);
+        dag[2 * (j + 1)] = static_cast<unsigned char>(deg);
 
         //  x-child
         c++;
         for (int k{2}; k <= deg; k++) {
           j = (c + k) - deg;
-          dag[dag.size(1) * (j - 1)] = static_cast<unsigned char>(deg);
+          dag[2 * (j - 1)] = static_cast<unsigned char>(deg);
 
           //  x-child
-          dag[dag.size(1) * (j - 2) + 1] = static_cast<unsigned char>(deg + 1);
+          dag[2 * (j - 2) + 1] = static_cast<unsigned char>(deg + 1);
 
           //  y-child
         }
 
         c = (c + deg) - 1;
-        dag[dag.size(1) * (c - deg) + 1] = 0U;
+        dag[2 * (c - deg) + 1] = 0U;
 
         //  no y-child
       }
 
-      dag[dag.size(1) * c] = 0U;
-      dag[dag.size(1) * c + 1] = 0U;
+      dag[2 * c] = 0U;
+      dag[2 * c + 1] = 0U;
     }
 
     //  Use last entry as signature
-    b_degree = dag.size(1) * dag.size(0) - 1;
-    j = dag.size(0);
-    dag[b_degree % j * dag.size(1) + b_degree / j] = static_cast<unsigned char>
-      (degree + 127);
-  }
-
-  static inline
-  void gen_vander_3d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
-  {
-    int c;
-    int d;
-    int n;
-    int ncols;
-
-    //  Generate generalized/confluent Vandermonde matrix in 3D.
-    ncols = (degree + 1) * (degree + 2) * (degree + 3) / 6;
-
-    //  Allocate storage for V
-    if ((V.size(1) != 1) || (V.size(0) != ncols)) {
-      int b_n;
-
-      n = (ncols);
-
-      b_n = (1);
-      V.set_size(n, b_n);
-    }
-
-    //  compute 0th order generalized Vandermonde matrix
-    V[0] = 1.0;
-    V[V.size(1)] = us_data[0];
-    V[V.size(1) * 2] = us_data[1];
-    V[V.size(1) * 3] = us_data[2];
-    c = 4;
-    d = 4;
-    if (degree < 0) {
-      n = -degree;
-    } else {
-      n = degree;
-    }
-
-    for (int deg{2}; deg <= n; deg++) {
-      //  Within each level, use convention of Pascal triangle with x^deg at peak
-      for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
-        c++;
-      }
-
-      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
-      c++;
-      for (int j{0}; j <= d - 2; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
-        c++;
-      }
-
-      d = (d + deg) + 1;
-    }
-
-    //  Compute the tri-degree terms if degree<0
-    m2cAssert(true, "");
+    b_degree = (dag.size(0) << 1) - 1;
+    dag[((b_degree % dag.size(0)) << 1) + b_degree / dag.size(0)] = static_cast<
+      unsigned char>(degree + 127);
   }
 
   static inline
   void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
-    ::coder::array<double, 2U> &V)
+    int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
+    array<double, 2U> &V)
   {
-    double hs_inv_idx_0;
-    double hs_inv_idx_1;
-    double hs_inv_idx_2;
-    int b_n;
+    int b_degree;
     int c;
     int cornerTriangle;
     int counterBottomRow;
@@ -3050,9 +2941,4760 @@ namespace wls
     int n;
     int nTermsInLayer;
     int nTermsInPrevLayer;
-    int ncols;
     int nrblks;
-    int nrows;
+    int stride;
+    int u0;
+    int x_tmp_tmp;
+
+    //  Generate generalized/confluent Vandermonde matrix in 3D.
+    if (npoints > us.size(0)) {
+      m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
+    }
+
+    if ((order < -4) || (order == -3)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                        "Order %d must be 0, 1, 2, -1, -2, or -4", order);
+    }
+
+    stride = us.size(0);
+    nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
+    switch (order) {
+     case -1:
+      nrblks = 4;
+      break;
+
+     case -2:
+      nrblks = 7;
+      break;
+
+     case -4:
+      if (degree > 0) {
+        nrblks = 13;
+      } else {
+        nrblks = 19;
+      }
+      break;
+    }
+
+    //  Allocate storage for V
+    if (degree >= 0) {
+      b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
+    } else {
+      b_degree = (1 - degree) * (1 - degree) * (1 - degree);
+    }
+
+    b_degree = (b_degree);
+
+    n = (us.size(0) * nrblks);
+    V.set_size(b_degree, n);
+
+    //  compute 0th order generalized Vandermonde matrix
+    if (weights.size(0) == 0) {
+      if (degree != 0) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt] = 1.0;
+          V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+          V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
+          V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
+        }
+      } else {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt] = 1.0;
+        }
+      }
+    } else if (degree != 0) {
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = weights[iPnt];
+        V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
+        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
+        V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2] * weights[iPnt];
+      }
+    } else {
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = weights[iPnt];
+      }
+    }
+
+    c = 4;
+    d = 3;
+    u0 = order;
+    if (order > 0) {
+      u0 = 0;
+    }
+
+    x_tmp_tmp = -degree;
+    n = -degree;
+    if (-degree > 0) {
+      n = 1;
+    } else if (-degree < 0) {
+      n = -1;
+    }
+
+    n *= u0;
+    if (degree < 0) {
+      b_degree = -degree;
+    } else {
+      b_degree = degree;
+    }
+
+    if (n < 0) {
+      n = 0;
+    }
+
+    i = b_degree - n;
+    for (deg = 2; deg <= i; deg++) {
+      //  Within each level, use convention of Pascal triangle with x^deg at peak
+      for (int j{0}; j < deg; j++) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)] * us[us.size(1)
+            * iPnt];
+        }
+
+        c++;
+      }
+
+      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * ((c - d) - 1)] *
+          us[us.size(1) * iPnt + 1];
+      }
+
+      c++;
+      for (int j{0}; j < d; j++) {
+        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+            us[us.size(1) * iPnt + 2];
+        }
+
+        c++;
+      }
+
+      d = (d + deg) + 1;
+    }
+
+    //  Compute the tri-degree terms if degree<0
+    if (degree < 0) {
+      deg = -degree;
+      maxLayers = -degree * 3 + u0;
+
+      // max number of layers needed in the Pascal tetrahedron
+      cornerTriangle = 0;
+
+      // number of elements subtracted in each corner Pascal triangle
+      nTermsInLayer = d;
+
+      // initializing number of elements in layer
+      excess = 0;
+
+      // excess based on overlapping of growing Pascal triangles
+      i = 1 - degree;
+      for (int p{i}; p <= maxLayers; p++) {
+        int gap;
+
+        //  Within each level, x^deg is at the peak of Pascal triangle
+        cornerTriangle = (cornerTriangle + p) + degree;
+        counterBottomRow = 1;
+
+        // counter for the bottom row to be subtracted later
+        for (int k{0}; k < deg; k++) {
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt + 1];
+          }
+
+          c++;
+          counterBottomRow++;
+        }
+
+        deg--;
+        n = ((degree + degree) + p) - 1;
+        if (n < 0) {
+          n = 0;
+        }
+
+        excess += n;
+        d = (d + p) + 1;
+
+        // number of terms in Pascal tetrahedron
+        nTermsInPrevLayer = nTermsInLayer;
+        nTermsInLayer = d + 3 * (excess - cornerTriangle);
+        gap = (nTermsInPrevLayer + counterBottomRow) - 1;
+        i1 = nTermsInLayer - counterBottomRow;
+        for (int j{0}; j <= i1; j++) {
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - gap)] *
+              us[us.size(1) * iPnt + 2];
+          }
+
+          c++;
+        }
+      }
+    }
+
+    m2cAssert(order <= 2, "");
+    if (order != 0) {
+       //      compute higher order confluent Vandermonde matrix blocks incrementally
+      switch (order) {
+       case 1:
+        {
+          int balance;
+          int offset;
+
+          //  Compute order-1 CVM row blocks from order-0 GVM.
+          m2cAssert(degree != 0, "");
+
+          // compute derivatives with respect to u
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 3;
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            double scaleu;
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to v
+          offset = us.size(0) + us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt];
+            V[b_degree + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 4;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            double scalev;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 1;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to w
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = V[iPnt];
+          }
+
+          c = 4;
+          d = 3;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
+                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                int partition;
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
+                      - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+        }
+        break;
+
+       case 2:
+        {
+          double scaleu;
+          double scalev;
+          int balance;
+          int offset;
+          int partition;
+
+          //  Compute order-1 CVM row blocks from order-0 GVM.
+          m2cAssert(degree != 0, "");
+
+          // compute derivatives with respect to u
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 3;
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to v
+          offset = us.size(0) + us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt];
+            V[b_degree + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 4;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 1;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to w
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = V[iPnt];
+          }
+
+          c = 4;
+          d = 3;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
+                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
+                      - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute du^2
+          offset = us.size(0) << 2;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = 0.0;
+            V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+            for (i = 0; i < 5; i++) {
+              V[n + V.size(1) * (i + 5)] = 0.0;
+            }
+          }
+
+          c = 10;
+          d = 6;
+          u0 = order + 2;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = i - n;
+          for (deg = 3; deg <= i1; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
+                * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // compute tri degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dv
+            offset += us.size(0);
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 5; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 5] = V[iPnt];
+              V[n + V.size(1) * 6] = 0.0;
+              V[n + V.size(1) * 7] = 0.0;
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 7;
+            for (deg = 3; deg <= i; deg++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              scalev = 1.0;
+              for (int j{0}; j <= deg - 2; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
+                    V.size(1) * (c - d)] * scalev;
+                }
+
+                scalev++;
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * static_cast<double>(deg);
+              }
+
+              c++;
+              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              d = (d + deg) + 1;
+            }
+
+            // compute the tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d - 2;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  implicitly calculating number of elements in corner Pascal triangles
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int kdegree{0}; kdegree < deg; kdegree++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
+                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
+                      (-degree - kdegree);
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                n = (((p + degree) << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer + 1;
+                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+                balance = nTermsInPrevLayer + counterBottomRow;
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute dv^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i1 = 0; i1 < 6; i1++) {
+              V[n + V.size(1) * i1] = 0.0;
+            }
+
+            V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+            V[n + V.size(1) * 7] = 0.0;
+            V[n + V.size(1) * 8] = 0.0;
+            V[n + V.size(1) * 9] = 0.0;
+          }
+
+          c = 10;
+          d = 7;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = b_degree - n;
+          for (deg = 3; deg <= i1; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
+                  V.size(1) * (c - d)] * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
+                V.size(1) * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 2;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dw
+            offset = (offset + us.size(0)) - 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = (offset + iPnt) + 1;
+              for (i1 = 0; i1 < 7; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 7] = V[iPnt];
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
+                        stride) + V.size(1) * (c - balance)] * static_cast<
+                        double>(k + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+ 
+            //      compute dv*dw
+            offset = (offset + us.size(0)) + 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 8; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 8] = V[iPnt];
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i = 1 - degree;
+              for (int p{i}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
+                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
+                        + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+          }
+
+          //  compute dw^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i = 0; i < 9; i++) {
+              V[n + V.size(1) * i] = 0.0;
+            }
+
+            V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+          }
+
+          c = 10;
+          d = 6;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 3; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
+                    + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 2;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+        }
+        break;
+
+       case -1:
+        {
+          int balance;
+          int offset;
+
+          //  Compute order-1 CVM row blocks from order-0 GVM.
+          m2cAssert(degree != 0, "");
+
+          // compute derivatives with respect to u
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 3;
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            double scaleu;
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to v
+          offset = us.size(0) + us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt];
+            V[b_degree + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 4;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            double scalev;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 1;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to w
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = V[iPnt];
+          }
+
+          c = 4;
+          d = 3;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
+                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                int partition;
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
+                      - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+        }
+        break;
+
+       case -2:
+        {
+          double scaleu;
+          double scalev;
+          int balance;
+          int offset;
+          int partition;
+
+          //  Compute order-1 CVM row blocks from order-0 GVM.
+          m2cAssert(degree != 0, "");
+
+          // compute derivatives with respect to u
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 3;
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to v
+          offset = us.size(0) + us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt];
+            V[b_degree + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 4;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 1;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to w
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = V[iPnt];
+          }
+
+          c = 4;
+          d = 3;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
+                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
+                      - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute du^2
+          offset = us.size(0) << 2;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = 0.0;
+            V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+            for (i = 0; i < 5; i++) {
+              V[n + V.size(1) * (i + 5)] = 0.0;
+            }
+          }
+
+          c = 10;
+          d = 6;
+          u0 = order + 2;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = i - n;
+          for (deg = 3; deg <= i1; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
+                * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // compute tri degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dv
+            offset += us.size(0);
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 5; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 5] = V[iPnt];
+              V[n + V.size(1) * 6] = 0.0;
+              V[n + V.size(1) * 7] = 0.0;
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 7;
+            for (deg = 3; deg <= i; deg++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              scalev = 1.0;
+              for (int j{0}; j <= deg - 2; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
+                    V.size(1) * (c - d)] * scalev;
+                }
+
+                scalev++;
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * static_cast<double>(deg);
+              }
+
+              c++;
+              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              d = (d + deg) + 1;
+            }
+
+            // compute the tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d - 2;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  implicitly calculating number of elements in corner Pascal triangles
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int kdegree{0}; kdegree < deg; kdegree++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
+                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
+                      (-degree - kdegree);
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                n = (((p + degree) << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer + 1;
+                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+                balance = nTermsInPrevLayer + counterBottomRow;
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute dv^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i1 = 0; i1 < 6; i1++) {
+              V[n + V.size(1) * i1] = 0.0;
+            }
+
+            V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+            V[n + V.size(1) * 7] = 0.0;
+            V[n + V.size(1) * 8] = 0.0;
+            V[n + V.size(1) * 9] = 0.0;
+          }
+
+          c = 10;
+          d = 7;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = b_degree - n;
+          for (deg = 3; deg <= i1; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
+                  V.size(1) * (c - d)] * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
+                V.size(1) * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            n = order + 2;
+            if (n > 0) {
+              n = 0;
+            }
+
+            maxLayers = -degree * 3 + n;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dw
+            offset = (offset + us.size(0)) - 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = (offset + iPnt) + 1;
+              for (i1 = 0; i1 < 7; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 7] = V[iPnt];
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
+                        stride) + V.size(1) * (c - balance)] * static_cast<
+                        double>(k + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+ 
+            //      compute dv*dw
+            offset = (offset + us.size(0)) + 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 8; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 8] = V[iPnt];
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i = 1 - degree;
+              for (int p{i}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
+                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
+                        + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+          }
+
+          //  compute dw^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i = 0; i < 9; i++) {
+              V[n + V.size(1) * i] = 0.0;
+            }
+
+            V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+          }
+
+          c = 10;
+          d = 6;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 3; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
+                    + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 2;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+        }
+        break;
+
+       case -4:
+        {
+          double scaleu;
+          double scalev;
+          double uu4_tmp;
+          int balance;
+          int offset;
+          int partition;
+
+          m2cAssert(degree > 0,
+                    "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
+
+          //  Compute order-1 CVM row blocks from order-0 GVM.
+          m2cAssert(degree != 0, "");
+
+          // compute derivatives with respect to u
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[stride + iPnt] = 0.0;
+            V[(stride + iPnt) + V.size(1)] = V[iPnt];
+            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 3;
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
+                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
+                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to v
+          offset = us.size(0) + us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt];
+            V[b_degree + V.size(1) * 3] = 0.0;
+          }
+
+          c = 4;
+          d = 4;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                  * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
+                * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              i1 = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= i1; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          // compute derivatives with respect to w
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = V[iPnt];
+          }
+
+          c = 4;
+          d = 3;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          u0 = order + 1;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 2; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
+                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 1;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
+                      - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute du^2
+          offset = us.size(0) << 2;
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            V[n] = 0.0;
+            V[n + V.size(1)] = 0.0;
+            V[n + V.size(1) * 2] = 0.0;
+            V[n + V.size(1) * 3] = 0.0;
+            V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+            for (i = 0; i < 5; i++) {
+              V[n + V.size(1) * (i + 5)] = 0.0;
+            }
+          }
+
+          c = 10;
+          d = 6;
+          u0 = order + 2;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          n *= u0;
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = i - n;
+          for (deg = 3; deg <= i1; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
+                * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * scaleu;
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          // compute tri degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 1;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dv
+            offset += us.size(0);
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 5; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 5] = V[iPnt];
+              V[n + V.size(1) * 6] = 0.0;
+              V[n + V.size(1) * 7] = 0.0;
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 7;
+            for (deg = 3; deg <= i; deg++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              scalev = 1.0;
+              for (int j{0}; j <= deg - 2; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
+                    V.size(1) * (c - d)] * scalev;
+                }
+
+                scalev++;
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
+                  (1) * (c - d)] * static_cast<double>(deg);
+              }
+
+              c++;
+              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+              d = (d + deg) + 1;
+            }
+
+            // compute the tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d - 2;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  implicitly calculating number of elements in corner Pascal triangles
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int kdegree{0}; kdegree < deg; kdegree++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
+                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
+                      (-degree - kdegree);
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                n = (((p + degree) << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer + 1;
+                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+                balance = nTermsInPrevLayer + counterBottomRow;
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute dv^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i1 = 0; i1 < 6; i1++) {
+              V[n + V.size(1) * i1] = 0.0;
+            }
+
+            V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+            V[n + V.size(1) * 7] = 0.0;
+            V[n + V.size(1) * 8] = 0.0;
+            V[n + V.size(1) * 9] = 0.0;
+          }
+
+          c = 10;
+          d = 7;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          u0 = order + 2;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i1 = b_degree - n;
+          for (deg = 3; deg <= i1; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
+                  V.size(1) * (c - d)] * scalev;
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
+                V.size(1) * (c - d)] * static_cast<double>(deg);
+            }
+
+            c++;
+            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            c++;
+            d = (d + deg) + 1;
+          }
+
+          // compute the tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 2;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d - 2;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i1 = 1 - degree;
+            for (int p{i1}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int kdegree{0}; kdegree < deg; kdegree++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              n = (((p + degree) << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer + 1;
+              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+              balance = nTermsInPrevLayer + counterBottomRow;
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
+                }
+
+                c++;
+              }
+            }
+          }
+
+          if (order > 0) {
+             //      compute du*dw
+            offset = (offset + us.size(0)) - 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = (offset + iPnt) + 1;
+              for (i1 = 0; i1 < 7; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 7] = V[iPnt];
+              V[n + V.size(1) * 8] = 0.0;
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i1 = 1 - degree;
+              for (int p{i1}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
+                        stride) + V.size(1) * (c - balance)] * static_cast<
+                        double>(k + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+ 
+            //      compute dv*dw
+            offset = (offset + us.size(0)) + 1;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              n = offset + iPnt;
+              for (i1 = 0; i1 < 8; i1++) {
+                V[n + V.size(1) * i1] = 0.0;
+              }
+
+              V[n + V.size(1) * 8] = V[iPnt];
+              V[n + V.size(1) * 9] = 0.0;
+            }
+
+            c = 10;
+            d = 6;
+            for (deg = 3; deg <= i; deg++) {
+              for (int j{0}; j <= deg; j++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+              }
+
+              for (int k{0}; k < deg; k++) {
+                i1 = (deg - k) - 1;
+                for (int b_i{0}; b_i <= i1; b_i++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
+                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
+                      (k) + 1.0);
+                  }
+
+                  c++;
+                }
+              }
+
+              d = (d + deg) + 1;
+            }
+
+            // compute tri-degree terms if degree < 0
+            if (degree < 0) {
+              deg = -degree;
+              maxLayers = -degree * 3 + 1;
+
+              // max number of layers needed in the Pascal tetrahedron
+              cornerTriangle = 0;
+
+              // number of elements subtracted in each corner Pascal triangle
+              nTermsInLayer = d;
+
+              // initializing number of elements in layer
+              excess = 0;
+
+              // excess based on overlapping of growing Pascal triangles
+              i = 1 - degree;
+              for (int p{i}; p <= maxLayers; p++) {
+                //  Within each level, x^deg is at the peak of Pascal triangle
+                cornerTriangle = (cornerTriangle + p) + degree;
+                counterBottomRow = 0;
+
+                // counter for the bottom row to be subtracted later
+                for (int k{0}; k < deg; k++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                  }
+
+                  c++;
+                  counterBottomRow++;
+                }
+
+                deg--;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
+                if (n < 0) {
+                  n = 0;
+                }
+
+                excess += n;
+                d = (d + p) + 1;
+
+                // number of terms in Pascal tetrahedron
+                nTermsInPrevLayer = nTermsInLayer;
+                nTermsInLayer = d + 3 * (excess - cornerTriangle);
+                balance = nTermsInPrevLayer + counterBottomRow;
+                for (int k{0}; k < x_tmp_tmp; k++) {
+                  n = (b_degree - k) - 1;
+                  if (n < 0) {
+                    n = -n;
+                  }
+
+                  partition = -degree - n;
+                  for (int j{0}; j <= partition; j++) {
+                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
+                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
+                        + 1);
+                    }
+
+                    c++;
+                  }
+                }
+              }
+            }
+          }
+
+          //  compute dw^2
+          offset += us.size(0);
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            n = offset + iPnt;
+            for (i = 0; i < 9; i++) {
+              V[n + V.size(1) * i] = 0.0;
+            }
+
+            V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+          }
+
+          c = 10;
+          d = 6;
+          n = -degree;
+          if (-degree > 0) {
+            n = 1;
+          } else if (-degree < 0) {
+            n = -1;
+          }
+
+          u0 = order + 2;
+          if (u0 > 0) {
+            u0 = 0;
+          }
+
+          n *= u0;
+          if (degree < 0) {
+            b_degree = -degree;
+          } else {
+            b_degree = degree;
+          }
+
+          if (n < 0) {
+            n = 0;
+          }
+
+          i = b_degree - n;
+          for (deg = 3; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
+                    + 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          // compute tri-degree terms if degree < 0
+          if (degree < 0) {
+            deg = -degree;
+            u0 = order + 2;
+            if (u0 > 0) {
+              u0 = 0;
+            }
+
+            maxLayers = -degree * 3 + u0;
+
+            // max number of layers needed in the Pascal tetrahedron
+            cornerTriangle = 0;
+
+            // number of elements subtracted in each corner Pascal triangle
+            nTermsInLayer = d;
+
+            // initializing number of elements in layer
+            excess = 0;
+
+            // excess based on overlapping of growing Pascal triangles
+            i = 1 - degree;
+            for (int p{i}; p <= maxLayers; p++) {
+              //  Within each level, x^deg is at the peak of Pascal triangle
+              cornerTriangle = (cornerTriangle + p) + degree;
+              counterBottomRow = 0;
+
+              // counter for the bottom row to be subtracted later
+              for (int k{0}; k < deg; k++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
+                }
+
+                c++;
+                counterBottomRow++;
+              }
+
+              deg--;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
+              if (n < 0) {
+                n = 0;
+              }
+
+              excess += n;
+              d = (d + p) + 1;
+
+              // number of terms in Pascal tetrahedron
+              nTermsInPrevLayer = nTermsInLayer;
+              nTermsInLayer = d + 3 * (excess - cornerTriangle);
+              balance = nTermsInPrevLayer + counterBottomRow;
+              for (int k{0}; k < x_tmp_tmp; k++) {
+                n = (b_degree - k) - 1;
+                if (n < 0) {
+                  n = -n;
+                }
+
+                partition = -degree - n;
+                for (int j{0}; j <= partition; j++) {
+                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
+                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
+                  }
+
+                  c++;
+                }
+              }
+            }
+          }
+
+          //  compute du^4
+          offset = us.size(0) * 7;
+          uu4_tmp = 24.0 * std::pow(1.0, 4.0);
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 20] = uu4_tmp * V[iPnt];
+          }
+
+          c = 35;
+          d = 15;
+          if (degree < 0) {
+            i = -degree;
+          } else {
+            i = degree;
+          }
+
+          for (deg = 5; deg <= i; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2)) +
+                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
+                (static_cast<double>(deg) - 1.0);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2)) +
+                  V.size(1) * ((c - (d << 1)) + deg)] * scaleu * (scaleu - 1.0);
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          //  compute du^2dv^2
+          offset = us.size(0) << 3;
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 22] = 4.0 * V[iPnt];
+          }
+
+          c = 35;
+          d = 15;
+          for (deg = 5; deg <= i; deg++) {
+            scaleu = deg;
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
+                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
+                (static_cast<double>(deg) - 1.0);
+            }
+
+            c++;
+            for (int j{0}; j <= deg - 2; j++) {
+              scaleu--;
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
+                  V.size(1) * ((c - (d << 1)) + deg)] * scaleu * (scaleu - 1.0);
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            c += 2;
+            d = (d + deg) + 1;
+          }
+
+          //  compute dv^4
+          offset = us.size(0) * 9;
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 24] = uu4_tmp * V[iPnt];
+          }
+
+          c = 34;
+          d = 15;
+          for (deg = 5; deg <= degree; deg++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+            }
+
+            scalev = 1.0;
+            for (int j{0}; j <= deg - 2; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * (c + 2)] = V[(iPnt + 5 * stride)
+                  + V.size(1) * ((c - (d << 1)) + deg)] * scalev * (scalev - 1.0);
+              }
+
+              scalev++;
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * (c + 2)] = V[(5 * stride + iPnt) +
+                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
+                (static_cast<double>(deg) - 1.0);
+            }
+
+            c += 3;
+            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (((c - d)
+                  - deg) - 1)] * us[us.size(1) * iPnt + 2];
+              }
+
+              c++;
+            }
+
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          //  compute du^2*dw^2
+          offset += us.size(0);
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 29] = 4.0 * V[iPnt];
+          }
+
+          c = 35;
+          d = 15;
+          for (deg = 5; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2))
+                    + V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
+                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          //  compute dv^2*dw^2
+          offset += us.size(0);
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 31] = 4.0 * V[iPnt];
+          }
+
+          c = 35;
+          d = 15;
+          for (deg = 5; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
+                    V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
+                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+
+          //  compute dw^4
+          offset += us.size(0);
+          for (int b_i{0}; b_i < 35; b_i++) {
+            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+            }
+          }
+
+          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * 34] = uu4_tmp * V[iPnt];
+          }
+
+          c = 35;
+          d = 15;
+          for (deg = 5; deg <= i; deg++) {
+            for (int j{0}; j <= deg; j++) {
+              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+
+              c++;
+            }
+
+            for (int k{0}; k < deg; k++) {
+              i1 = (deg - k) - 1;
+              for (int b_i{0}; b_i <= i1; b_i++) {
+                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 6 * stride) +
+                    V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
+                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
+                }
+
+                c++;
+              }
+            }
+
+            d = (d + deg) + 1;
+          }
+        }
+        break;
+
+       default:
+        m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
+        break;
+      }
+    }
+  }
+
+  static inline
+  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
+    int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
+    ::coder::array<double, 2U> &V)
+  {
+    double hs_inv_idx_0;
+    double hs_inv_idx_1;
+    double hs_inv_idx_2;
+    int b_degree;
+    int c;
+    int cornerTriangle;
+    int counterBottomRow;
+    int d;
+    int deg;
+    int excess;
+    int i;
+    int i1;
+    int maxLayers;
+    int n;
+    int nTermsInLayer;
+    int nTermsInPrevLayer;
+    int nrblks;
     int stride;
     int u0;
     int x_tmp_tmp;
@@ -3099,20 +7741,17 @@ namespace wls
       break;
     }
 
-    if (degree >= 0) {
-      ncols = (degree + 1) * (degree + 2) * (degree + 3) / 6;
-    } else {
-      ncols = (1 - degree) * (1 - degree) * (1 - degree);
-    }
-
     //  Allocate storage for V
-    nrows = us.size(0) * nrblks;
-    if ((V.size(1) != nrows) || (V.size(0) != ncols)) {
-      b_n = (ncols);
-
-      n = (nrows);
-      V.set_size(b_n, n);
+    if (degree >= 0) {
+      b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
+    } else {
+      b_degree = (1 - degree) * (1 - degree) * (1 - degree);
     }
+
+    b_degree = (b_degree);
+
+    n = (us.size(0) * nrblks);
+    V.set_size(b_degree, n);
 
     //  compute 0th order generalized Vandermonde matrix
     if (degree != 0) {
@@ -3145,16 +7784,16 @@ namespace wls
 
     n *= u0;
     if (degree < 0) {
-      b_n = -degree;
+      b_degree = -degree;
     } else {
-      b_n = degree;
+      b_degree = degree;
     }
 
     if (n < 0) {
       n = 0;
     }
 
-    i = b_n - n;
+    i = b_degree - n;
     for (deg = 2; deg <= i; deg++) {
       //  Within each level, use convention of Pascal triangle with x^deg at peak
       for (int j{0}; j < deg; j++) {
@@ -3258,11 +7897,11 @@ namespace wls
 
           // compute derivatives with respect to u
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = stride + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+            V[b_degree + V.size(1) * 2] = 0.0;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -3281,16 +7920,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             double scaleu;
             scaleu = static_cast<double>(deg) * hs_inv_idx_0;
@@ -3316,9 +7955,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = stride + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = stride + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -3356,9 +7995,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -3381,9 +8020,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = stride + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -3394,11 +8033,11 @@ namespace wls
           // compute derivatives with respect to v
           offset = us.size(0) + us.size(0);
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -3412,16 +8051,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             double scalev;
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -3449,9 +8088,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -3494,9 +8133,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
                 c++;
@@ -3519,9 +8158,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -3550,16 +8189,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -3622,8 +8261,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -3637,7 +8276,7 @@ namespace wls
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
                 int partition;
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -3675,11 +8314,11 @@ namespace wls
 
           // compute derivatives with respect to u
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = stride + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+            V[b_degree + V.size(1) * 2] = 0.0;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -3698,16 +8337,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             scaleu = static_cast<double>(deg) * hs_inv_idx_0;
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -3732,9 +8371,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = stride + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = stride + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -3772,9 +8411,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -3797,9 +8436,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = stride + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -3810,11 +8449,11 @@ namespace wls
           // compute derivatives with respect to v
           offset = us.size(0) + us.size(0);
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -3828,16 +8467,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -3864,9 +8503,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -3909,9 +8548,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
                 c++;
@@ -3934,9 +8573,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -3965,16 +8604,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -4037,8 +8676,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -4051,7 +8690,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -4135,9 +8774,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * (c + 1)] = V[b_n + V.size(1) * ((c - d) -
-                  deg)] * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -4175,8 +8814,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
@@ -4197,12 +8836,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer;
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -4257,9 +8896,9 @@ namespace wls
               c++;
               for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -4319,12 +8958,12 @@ namespace wls
                 nTermsInPrevLayer = nTermsInLayer + 1;
                 nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
                 balance = nTermsInPrevLayer + counterBottomRow;
-                b_n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= b_n; j++) {
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
                   for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    n = offset + iPnt;
-                    V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
                   }
 
                   c++;
@@ -4359,16 +8998,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i1 = b_n - n;
+          i1 = b_degree - n;
           for (deg = 3; deg <= i1; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -4395,9 +9034,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * c] = V[b_n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -4440,8 +9079,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
@@ -4462,12 +9101,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer + 1;
               nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
               balance = nTermsInPrevLayer + counterBottomRow;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -4552,8 +9191,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -4566,7 +9205,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -4657,8 +9296,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -4671,7 +9310,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -4714,16 +9353,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 3; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -4786,8 +9425,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -4800,7 +9439,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -4832,11 +9471,11 @@ namespace wls
 
           // compute derivatives with respect to u
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = stride + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+            V[b_degree + V.size(1) * 2] = 0.0;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -4855,16 +9494,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             double scaleu;
             scaleu = static_cast<double>(deg) * hs_inv_idx_0;
@@ -4890,9 +9529,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = stride + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = stride + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -4930,9 +9569,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -4955,9 +9594,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = stride + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -4968,11 +9607,11 @@ namespace wls
           // compute derivatives with respect to v
           offset = us.size(0) + us.size(0);
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -4986,16 +9625,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             double scalev;
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -5023,9 +9662,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -5068,9 +9707,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
                 c++;
@@ -5093,9 +9732,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -5124,16 +9763,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -5196,8 +9835,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -5211,7 +9850,7 @@ namespace wls
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
                 int partition;
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -5249,11 +9888,11 @@ namespace wls
 
           // compute derivatives with respect to u
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = stride + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+            V[b_degree + V.size(1) * 2] = 0.0;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -5272,16 +9911,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             scaleu = static_cast<double>(deg) * hs_inv_idx_0;
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -5306,9 +9945,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = stride + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = stride + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -5346,9 +9985,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -5371,9 +10010,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = stride + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -5384,11 +10023,11 @@ namespace wls
           // compute derivatives with respect to v
           offset = us.size(0) + us.size(0);
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -5402,16 +10041,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -5438,9 +10077,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -5483,9 +10122,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
                 c++;
@@ -5508,9 +10147,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -5539,16 +10178,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -5611,8 +10250,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -5625,7 +10264,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -5709,9 +10348,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * (c + 1)] = V[b_n + V.size(1) * ((c - d) -
-                  deg)] * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -5749,8 +10388,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
@@ -5771,12 +10410,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer;
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -5831,9 +10470,9 @@ namespace wls
               c++;
               for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -5893,12 +10532,12 @@ namespace wls
                 nTermsInPrevLayer = nTermsInLayer + 1;
                 nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
                 balance = nTermsInPrevLayer + counterBottomRow;
-                b_n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= b_n; j++) {
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
                   for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    n = offset + iPnt;
-                    V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
                   }
 
                   c++;
@@ -5933,16 +10572,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i1 = b_n - n;
+          i1 = b_degree - n;
           for (deg = 3; deg <= i1; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -5969,9 +10608,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * c] = V[b_n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -6014,8 +10653,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
@@ -6036,12 +10675,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer + 1;
               nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
               balance = nTermsInPrevLayer + counterBottomRow;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -6126,8 +10765,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -6140,7 +10779,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -6231,8 +10870,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -6245,7 +10884,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -6288,16 +10927,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 3; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -6360,8 +10999,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -6374,7 +11013,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -6424,11 +11063,11 @@ namespace wls
 
           // compute derivatives with respect to u
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = stride + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-            V[i + V.size(1) * 2] = 0.0;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = stride + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+            V[b_degree + V.size(1) * 2] = 0.0;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -6447,16 +11086,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             scaleu = static_cast<double>(deg) * hs_inv_idx_0;
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -6481,9 +11120,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = stride + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = stride + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -6521,9 +11160,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = stride + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt + 1];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
                 c++;
@@ -6546,9 +11185,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = stride + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = stride + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -6559,11 +11198,11 @@ namespace wls
           // compute derivatives with respect to v
           offset = us.size(0) + us.size(0);
           for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-            V[i + V.size(1) * 3] = 0.0;
+            b_degree = offset + iPnt;
+            V[b_degree] = 0.0;
+            V[b_degree + V.size(1)] = 0.0;
+            V[b_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+            V[b_degree + V.size(1) * 3] = 0.0;
           }
 
           c = 4;
@@ -6582,16 +11221,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -6618,9 +11257,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -6663,9 +11302,9 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
                 c++;
@@ -6688,9 +11327,9 @@ namespace wls
               i1 = nTermsInLayer - counterBottomRow;
               for (int j{0}; j <= i1; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -6724,16 +11363,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 2; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -6796,8 +11435,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -6810,7 +11449,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -6894,9 +11533,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * (c + 1)] = V[b_n + V.size(1) * ((c - d) -
-                  deg)] * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -6934,8 +11573,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt + 1];
                 }
 
@@ -6956,12 +11595,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer;
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -7016,9 +11655,9 @@ namespace wls
               c++;
               for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                    - deg)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -7078,12 +11717,12 @@ namespace wls
                 nTermsInPrevLayer = nTermsInLayer + 1;
                 nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
                 balance = nTermsInPrevLayer + counterBottomRow;
-                b_n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= b_n; j++) {
+                n = nTermsInLayer - counterBottomRow;
+                for (int j{0}; j <= n; j++) {
                   for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    n = offset + iPnt;
-                    V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
+                    b_degree = offset + iPnt;
+                    V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                      balance)] * us[us.size(1) * iPnt + 2];
                   }
 
                   c++;
@@ -7123,16 +11762,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i1 = b_n - n;
+          i1 = b_degree - n;
           for (deg = 3; deg <= i1; deg++) {
             for (int iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
@@ -7159,9 +11798,9 @@ namespace wls
             c++;
             for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_n = offset + iPnt;
-                V[b_n + V.size(1) * c] = V[b_n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * ((c - d)
+                  - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -7204,8 +11843,8 @@ namespace wls
               // counter for the bottom row to be subtracted later
               for (int kdegree{0}; kdegree < deg; kdegree++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c -
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
                     nTermsInLayer)] * us[us.size(1) * iPnt];
                 }
 
@@ -7226,12 +11865,12 @@ namespace wls
               nTermsInPrevLayer = nTermsInLayer + 1;
               nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
               balance = nTermsInPrevLayer + counterBottomRow;
-              b_n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= b_n; j++) {
+              n = nTermsInLayer - counterBottomRow;
+              for (int j{0}; j <= n; j++) {
                 for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
+                  b_degree = offset + iPnt;
+                  V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (c -
+                    balance)] * us[us.size(1) * iPnt + 2];
                 }
 
                 c++;
@@ -7316,8 +11955,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -7330,7 +11969,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -7421,8 +12060,8 @@ namespace wls
                 }
 
                 deg--;
-                b_n = p + degree;
-                n = ((b_n << 1) - p) - 1;
+                b_degree = p + degree;
+                n = ((b_degree << 1) - p) - 1;
                 if (n < 0) {
                   n = 0;
                 }
@@ -7435,7 +12074,7 @@ namespace wls
                 nTermsInLayer = d + 3 * (excess - cornerTriangle);
                 balance = nTermsInPrevLayer + counterBottomRow;
                 for (int k{0}; k < x_tmp_tmp; k++) {
-                  n = (b_n - k) - 1;
+                  n = (b_degree - k) - 1;
                   if (n < 0) {
                     n = -n;
                   }
@@ -7483,16 +12122,16 @@ namespace wls
 
           n *= u0;
           if (degree < 0) {
-            b_n = -degree;
+            b_degree = -degree;
           } else {
-            b_n = degree;
+            b_degree = degree;
           }
 
           if (n < 0) {
             n = 0;
           }
 
-          i = b_n - n;
+          i = b_degree - n;
           for (deg = 3; deg <= i; deg++) {
             for (int j{0}; j <= deg; j++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
@@ -7555,8 +12194,8 @@ namespace wls
               }
 
               deg--;
-              b_n = p + degree;
-              n = ((b_n << 1) - p) - 1;
+              b_degree = p + degree;
+              n = ((b_degree << 1) - p) - 1;
               if (n < 0) {
                 n = 0;
               }
@@ -7569,7 +12208,7 @@ namespace wls
               nTermsInLayer = d + 3 * (excess - cornerTriangle);
               balance = nTermsInPrevLayer + counterBottomRow;
               for (int k{0}; k < x_tmp_tmp; k++) {
-                n = (b_n - k) - 1;
+                n = (b_degree - k) - 1;
                 if (n < 0) {
                   n = -n;
                 }
@@ -7635,9 +12274,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -7694,9 +12333,9 @@ namespace wls
 
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * (c + 1)] = V[b_degree + V.size(1) * ((c
+                  - d) - deg)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -7752,9 +12391,9 @@ namespace wls
             c += 3;
             for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
               for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (((c - d) - deg) - 1)]
-                  * us[us.size(1) * iPnt + 2];
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] = V[b_degree + V.size(1) * (((c - d)
+                  - deg) - 1)] * us[us.size(1) * iPnt + 2];
               }
 
               c++;
@@ -7901,152 +12540,44 @@ namespace wls
   }
 
   static inline
-  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
-    array<double, 2U> &V)
+  void gen_vander_3d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
   {
     int b_n;
     int c;
-    int cornerTriangle;
-    int counterBottomRow;
     int d;
-    int deg;
-    int excess;
-    int i;
-    int i1;
-    int maxLayers;
     int n;
-    int nTermsInLayer;
-    int nTermsInPrevLayer;
-    int ncols;
-    int nrblks;
-    int nrows;
-    int stride;
-    int u0;
-    int x_tmp_tmp;
 
     //  Generate generalized/confluent Vandermonde matrix in 3D.
-    if (npoints > us.size(0)) {
-      m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
-    }
+    n = ((degree + 1) * (degree + 2) * (degree + 3) / 6);
 
-    if ((order < -4) || (order == -3)) {
-      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                        "Order %d must be 0, 1, 2, -1, -2, or -4", order);
-    }
-
-    stride = us.size(0);
-    nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
-    switch (order) {
-     case -1:
-      nrblks = 4;
-      break;
-
-     case -2:
-      nrblks = 7;
-      break;
-
-     case -4:
-      if (degree > 0) {
-        nrblks = 13;
-      } else {
-        nrblks = 19;
-      }
-      break;
-    }
-
-    if (degree >= 0) {
-      ncols = (degree + 1) * (degree + 2) * (degree + 3) / 6;
-    } else {
-      ncols = (1 - degree) * (1 - degree) * (1 - degree);
-    }
-
-    //  Allocate storage for V
-    nrows = us.size(0) * nrblks;
-    if ((V.size(1) != nrows) || (V.size(0) != ncols)) {
-      n = (ncols);
-
-      b_n = (nrows);
-      V.set_size(n, b_n);
-    }
+    b_n = (1);
+    V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
-    if (weights.size(0) == 0) {
-      if (degree != 0) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt] = 1.0;
-          V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-          V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-          V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
-        }
-      } else {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt] = 1.0;
-        }
-      }
-    } else if (degree != 0) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = weights[iPnt];
-        V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
-        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
-        V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2] * weights[iPnt];
-      }
-    } else {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = weights[iPnt];
-      }
-    }
-
+    V[V.size(1) * 3] = us_data[2];
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
     c = 4;
-    d = 3;
-    u0 = order;
-    if (order > 0) {
-      u0 = 0;
-    }
-
-    x_tmp_tmp = -degree;
-    b_n = -degree;
-    if (-degree > 0) {
-      b_n = 1;
-    } else if (-degree < 0) {
-      b_n = -1;
-    }
-
-    b_n *= u0;
+    d = 4;
     if (degree < 0) {
       n = -degree;
     } else {
       n = degree;
     }
 
-    if (b_n < 0) {
-      b_n = 0;
-    }
-
-    i = n - b_n;
-    for (deg = 2; deg <= i; deg++) {
+    for (int deg{2}; deg <= n; deg++) {
       //  Within each level, use convention of Pascal triangle with x^deg at peak
       for (int j{0}; j < deg; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)] * us[us.size(1)
-            * iPnt];
-        }
-
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
         c++;
       }
 
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * ((c - d) - 1)] *
-          us[us.size(1) * iPnt + 1];
-      }
-
+      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
       c++;
-      for (int j{0}; j < d; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-            us[us.size(1) * iPnt + 2];
-        }
-
+      for (int j{0}; j <= d - 2; j++) {
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
         c++;
       }
 
@@ -8054,4605 +12585,7 @@ namespace wls
     }
 
     //  Compute the tri-degree terms if degree<0
-    if (degree < 0) {
-      deg = -degree;
-      maxLayers = -degree * 3 + u0;
-
-      // max number of layers needed in the Pascal tetrahedron
-      cornerTriangle = 0;
-
-      // number of elements subtracted in each corner Pascal triangle
-      nTermsInLayer = d;
-
-      // initializing number of elements in layer
-      excess = 0;
-
-      // excess based on overlapping of growing Pascal triangles
-      i = 1 - degree;
-      for (int p{i}; p <= maxLayers; p++) {
-        int gap;
-
-        //  Within each level, x^deg is at the peak of Pascal triangle
-        cornerTriangle = (cornerTriangle + p) + degree;
-        counterBottomRow = 1;
-
-        // counter for the bottom row to be subtracted later
-        for (int k{0}; k < deg; k++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt + 1];
-          }
-
-          c++;
-          counterBottomRow++;
-        }
-
-        deg--;
-        b_n = ((degree + degree) + p) - 1;
-        if (b_n < 0) {
-          b_n = 0;
-        }
-
-        excess += b_n;
-        d = (d + p) + 1;
-
-        // number of terms in Pascal tetrahedron
-        nTermsInPrevLayer = nTermsInLayer;
-        nTermsInLayer = d + 3 * (excess - cornerTriangle);
-        gap = (nTermsInPrevLayer + counterBottomRow) - 1;
-        i1 = nTermsInLayer - counterBottomRow;
-        for (int j{0}; j <= i1; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - gap)] *
-              us[us.size(1) * iPnt + 2];
-          }
-
-          c++;
-        }
-      }
-    }
-
-    m2cAssert(order <= 2, "");
-    if (order != 0) {
-       //      compute higher order confluent Vandermonde matrix blocks incrementally
-      switch (order) {
-       case 1:
-        {
-          int balance;
-          int offset;
-
-          //  Compute order-1 CVM row blocks from order-0 GVM.
-          m2cAssert(degree != 0, "");
-
-          // compute derivatives with respect to u
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[stride + iPnt] = 0.0;
-            V[(stride + iPnt) + V.size(1)] = V[iPnt];
-            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 3;
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            double scaleu;
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
-                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to v
-          offset = us.size(0) + us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt];
-            V[i + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 4;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            double scalev;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 1;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to w
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = V[iPnt];
-          }
-
-          c = 4;
-          d = 3;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
-                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                int partition;
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
-                      - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-        }
-        break;
-
-       case 2:
-        {
-          double scaleu;
-          double scalev;
-          int balance;
-          int offset;
-          int partition;
-
-          //  Compute order-1 CVM row blocks from order-0 GVM.
-          m2cAssert(degree != 0, "");
-
-          // compute derivatives with respect to u
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[stride + iPnt] = 0.0;
-            V[(stride + iPnt) + V.size(1)] = V[iPnt];
-            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 3;
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
-                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to v
-          offset = us.size(0) + us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt];
-            V[i + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 4;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 1;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to w
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = V[iPnt];
-          }
-
-          c = 4;
-          d = 3;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
-                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
-                      - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute du^2
-          offset = us.size(0) << 2;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = 0.0;
-            V[b_n + V.size(1) * 4] = 2.0 * V[iPnt];
-            for (i = 0; i < 5; i++) {
-              V[b_n + V.size(1) * (i + 5)] = 0.0;
-            }
-          }
-
-          c = 10;
-          d = 6;
-          u0 = order + 2;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = i - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
-                * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * (c + 1)] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // compute tri degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dv
-            offset += us.size(0);
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 5; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 5] = V[iPnt];
-              V[b_n + V.size(1) * 6] = 0.0;
-              V[b_n + V.size(1) * 7] = 0.0;
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 7;
-            for (deg = 3; deg <= i; deg++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              scalev = 1.0;
-              for (int j{0}; j <= deg - 2; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
-                    V.size(1) * (c - d)] * scalev;
-                }
-
-                scalev++;
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * static_cast<double>(deg);
-              }
-
-              c++;
-              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              d = (d + deg) + 1;
-            }
-
-            // compute the tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d - 2;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  implicitly calculating number of elements in corner Pascal triangles
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int kdegree{0}; kdegree < deg; kdegree++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
-                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
-                      (-degree - kdegree);
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                b_n = (((p + degree) << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer + 1;
-                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-                balance = nTermsInPrevLayer + counterBottomRow;
-                n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= n; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    b_n = offset + iPnt;
-                    V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute dv^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i1 = 0; i1 < 6; i1++) {
-              V[b_n + V.size(1) * i1] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 6] = 2.0 * V[iPnt];
-            V[b_n + V.size(1) * 7] = 0.0;
-            V[b_n + V.size(1) * 8] = 0.0;
-            V[b_n + V.size(1) * 9] = 0.0;
-          }
-
-          c = 10;
-          d = 7;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = n - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
-                  V.size(1) * (c - d)] * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
-                V.size(1) * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * c] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 2;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dw
-            offset = (offset + us.size(0)) - 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = (offset + iPnt) + 1;
-              for (i1 = 0; i1 < 7; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 7] = V[iPnt];
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
-                        stride) + V.size(1) * (c - balance)] * static_cast<
-                        double>(k + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
- 
-            //      compute dv*dw
-            offset = (offset + us.size(0)) + 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 8; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 8] = V[iPnt];
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i = 1 - degree;
-              for (int p{i}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
-                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
-                        + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
-          }
-
-          //  compute dw^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i = 0; i < 9; i++) {
-              V[b_n + V.size(1) * i] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 9] = 2.0 * V[iPnt];
-          }
-
-          c = 10;
-          d = 6;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 3; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
-                    + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 2;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-        }
-        break;
-
-       case -1:
-        {
-          int balance;
-          int offset;
-
-          //  Compute order-1 CVM row blocks from order-0 GVM.
-          m2cAssert(degree != 0, "");
-
-          // compute derivatives with respect to u
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[stride + iPnt] = 0.0;
-            V[(stride + iPnt) + V.size(1)] = V[iPnt];
-            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 3;
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            double scaleu;
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
-                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to v
-          offset = us.size(0) + us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt];
-            V[i + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 4;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            double scalev;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 1;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to w
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = V[iPnt];
-          }
-
-          c = 4;
-          d = 3;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
-                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                int partition;
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
-                      - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-        }
-        break;
-
-       case -2:
-        {
-          double scaleu;
-          double scalev;
-          int balance;
-          int offset;
-          int partition;
-
-          //  Compute order-1 CVM row blocks from order-0 GVM.
-          m2cAssert(degree != 0, "");
-
-          // compute derivatives with respect to u
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[stride + iPnt] = 0.0;
-            V[(stride + iPnt) + V.size(1)] = V[iPnt];
-            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 3;
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
-                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to v
-          offset = us.size(0) + us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt];
-            V[i + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 4;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 1;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to w
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = V[iPnt];
-          }
-
-          c = 4;
-          d = 3;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
-                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
-                      - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute du^2
-          offset = us.size(0) << 2;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = 0.0;
-            V[b_n + V.size(1) * 4] = 2.0 * V[iPnt];
-            for (i = 0; i < 5; i++) {
-              V[b_n + V.size(1) * (i + 5)] = 0.0;
-            }
-          }
-
-          c = 10;
-          d = 6;
-          u0 = order + 2;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = i - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
-                * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * (c + 1)] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // compute tri degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dv
-            offset += us.size(0);
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 5; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 5] = V[iPnt];
-              V[b_n + V.size(1) * 6] = 0.0;
-              V[b_n + V.size(1) * 7] = 0.0;
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 7;
-            for (deg = 3; deg <= i; deg++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              scalev = 1.0;
-              for (int j{0}; j <= deg - 2; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
-                    V.size(1) * (c - d)] * scalev;
-                }
-
-                scalev++;
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * static_cast<double>(deg);
-              }
-
-              c++;
-              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              d = (d + deg) + 1;
-            }
-
-            // compute the tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d - 2;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  implicitly calculating number of elements in corner Pascal triangles
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int kdegree{0}; kdegree < deg; kdegree++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
-                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
-                      (-degree - kdegree);
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                b_n = (((p + degree) << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer + 1;
-                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-                balance = nTermsInPrevLayer + counterBottomRow;
-                n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= n; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    b_n = offset + iPnt;
-                    V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute dv^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i1 = 0; i1 < 6; i1++) {
-              V[b_n + V.size(1) * i1] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 6] = 2.0 * V[iPnt];
-            V[b_n + V.size(1) * 7] = 0.0;
-            V[b_n + V.size(1) * 8] = 0.0;
-            V[b_n + V.size(1) * 9] = 0.0;
-          }
-
-          c = 10;
-          d = 7;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = n - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
-                  V.size(1) * (c - d)] * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
-                V.size(1) * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * c] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            b_n = order + 2;
-            if (b_n > 0) {
-              b_n = 0;
-            }
-
-            maxLayers = -degree * 3 + b_n;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dw
-            offset = (offset + us.size(0)) - 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = (offset + iPnt) + 1;
-              for (i1 = 0; i1 < 7; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 7] = V[iPnt];
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
-                        stride) + V.size(1) * (c - balance)] * static_cast<
-                        double>(k + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
- 
-            //      compute dv*dw
-            offset = (offset + us.size(0)) + 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 8; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 8] = V[iPnt];
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i = 1 - degree;
-              for (int p{i}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
-                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
-                        + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
-          }
-
-          //  compute dw^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i = 0; i < 9; i++) {
-              V[b_n + V.size(1) * i] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 9] = 2.0 * V[iPnt];
-          }
-
-          c = 10;
-          d = 6;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 3; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
-                    + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 2;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-        }
-        break;
-
-       case -4:
-        {
-          double scaleu;
-          double scalev;
-          double uu4_tmp;
-          int balance;
-          int offset;
-          int partition;
-
-          m2cAssert(degree > 0,
-                    "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
-
-          //  Compute order-1 CVM row blocks from order-0 GVM.
-          m2cAssert(degree != 0, "");
-
-          // compute derivatives with respect to u
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[stride + iPnt] = 0.0;
-            V[(stride + iPnt) + V.size(1)] = V[iPnt];
-            V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-            V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 3;
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(stride + iPnt) + V.size(1) * (c + 1)] = V[(stride + iPnt) +
-                  V.size(1) * ((c - d) - deg)] * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - nTermsInLayer)] * us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(stride + iPnt) + V.size(1) * c] = V[(stride + iPnt) +
-                    V.size(1) * (c - balance)] * us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to v
-          offset = us.size(0) + us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            i = offset + iPnt;
-            V[i] = 0.0;
-            V[i + V.size(1)] = 0.0;
-            V[i + V.size(1) * 2] = V[iPnt];
-            V[i + V.size(1) * 3] = 0.0;
-          }
-
-          c = 4;
-          d = 4;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                  * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (c - d)]
-                * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (c - nTermsInLayer)]
-                    * us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              i1 = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= i1; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          // compute derivatives with respect to w
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = V[iPnt];
-          }
-
-          c = 4;
-          d = 3;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          u0 = order + 1;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[iPnt + V.size(1) * (((c
-                    - d) - deg) - 1)] * (static_cast<double>(k) + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 1;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[iPnt + V.size(1) * (c
-                      - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute du^2
-          offset = us.size(0) << 2;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            V[b_n] = 0.0;
-            V[b_n + V.size(1)] = 0.0;
-            V[b_n + V.size(1) * 2] = 0.0;
-            V[b_n + V.size(1) * 3] = 0.0;
-            V[b_n + V.size(1) * 4] = 2.0 * V[iPnt];
-            for (i = 0; i < 5; i++) {
-              V[b_n + V.size(1) * (i + 5)] = 0.0;
-            }
-          }
-
-          c = 10;
-          d = 6;
-          u0 = order + 2;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          b_n *= u0;
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = i - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size(1)
-                * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * scaleu;
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * (c + 1)] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          // compute tri degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 1;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt + 1];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dv
-            offset += us.size(0);
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 5; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 5] = V[iPnt];
-              V[b_n + V.size(1) * 6] = 0.0;
-              V[b_n + V.size(1) * 7] = 0.0;
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 7;
-            for (deg = 3; deg <= i; deg++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              scalev = 1.0;
-              for (int j{0}; j <= deg - 2; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) +
-                    V.size(1) * (c - d)] * scalev;
-                }
-
-                scalev++;
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + stride) + V.size
-                  (1) * (c - d)] * static_cast<double>(deg);
-              }
-
-              c++;
-              for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  i1 = offset + iPnt;
-                  V[i1 + V.size(1) * c] = V[i1 + V.size(1) * ((c - d) - deg)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-              d = (d + deg) + 1;
-            }
-
-            // compute the tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d - 2;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  implicitly calculating number of elements in corner Pascal triangles
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int kdegree{0}; kdegree < deg; kdegree++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt)
-                      + V.size(1) * (c - nTermsInLayer)] * static_cast<double>
-                      (-degree - kdegree);
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                b_n = (((p + degree) << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer + 1;
-                nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-                balance = nTermsInPrevLayer + counterBottomRow;
-                n = nTermsInLayer - counterBottomRow;
-                for (int j{0}; j <= n; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    b_n = offset + iPnt;
-                    V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                      us[us.size(1) * iPnt + 2];
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute dv^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i1 = 0; i1 < 6; i1++) {
-              V[b_n + V.size(1) * i1] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 6] = 2.0 * V[iPnt];
-            V[b_n + V.size(1) * 7] = 0.0;
-            V[b_n + V.size(1) * 8] = 0.0;
-            V[b_n + V.size(1) * 9] = 0.0;
-          }
-
-          c = 10;
-          d = 7;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          u0 = order + 2;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i1 = n - b_n;
-          for (deg = 3; deg <= i1; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1)) +
-                  V.size(1) * (c - d)] * scalev;
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[((stride << 1) + iPnt) +
-                V.size(1) * (c - d)] * static_cast<double>(deg);
-            }
-
-            c++;
-            for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                n = offset + iPnt;
-                V[n + V.size(1) * c] = V[n + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            c++;
-            d = (d + deg) + 1;
-          }
-
-          // compute the tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 2;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d - 2;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i1 = 1 - degree;
-            for (int p{i1}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int kdegree{0}; kdegree < deg; kdegree++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  n = offset + iPnt;
-                  V[n + V.size(1) * c] = V[n + V.size(1) * (c - nTermsInLayer)] *
-                    us[us.size(1) * iPnt];
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              b_n = (((p + degree) << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer + 1;
-              nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-              balance = nTermsInPrevLayer + counterBottomRow;
-              n = nTermsInLayer - counterBottomRow;
-              for (int j{0}; j <= n; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  b_n = offset + iPnt;
-                  V[b_n + V.size(1) * c] = V[b_n + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-                }
-
-                c++;
-              }
-            }
-          }
-
-          if (order > 0) {
-             //      compute du*dw
-            offset = (offset + us.size(0)) - 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = (offset + iPnt) + 1;
-              for (i1 = 0; i1 < 7; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 7] = V[iPnt];
-              V[b_n + V.size(1) * 8] = 0.0;
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = V[(iPnt + stride)
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i1 = 1 - degree;
-              for (int p{i1}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[((iPnt + offset) + V.size(1) * c) + 1] = V[(iPnt +
-                        stride) + V.size(1) * (c - balance)] * static_cast<
-                        double>(k + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
- 
-            //      compute dv*dw
-            offset = (offset + us.size(0)) + 1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_n = offset + iPnt;
-              for (i1 = 0; i1 < 8; i1++) {
-                V[b_n + V.size(1) * i1] = 0.0;
-              }
-
-              V[b_n + V.size(1) * 8] = V[iPnt];
-              V[b_n + V.size(1) * 9] = 0.0;
-            }
-
-            c = 10;
-            d = 6;
-            for (deg = 3; deg <= i; deg++) {
-              for (int j{0}; j <= deg; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-              }
-
-              for (int k{0}; k < deg; k++) {
-                i1 = (deg - k) - 1;
-                for (int b_i{0}; b_i <= i1; b_i++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 1))
-                      + V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>
-                      (k) + 1.0);
-                  }
-
-                  c++;
-                }
-              }
-
-              d = (d + deg) + 1;
-            }
-
-            // compute tri-degree terms if degree < 0
-            if (degree < 0) {
-              deg = -degree;
-              maxLayers = -degree * 3 + 1;
-
-              // max number of layers needed in the Pascal tetrahedron
-              cornerTriangle = 0;
-
-              // number of elements subtracted in each corner Pascal triangle
-              nTermsInLayer = d;
-
-              // initializing number of elements in layer
-              excess = 0;
-
-              // excess based on overlapping of growing Pascal triangles
-              i = 1 - degree;
-              for (int p{i}; p <= maxLayers; p++) {
-                //  Within each level, x^deg is at the peak of Pascal triangle
-                cornerTriangle = (cornerTriangle + p) + degree;
-                counterBottomRow = 0;
-
-                // counter for the bottom row to be subtracted later
-                for (int k{0}; k < deg; k++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                  }
-
-                  c++;
-                  counterBottomRow++;
-                }
-
-                deg--;
-                n = p + degree;
-                b_n = ((n << 1) - p) - 1;
-                if (b_n < 0) {
-                  b_n = 0;
-                }
-
-                excess += b_n;
-                d = (d + p) + 1;
-
-                // number of terms in Pascal tetrahedron
-                nTermsInPrevLayer = nTermsInLayer;
-                nTermsInLayer = d + 3 * (excess - cornerTriangle);
-                balance = nTermsInPrevLayer + counterBottomRow;
-                for (int k{0}; k < x_tmp_tmp; k++) {
-                  b_n = (n - k) - 1;
-                  if (b_n < 0) {
-                    b_n = -b_n;
-                  }
-
-                  partition = -degree - b_n;
-                  for (int j{0}; j <= partition; j++) {
-                    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                      V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + (stride <<
-                        1)) + V.size(1) * (c - balance)] * static_cast<double>(k
-                        + 1);
-                    }
-
-                    c++;
-                  }
-                }
-              }
-            }
-          }
-
-          //  compute dw^2
-          offset += us.size(0);
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = offset + iPnt;
-            for (i = 0; i < 9; i++) {
-              V[b_n + V.size(1) * i] = 0.0;
-            }
-
-            V[b_n + V.size(1) * 9] = 2.0 * V[iPnt];
-          }
-
-          c = 10;
-          d = 6;
-          b_n = -degree;
-          if (-degree > 0) {
-            b_n = 1;
-          } else if (-degree < 0) {
-            b_n = -1;
-          }
-
-          u0 = order + 2;
-          if (u0 > 0) {
-            u0 = 0;
-          }
-
-          b_n *= u0;
-          if (degree < 0) {
-            n = -degree;
-          } else {
-            n = degree;
-          }
-
-          if (b_n < 0) {
-            b_n = 0;
-          }
-
-          i = n - b_n;
-          for (deg = 3; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                    V.size(1) * (((c - d) - deg) - 1)] * (static_cast<double>(k)
-                    + 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          // compute tri-degree terms if degree < 0
-          if (degree < 0) {
-            deg = -degree;
-            u0 = order + 2;
-            if (u0 > 0) {
-              u0 = 0;
-            }
-
-            maxLayers = -degree * 3 + u0;
-
-            // max number of layers needed in the Pascal tetrahedron
-            cornerTriangle = 0;
-
-            // number of elements subtracted in each corner Pascal triangle
-            nTermsInLayer = d;
-
-            // initializing number of elements in layer
-            excess = 0;
-
-            // excess based on overlapping of growing Pascal triangles
-            i = 1 - degree;
-            for (int p{i}; p <= maxLayers; p++) {
-              //  Within each level, x^deg is at the peak of Pascal triangle
-              cornerTriangle = (cornerTriangle + p) + degree;
-              counterBottomRow = 0;
-
-              // counter for the bottom row to be subtracted later
-              for (int k{0}; k < deg; k++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = 0.0;
-                }
-
-                c++;
-                counterBottomRow++;
-              }
-
-              deg--;
-              n = p + degree;
-              b_n = ((n << 1) - p) - 1;
-              if (b_n < 0) {
-                b_n = 0;
-              }
-
-              excess += b_n;
-              d = (d + p) + 1;
-
-              // number of terms in Pascal tetrahedron
-              nTermsInPrevLayer = nTermsInLayer;
-              nTermsInLayer = d + 3 * (excess - cornerTriangle);
-              balance = nTermsInPrevLayer + counterBottomRow;
-              for (int k{0}; k < x_tmp_tmp; k++) {
-                b_n = (n - k) - 1;
-                if (b_n < 0) {
-                  b_n = -b_n;
-                }
-
-                partition = -degree - b_n;
-                for (int j{0}; j <= partition; j++) {
-                  for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                    V[(iPnt + offset) + V.size(1) * c] = V[(iPnt + 3 * stride) +
-                      V.size(1) * (c - balance)] * static_cast<double>(k + 1);
-                  }
-
-                  c++;
-                }
-              }
-            }
-          }
-
-          //  compute du^4
-          offset = us.size(0) * 7;
-          uu4_tmp = 24.0 * std::pow(1.0, 4.0);
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 20] = uu4_tmp * V[iPnt];
-          }
-
-          c = 35;
-          d = 15;
-          if (degree < 0) {
-            i = -degree;
-          } else {
-            i = degree;
-          }
-
-          for (deg = 5; deg <= i; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2)) +
-                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
-                (static_cast<double>(deg) - 1.0);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2)) +
-                  V.size(1) * ((c - (d << 1)) + deg)] * scaleu * (scaleu - 1.0);
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          //  compute du^2dv^2
-          offset = us.size(0) << 3;
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 22] = 4.0 * V[iPnt];
-          }
-
-          c = 35;
-          d = 15;
-          for (deg = 5; deg <= i; deg++) {
-            scaleu = deg;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
-                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
-                (static_cast<double>(deg) - 1.0);
-            }
-
-            c++;
-            for (int j{0}; j <= deg - 2; j++) {
-              scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
-                  V.size(1) * ((c - (d << 1)) + deg)] * scaleu * (scaleu - 1.0);
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * (c + 1)] = V[i1 + V.size(1) * ((c - d) - deg)]
-                  * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            c += 2;
-            d = (d + deg) + 1;
-          }
-
-          //  compute dv^4
-          offset = us.size(0) * 9;
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 24] = uu4_tmp * V[iPnt];
-          }
-
-          c = 34;
-          d = 15;
-          for (deg = 5; deg <= degree; deg++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-            }
-
-            scalev = 1.0;
-            for (int j{0}; j <= deg - 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * (c + 2)] = V[(iPnt + 5 * stride)
-                  + V.size(1) * ((c - (d << 1)) + deg)] * scalev * (scalev - 1.0);
-              }
-
-              scalev++;
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * (c + 2)] = V[(5 * stride + iPnt) +
-                V.size(1) * ((c - (d << 1)) + deg)] * static_cast<double>(deg) *
-                (static_cast<double>(deg) - 1.0);
-            }
-
-            c += 3;
-            for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                i1 = offset + iPnt;
-                V[i1 + V.size(1) * c] = V[i1 + V.size(1) * (((c - d) - deg) - 1)]
-                  * us[us.size(1) * iPnt + 2];
-              }
-
-              c++;
-            }
-
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          //  compute du^2*dw^2
-          offset += us.size(0);
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 29] = 4.0 * V[iPnt];
-          }
-
-          c = 35;
-          d = 15;
-          for (deg = 5; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + (stride << 2))
-                    + V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
-                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          //  compute dv^2*dw^2
-          offset += us.size(0);
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 31] = 4.0 * V[iPnt];
-          }
-
-          c = 35;
-          d = 15;
-          for (deg = 5; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 5 * stride) +
-                    V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
-                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-
-          //  compute dw^4
-          offset += us.size(0);
-          for (int b_i{0}; b_i < 35; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-            }
-          }
-
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * 34] = uu4_tmp * V[iPnt];
-          }
-
-          c = 35;
-          d = 15;
-          for (deg = 5; deg <= i; deg++) {
-            for (int j{0}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-
-              c++;
-            }
-
-            for (int k{0}; k < deg; k++) {
-              i1 = (deg - k) - 1;
-              for (int b_i{0}; b_i <= i1; b_i++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] = V[(iPnt + 6 * stride) +
-                    V.size(1) * (((c - (d << 1)) - deg) - 1)] * (static_cast<
-                    double>(k) + 1.0) * ((static_cast<double>(k) + 1.0) - 1.0);
-                }
-
-                c++;
-              }
-            }
-
-            d = (d + deg) + 1;
-          }
-        }
-        break;
-
-       default:
-        m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
-        break;
-      }
-    }
+    m2cAssert(true, "");
   }
 
   static inline
@@ -12672,8 +12605,7 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree) * (1 - degree);
     }
 
-    m2cAssert(dag.size(1) * dag.size(0) >= b_degree * 3 + 1,
-              "DAG must be preallocated.");
+    dag.set_size(b_degree + 1, 3);
     if (degree != 0) {
       dag[0] = 1U;
 
@@ -12705,9 +12637,9 @@ namespace wls
       for (int j{deg}; j >= 1; j--) {
         for (int b_i{0}; b_i < j; b_i++) {
           b_degree = c + b_i;
-          dag[dag.size(1) * b_degree] = static_cast<unsigned char>(d);
-          dag[dag.size(1) * b_degree + 1] = static_cast<unsigned char>(d + 1);
-          dag[dag.size(1) * b_degree + 2] = static_cast<unsigned char>(maxterms);
+          dag[3 * b_degree] = static_cast<unsigned char>(d);
+          dag[3 * b_degree + 1] = static_cast<unsigned char>(d + 1);
+          dag[3 * b_degree + 2] = static_cast<unsigned char>(maxterms);
         }
 
         c += j;
@@ -12720,9 +12652,9 @@ namespace wls
     if (degree > 0) {
       i = dag.size(0);
       for (int b_i{c + 1}; b_i <= i; b_i++) {
-        dag[dag.size(1) * (b_i - 1)] = 0U;
-        dag[dag.size(1) * (b_i - 1) + 1] = 0U;
-        dag[dag.size(1) * (b_i - 1) + 2] = 0U;
+        dag[3 * (b_i - 1)] = 0U;
+        dag[3 * (b_i - 1) + 1] = 0U;
+        dag[3 * (b_i - 1) + 2] = 0U;
       }
     } else if (degree < 0) {
       int cornerTriangle;
@@ -12766,20 +12698,18 @@ namespace wls
           if (num_elem_group + 1 < 1) {
             ntermsinlayer -= 3;
           } else if (((-degree - p) + group) - 1 < 0) {
-            dag[dag.size(1) * c] = 0U;
+            dag[3 * c] = 0U;
             for (int b_i{0}; b_i < num_elem_group; b_i++) {
               b_degree = c + b_i;
-              dag[dag.size(1) * (b_degree + 1)] = static_cast<unsigned char>
-                (ntermsinlayer - 1);
-              dag[dag.size(1) * b_degree + 1] = static_cast<unsigned char>
-                (ntermsinlayer);
-              dag[dag.size(1) * b_degree + 2] = static_cast<unsigned char>
-                (maxterms);
+              dag[3 * (b_degree + 1)] = static_cast<unsigned char>(ntermsinlayer
+                - 1);
+              dag[3 * b_degree + 1] = static_cast<unsigned char>(ntermsinlayer);
+              dag[3 * b_degree + 2] = static_cast<unsigned char>(maxterms);
             }
 
             c += num_elem_group;
-            dag[dag.size(1) * c + 1] = 0U;
-            dag[dag.size(1) * c + 2] = static_cast<unsigned char>(maxterms);
+            dag[3 * c + 1] = 0U;
+            dag[3 * c + 2] = static_cast<unsigned char>(maxterms);
             c++;
             if (y > 1) {
               y = 1;
@@ -12789,12 +12719,9 @@ namespace wls
           } else {
             for (int b_i{0}; b_i <= num_elem_group; b_i++) {
               b_degree = c + b_i;
-              dag[dag.size(1) * b_degree] = static_cast<unsigned char>
-                (ntermsinlayer - 1);
-              dag[dag.size(1) * b_degree + 1] = static_cast<unsigned char>
-                (ntermsinlayer);
-              dag[dag.size(1) * b_degree + 2] = static_cast<unsigned char>
-                (maxterms);
+              dag[3 * b_degree] = static_cast<unsigned char>(ntermsinlayer - 1);
+              dag[3 * b_degree + 1] = static_cast<unsigned char>(ntermsinlayer);
+              dag[3 * b_degree + 2] = static_cast<unsigned char>(maxterms);
             }
 
             c = (c + num_elem_group) + 1;
@@ -12803,7 +12730,7 @@ namespace wls
         }
 
         for (int j{0}; j <= num_elem_group; j++) {
-          dag[dag.size(1) * (((c + j) - num_elem_group) - 1) + 2] = 0U;
+          dag[3 * (((c + j) - num_elem_group) - 1) + 2] = 0U;
         }
 
         d = (d + p) + 2;
@@ -12811,9 +12738,8 @@ namespace wls
     }
 
     //  Use last entry as signature
-    i = dag.size(1) * dag.size(0) - 1;
-    b_degree = dag.size(0);
-    dag[i % b_degree * dag.size(1) + i / b_degree] = static_cast<unsigned char>
+    i = dag.size(0) * 3 - 1;
+    dag[i % dag.size(0) * 3 + i / dag.size(0)] = static_cast<unsigned char>
       (degree + 127);
   }
 
@@ -12879,9 +12805,10 @@ namespace wls
 
   static inline
   void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-    int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
-    1U> &work)
+    int rank, ::coder::array<double, 2U> &bs, int nrhs, const ::coder::array<
+    double, 1U> &work)
   {
+    ::coder::array<double, 1U> work_;
     int stride_bs;
     int u1;
     int wsize;
@@ -12920,7 +12847,14 @@ namespace wls
     //  Resize work space if needed
     wsize = wls::query_work_size(m, n);
     if (work.size(0) < wsize) {
-      work.set_size(wsize);
+      work_.set_size(wsize);
+    } else {
+      int u0;
+      work_.set_size(work.size(0));
+      u0 = work.size(0);
+      for (u1 = 0; u1 < u0; u1++) {
+        work_[u1] = work[u1];
+      }
     }
 
     //  zero out extra rows in bs to avoid errors in LAPACK
@@ -12933,7 +12867,7 @@ namespace wls
 
     //  Invoke C++ function
     wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), nrhs, &bs[0], stride_bs,
-                     &(work.data())[0], wsize);
+                     &(work_.data())[0], wsize);
   }
 
   static inline
@@ -13828,6 +13762,7 @@ namespace wls
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag, int npoints)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int dim;
 
     //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
@@ -13851,8 +13786,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -13862,13 +13797,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -13895,28 +13835,28 @@ namespace wls
             b = true;
             b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i < npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -13961,28 +13901,28 @@ namespace wls
             b = true;
             b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i < npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -14056,9 +13996,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i < npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -14093,9 +14033,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -14147,16 +14087,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -14228,6 +14168,7 @@ namespace wls
   static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int degree;
     int dim;
     int interp0;
@@ -14255,8 +14196,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -14265,13 +14206,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -14298,29 +14244,29 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               int i1;
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 i1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > i1) {
-                    b_us -= i1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > i1) {
+                    loop_ub -= i1;
                   }
                 }
               }
 
               i1 = b_wls->us.size(0);
-              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us] -
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -14365,29 +14311,29 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               int i1;
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 i1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > i1) {
-                    b_us -= i1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > i1) {
+                    loop_ub -= i1;
                   }
                 }
               }
 
               i1 = b_wls->us.size(0);
-              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us];
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[loop_ub];
             }
           }
           break;
@@ -14461,9 +14407,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -14497,9 +14443,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
 
         //  unit weights
-        b_us = b_wls->rweights.size(0);
-        b_wls->rweights.set_size(b_us);
-        for (i = 0; i < b_us; i++) {
+        loop_ub = b_wls->rweights.size(0);
+        b_wls->rweights.set_size(loop_ub);
+        for (i = 0; i < loop_ub; i++) {
           b_wls->rweights[i] = 1.0;
         }
       }
@@ -14599,6 +14545,7 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int degree;
     int dim;
     int interp0;
@@ -14624,8 +14571,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -14635,13 +14582,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -14668,28 +14620,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -14734,28 +14686,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -14829,9 +14781,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -14866,9 +14818,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -14923,16 +14875,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -15005,6 +14957,7 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int interp0;
     int npoints;
@@ -15028,8 +14981,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -15039,13 +14992,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -15072,28 +15030,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -15138,28 +15096,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -15233,9 +15191,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -15270,9 +15228,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -15327,16 +15285,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -15409,6 +15367,7 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int interp0;
     int npoints;
@@ -15429,8 +15388,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -15440,13 +15399,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -15473,28 +15437,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -15539,28 +15503,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -15634,9 +15598,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -15671,9 +15635,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -15728,16 +15692,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -15810,6 +15774,7 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order, int interp0)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int npoints;
     boolean_T use_dag;
@@ -15830,8 +15795,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -15841,13 +15806,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -15874,28 +15844,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -15940,28 +15910,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -16035,9 +16005,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -16072,9 +16042,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -16129,16 +16099,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -16212,6 +16182,7 @@ namespace wls
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag)
   {
+    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int npoints;
 
@@ -16231,8 +16202,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
-      int b_us;
       int i;
+      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -16242,13 +16213,18 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        b_us = b_wls->dag.size(0);
-        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
-        {
+        loop_ub = b_wls->dag.size(0);
+        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
+            + 127) {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, b_wls->dag);
+            gen_vander_1d_dag(degree, dag);
+            b_wls->dag.set_size(dag.size(0), 1);
+            loop_ub = dag.size(0);
+            for (i = 0; i < loop_ub; i++) {
+              b_wls->dag[i] = dag[i];
+            }
             break;
 
            case 2:
@@ -16275,28 +16251,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
                 us[0];
             }
           }
@@ -16341,28 +16317,28 @@ namespace wls
             b = true;
             b1 = (us.size(1) <= 0);
             i = us.size(1) * us.size(0);
-            b_us = 0;
+            loop_ub = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                b_us = 0;
+                loop_ub = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (b_us > MAX_int32_T - us.size(1)) {
-                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (loop_ub > MAX_int32_T - us.size(1)) {
+                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  b_us += us.size(1);
-                  if (b_us > u1) {
-                    b_us -= u1;
+                  loop_ub += us.size(1);
+                  if (loop_ub > u1) {
+                    loop_ub -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
             }
           }
           break;
@@ -16436,9 +16412,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            b_us = b_wls->us.size(0);
+            loop_ub = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
+              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
           }
           break;
 
@@ -16473,9 +16449,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          b_us = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(b_us);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(loop_ub);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -16530,16 +16506,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      b_us = weight->omit_rows.size(0);
+      loop_ub = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (b_us <= u1) {
-        u1 = b_us;
+      if (loop_ub <= u1) {
+        u1 = loop_ub;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          b_us = b_wls->V.size(0);
-          for (i = 0; i < b_us; i++) {
+          loop_ub = b_wls->V.size(0);
+          for (i = 0; i < loop_ub; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }

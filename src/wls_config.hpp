@@ -93,6 +93,13 @@
 #  endif
 #  include <stddef.h>
 #  define WLS_LAPACK_INT ptrdiff_t
+
+#ifdef __MINGW32__
+#  define WLS_FC 1  // on Windows, use lowercase
+#else
+#  define WLS_FC 2  // default is lower case with one "_" appended
+#endif
+
 #endif
 #ifndef WLS_LAPACK_INT
 #  ifdef MKL_INT
