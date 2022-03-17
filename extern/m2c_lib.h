@@ -174,7 +174,7 @@
             #cond, __LINE__, __FILE__, message); \
         m2cFlushError(); \
         throw std::logic_error(std::string("Assertion failed (") + #cond + "). " + message); \
-    }
+    } \
 }
 #endif // _OPENMP
 #else // NDEBUG
