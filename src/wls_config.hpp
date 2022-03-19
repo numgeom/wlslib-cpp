@@ -93,7 +93,7 @@
 #  endif
 #  include <stddef.h>
 #  define WLS_LAPACK_INT ptrdiff_t
-#  ifdef __MINGW32__
+#  if defined(_WIN32) || defined(__hpux)
 #    define WLS_FC 1  // on Windows, use lowercase
 #  else
 #    define WLS_FC 2  // default is lower case with one "_" appended
