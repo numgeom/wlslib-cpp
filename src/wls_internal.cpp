@@ -93,14 +93,16 @@ namespace wls
   void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag);
   static inline
-  int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
+  void rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
     rowoffset, int coloffset, int m, int n, ::coder::array<double, 2U> &QR, ::
-    coder::array<int, 1U> &p, ::coder::array<double, 1U> &work, const ::coder::
-    array<unsigned char, 2U> &dag);
+    coder::array<int, 1U> &p, int *rank, ::coder::array<double, 1U> &work);
   static inline
   void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-    int rank, ::coder::array<double, 2U> &bs, int nrhs, const ::coder::array<
-    double, 1U> &work);
+    int rank, ::coder::array<double, 2U> &bs, ::coder::array<double, 1U> &work);
+  static inline
+  void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
+    int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
+    1U> &work);
   static inline
   void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
     ::coder::array<double, 2U> &bs, int nrhs);
@@ -228,6 +230,48 @@ namespace wls
     }
 
     return dist;
+  }
+
+  static void gen_vander(const double us_data[], const int us_size[2], int
+    degree, ::coder::array<double, 2U> &V)
+  {
+    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
+    switch (us_size[1]) {
+     case 1:
+      {
+        int b_n;
+        int n;
+
+        //  Generate (confluent) Vandermonde matrix in 1D.
+        m2cAssert(us_size[1] == 1, "");
+
+        //  Handle input arguments
+        //  Number of row blocks
+        n = (degree + 1);
+
+        b_n = (1);
+        V.set_size(n, b_n);
+
+        //  Compute rows corresponding to function values
+        V[0] = 1.0;
+        V[V.size(1)] = us_data[0];
+        n = degree + 1;
+        for (int ii{2}; ii <= n; ii++) {
+          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+        }
+
+        //  Add row blocks corresponding to kth derivatives
+      }
+      break;
+
+     case 2:
+      gen_vander_2d(us_data, degree, V);
+      break;
+
+     default:
+      gen_vander_3d(us_data, degree, V);
+      break;
+    }
   }
 
   static void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
@@ -674,48 +718,6 @@ namespace wls
 
      default:
       gen_vander_3d(us, npoints, degree, order, hs_inv_data, hs_inv_size, V);
-      break;
-    }
-  }
-
-  static void gen_vander(const double us_data[], const int us_size[2], int
-    degree, ::coder::array<double, 2U> &V)
-  {
-    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    switch (us_size[1]) {
-     case 1:
-      {
-        int b_n;
-        int n;
-
-        //  Generate (confluent) Vandermonde matrix in 1D.
-        m2cAssert(us_size[1] == 1, "");
-
-        //  Handle input arguments
-        //  Number of row blocks
-        n = (degree + 1);
-
-        b_n = (1);
-        V.set_size(n, b_n);
-
-        //  Compute rows corresponding to function values
-        V[0] = 1.0;
-        V[V.size(1)] = us_data[0];
-        n = degree + 1;
-        for (int ii{2}; ii <= n; ii++) {
-          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
-        }
-
-        //  Add row blocks corresponding to kth derivatives
-      }
-      break;
-
-     case 2:
-      gen_vander_2d(us_data, degree, V);
-      break;
-
-     default:
-      gen_vander_3d(us_data, degree, V);
       break;
     }
   }
@@ -12730,12 +12732,12 @@ namespace wls
       (degree + 127);
   }
 
-  static int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
+  static void rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
     rowoffset, int coloffset, int m, int n, ::coder::array<double, 2U> &QR, ::
-    coder::array<int, 1U> &p, ::coder::array<double, 1U> &work, const ::coder::
-    array<unsigned char, 2U> &dag)
+    coder::array<int, 1U> &p, int *rank, ::coder::array<double, 1U> &work)
   {
-    int rank;
+    int i;
+    int wsize;
 
     //  rrqr_factor  Compute rank-revealing QR with column pivoting
     if (m == 0) {
@@ -12763,37 +12765,71 @@ namespace wls
               "Length of permutation vector must be no smaller than the number of columns.");
 
     //  Allocate work space if needed
+    wsize = wls::query_work_size(m, n);
+    work.set_size(wsize);
+
+    //  Invoke C++ function
     p[0] = 0;
-    if ((n == 0) || ((dag.size(0) == 0) || (dag.size(1) == 0))) {
-      int i;
 
-      //  Note: A and Q are always stored in column major
-      i = coloffset * A.size(1) + rowoffset;
-      rank = wls::rrqr_factor_nodag(&A[i % A.size(0) * A.size(1) + i / A.size(0)],
-        thres, m, n, &QR[0], &(p.data())[0], &(work.data())[0], work.size(0),
-        A.size(1));
-    } else {
-      int i;
-      int i1;
-
-      //  Note: A, Q, and dag are always stored in column major
-      i = coloffset * A.size(1) + rowoffset;
-      i1 = static_cast<int>(static_cast<double>(coloffset) * static_cast<double>
-                            (dag.size(1)));
-      rank = wls::rrqr_factor(&A[i % A.size(0) * A.size(1) + i / A.size(0)],
-        thres, m, n, &QR[0], &(p.data())[0], &(work.data())[0], work.size(0),
-        A.size(1), &dag[i1 % dag.size(0) * dag.size(1) + i1 / dag.size(0)],
-        dag.size(1), dag.size(0) - coloffset);
-    }
-
-    return rank;
+    //  Note: A and Q are always stored in column major
+    i = coloffset * A.size(1) + rowoffset;
+    *rank = wls::rrqr_factor_nodag(&A[i % A.size(0) * A.size(1) + i / A.size(0)],
+      thres, m, n, &QR[0], &(p.data())[0], &(work.data())[0], wsize, A.size(1));
   }
 
   static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-    int rank, ::coder::array<double, 2U> &bs, int nrhs, const ::coder::array<
-    double, 1U> &work)
+    int rank, ::coder::array<double, 2U> &bs, ::coder::array<double, 1U> &work)
   {
-    ::coder::array<double, 1U> work_;
+    int stride_bs;
+    int u1;
+    int wsize;
+
+    //  Perform Q*bs, where Q is stored implicitly in QR
+    stride_bs = bs.size(1);
+
+    //  Obtain input arguments
+    if (m == 0) {
+      m = QR.size(1);
+    }
+
+    if (n == 0) {
+      n = QR.size(0) - 1;
+    }
+
+    if (rank == 0) {
+      rank = n;
+    }
+
+    u1 = n;
+    if (m <= n) {
+      u1 = m;
+    }
+
+    if ((rank > u1) || (rank < 1)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongRank",
+                        "Rank %d must be a positive value no greater than min(%d, %d).",
+                        rank, m, n);
+    }
+
+    //  Resize work space if needed
+    wsize = wls::query_work_size(m, n);
+    work.set_size(wsize);
+
+    //  zero out extra rows in bs to avoid errors in LAPACK
+    u1 = n + 1;
+    for (int i{u1}; i <= m; i++) {
+      bs[i - 1] = 0.0;
+    }
+
+    //  Invoke C++ function
+    wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), 1, &bs[0], stride_bs,
+                     &(work.data())[0], wsize);
+  }
+
+  static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
+    int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
+    1U> &work)
+  {
     int stride_bs;
     int u1;
     int wsize;
@@ -12831,16 +12867,7 @@ namespace wls
 
     //  Resize work space if needed
     wsize = wls::query_work_size(m, n);
-    if (work.size(0) < wsize) {
-      work_.set_size(wsize);
-    } else {
-      int u0;
-      work_.set_size(work.size(0));
-      u0 = work.size(0);
-      for (u1 = 0; u1 < u0; u1++) {
-        work_[u1] = work[u1];
-      }
-    }
+    work.set_size(wsize);
 
     //  zero out extra rows in bs to avoid errors in LAPACK
     u1 = n + 1;
@@ -12852,7 +12879,7 @@ namespace wls
 
     //  Invoke C++ function
     wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), nrhs, &bs[0], stride_bs,
-                     &(work_.data())[0], wsize);
+                     &(work.data())[0], wsize);
   }
 
   static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
@@ -12922,12 +12949,7 @@ namespace wls
       sigma = b_dv[abs_degree - 2];
     }
 
-    if (ws.size(0) == 0) {
-      ws.set_size(npoints);
-    } else {
-      m2cAssert(ws.size(0) >= npoints,
-                "length of ws cannot be smaller than npoints");
-    }
+    ws.set_size(npoints);
 
     //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
     compute_distances(us, npoints, degree < 0, ws);
@@ -13063,12 +13085,7 @@ namespace wls
               "size(params_pw,1) should be >=npoints");
 
     m2cAssert(params_pw.size(1) >= 2, "size(params_pw,2) should be >=2");
-    if (ws.size(0) == 0) {
-      ws.set_size(npoints);
-    } else {
-      m2cAssert(ws.size(0) >= npoints,
-                "length of ws cannot be smaller than npoints");
-    }
+    ws.set_size(npoints);
 
     //  Compute hbar using ws as buffer space
     compute_distances(us_unscaled, npoints, degree < 0, ws);
@@ -13097,8 +13114,7 @@ namespace wls
       epsilon = h2bar_tmp;
     }
 
-    m2cAssert(ws.size(0) >= npoints,
-              "length of ws cannot be smaller than npoints");
+    ws.set_size(npoints);
     for (int i{0}; i < npoints; i++) {
       double r;
       double r2;
@@ -13191,13 +13207,7 @@ namespace wls
       alpha = params_sh[1];
     }
 
-    if (ws.size(0) == 0) {
-      ws.set_size(npoints);
-    } else {
-      m2cAssert(ws.size(0) >= npoints,
-                "length of ws cannot be smaller than npoints");
-    }
-
+    ws.set_size(npoints);
     if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
       for (int i{0}; i < npoints; i++) {
         double r;
@@ -14086,9 +14096,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14461,9 +14471,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14872,9 +14882,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15281,9 +15291,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15687,9 +15697,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16093,9 +16103,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16499,9 +16509,9 @@ namespace wls
       }
 
       //  In interp0 mode, we trim off the first row and first column.
-      b_wls->rank = rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows
-        - interp0, ncols - interp0, b_wls->QR, b_wls->jpvt, b_wls->work,
-        b_wls->dag);
+      rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
+                  ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
+                  b_wls->work);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -21164,7 +21174,7 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
                  b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
-                b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
+                b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
     u1 = (1);
     varargout_1.set_size(nrows_vdops, u1);
@@ -21318,7 +21328,7 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
                  b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
-                b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
+                b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
     u1 = (1);
     varargout_1.set_size(nrows_vdops, u1);
@@ -21461,7 +21471,7 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
                  b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
-                b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
+                b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
     u0 = (1);
     varargout_1.set_size(nrows_vdops, u0);
@@ -21573,7 +21583,7 @@ namespace wls
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
                  b_wls->vdops, 1);
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
-                b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
+                b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
     u0 = (1);
     varargout_1.set_size(nrows_vdops, u0);

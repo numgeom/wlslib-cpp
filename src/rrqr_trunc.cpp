@@ -18,8 +18,8 @@
 // Function Definitions
 namespace wls {
 void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
-                ::coder::array<int, 1U> &p, boolean_T *permuted,
-                ::coder::array<int, 2U> &work)
+                ::coder::array<int, 1U> &p, ::coder::array<int, 2U> &work,
+                boolean_T *permuted)
 {
   int b_i;
   int child;
@@ -31,11 +31,11 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
   work.set_size(4, dag.size(1) - 1);
   //  compute inverse permutation and tag whether each column is truncated
   for (int i{0}; i <= n; i++) {
-    work[work.size(0) * (p[i] - 1)] = i + 1;
+    work[4 * (p[i] - 1)] = i + 1;
     //  first column for inverse permute
-    work[work.size(0) * (p[i] - 1) + 1] = (i + 1 > rank);
+    work[4 * (p[i] - 1) + 1] = (i + 1 > rank);
     //  second column for tagging truncation
-    work[work.size(0) * i + 3] = 0;
+    work[4 * i + 3] = 0;
     //  third column for stack, and last column for marks
   }
   nChanged = -1;
@@ -44,22 +44,21 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
   for (int i{b_i}; i <= *n1; i++) {
     int c_tmp;
     c_tmp = p[i - 1] - 1;
-    if (work[work.size(0) * c_tmp + 1] != 0) {
+    if (work[4 * c_tmp + 1] != 0) {
       int i1;
       i1 = dag.size(0);
       for (int j{0}; j < i1; j++) {
         child = c_tmp + dag[j + dag.size(0) * c_tmp];
-        if ((dag[j + dag.size(0) * c_tmp] != 0) &&
-            (work[work.size(0) * child + 1] != 1)) {
-          if (work[work.size(0) * child] <= rank) {
-            work[work.size(0) * child + 1] = -1;
-            if (work[work.size(0) * child + 3] == 0) {
+        if ((dag[j + dag.size(0) * c_tmp] != 0) && (work[4 * child + 1] != 1)) {
+          if (work[4 * child] <= rank) {
+            work[4 * child + 1] = -1;
+            if (work[4 * child + 3] == 0) {
               nChanged++;
-              work[work.size(0) * nChanged + 2] = child + 1;
-              work[work.size(0) * child + 3] = 1;
+              work[4 * nChanged + 2] = child + 1;
+              work[4 * child + 3] = 1;
             }
           }
-          work[work.size(0) * c_tmp + 1] = 0;
+          work[4 * c_tmp + 1] = 0;
         }
       }
     }
@@ -69,7 +68,7 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
   while (nChanged + 1 != 0) {
     int c;
     boolean_T allChildrenTruncated;
-    c = work[work.size(0) * nChanged + 2] - 1;
+    c = work[4 * nChanged + 2] - 1;
     nChanged--;
     //  Make sure all the untruncated children of a candidate monomial
     allChildrenTruncated = true;
@@ -77,21 +76,21 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
     for (int j{0}; j < b_i; j++) {
       if (dag[j + dag.size(0) * c] != 0) {
         child = c + dag[j + dag.size(0) * c];
-        if (work[work.size(0) * child] <= rank) {
+        if (work[4 * child] <= rank) {
           allChildrenTruncated = false;
-          if (work[work.size(0) * child + 1] != -1) {
-            work[work.size(0) * child + 1] = -1;
-            if (work[work.size(0) * child + 3] == 0) {
+          if (work[4 * child + 1] != -1) {
+            work[4 * child + 1] = -1;
+            if (work[4 * child + 3] == 0) {
               nChanged++;
-              work[work.size(0) * nChanged + 2] = child + 1;
-              work[work.size(0) * child + 3] = 1;
+              work[4 * nChanged + 2] = child + 1;
+              work[4 * child + 3] = 1;
             }
           }
         }
       }
     }
     if (!allChildrenTruncated) {
-      work[work.size(0) * c + 1] = 0;
+      work[4 * c + 1] = 0;
     }
   }
   if (*permuted) {
@@ -101,7 +100,7 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
     n2 = dag.size(1) - 1;
     for (int i{0}; i <= n; i++) {
       //  i is original ids
-      if (work[work.size(0) * i + 1] == 0) {
+      if (work[4 * i + 1] == 0) {
         (*n1)++;
         p[*n1 - 1] = i + 1;
       } else {

@@ -19,7 +19,7 @@
 namespace wls {
 static inline void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
                        int rank, ::coder::array<int, 1U> &p,
-                       boolean_T *permuted, ::coder::array<int, 2U> &work);
+                       ::coder::array<int, 2U> &work, boolean_T *permuted);
 
 static inline void rrqr_trunc_initialize();
 

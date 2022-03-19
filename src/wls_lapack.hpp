@@ -404,7 +404,9 @@ inline int rrqr_factor(const T *A, const T cond_thres, const int m, const int n,
 #endif
   int n1 = n;
   for (;;) {
-    if (rrqr_trunc(dag_array, &n1, rank, jpvt_array, work_array)) {
+    boolean_T permuted;
+    rrqr_trunc(dag_array, &n1, rank, jpvt_array, work_array, &permuted);
+    if (permuted) {
       // if we have permutation, continue factorizing QRCP with updated columns
       rank = rrqr_factor_nodag(A, cond_thres, m, n1, B, jpvt, work, work_size,
                                stride);
