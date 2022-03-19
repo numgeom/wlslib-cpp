@@ -9,6 +9,7 @@
 
 #ifdef MATLAB_MEX_FILE
 #include "m2c_mex.h"
+
 #else
 
 #ifndef M2C_SKIP_THREAD_ID

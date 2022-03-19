@@ -125,8 +125,7 @@ namespace wls
 // Function Definitions
 namespace wls
 {
-  static inline
-  void compute_distances(const ::coder::array<double, 2U> &us, int
+  static void compute_distances(const ::coder::array<double, 2U> &us, int
     npoints, boolean_T infnorm, ::coder::array<double, 1U> &ws)
   {
     //  Compute norms for each point using 2-norm or inf-norm
@@ -168,8 +167,7 @@ namespace wls
     }
   }
 
-  static inline
-  double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
+  static double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
     int l, int r)
   {
     double dist;
@@ -232,8 +230,7 @@ namespace wls
     return dist;
   }
 
-  static inline
-  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
+  static void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
     degree, int order, const ::coder::array<double, 1U> &weights, ::coder::array<
     double, 2U> &V)
   {
@@ -464,8 +461,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
+  static void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
     degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
     coder::array<double, 2U> &V)
   {
@@ -682,8 +678,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander(const double us_data[], const int us_size[2], int
+  static void gen_vander(const double us_data[], const int us_size[2], int
     degree, ::coder::array<double, 2U> &V)
   {
     //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
@@ -741,8 +736,7 @@ namespace wls
     dag[dag.size(0) - 1] = static_cast<unsigned char>(degree + 127);
   }
 
-  static inline
-  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
+  static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
     array<double, 2U> &V)
   {
@@ -1758,8 +1752,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
+  static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
     ::coder::array<double, 2U> &V)
   {
@@ -2777,8 +2770,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander_2d(const double us_data[], int degree, ::coder::array<
+  static void gen_vander_2d(const double us_data[], int degree, ::coder::array<
     double, 2U> &V)
   {
     int b_n;
@@ -2815,8 +2807,7 @@ namespace wls
     //  Compute the bi-degree terms if degree<0
   }
 
-  static inline
-  void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
+  static void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
     int b_degree;
@@ -2923,8 +2914,7 @@ namespace wls
       unsigned char>(degree + 127);
   }
 
-  static inline
-  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
+  static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
     array<double, 2U> &V)
   {
@@ -7673,8 +7663,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
+  static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const double hs_inv_data[], const int hs_inv_size[2],
     ::coder::array<double, 2U> &V)
   {
@@ -12539,8 +12528,7 @@ namespace wls
     }
   }
 
-  static inline
-  void gen_vander_3d(const double us_data[], int degree, ::coder::array<
+  static void gen_vander_3d(const double us_data[], int degree, ::coder::array<
     double, 2U> &V)
   {
     int b_n;
@@ -12588,8 +12576,7 @@ namespace wls
     m2cAssert(true, "");
   }
 
-  static inline
-  void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
+  static void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
     int b_degree;
@@ -12743,8 +12730,7 @@ namespace wls
       (degree + 127);
   }
 
-  static inline
-  int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
+  static int rrqr_factor(const ::coder::array<double, 2U> &A, double thres, int
     rowoffset, int coloffset, int m, int n, ::coder::array<double, 2U> &QR, ::
     coder::array<int, 1U> &p, ::coder::array<double, 1U> &work, const ::coder::
     array<unsigned char, 2U> &dag)
@@ -12803,8 +12789,7 @@ namespace wls
     return rank;
   }
 
-  static inline
-  void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
+  static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
     int rank, ::coder::array<double, 2U> &bs, int nrhs, const ::coder::array<
     double, 1U> &work)
   {
@@ -12870,8 +12855,7 @@ namespace wls
                      &(work_.data())[0], wsize);
   }
 
-  static inline
-  void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
+  static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
     ::coder::array<double, 2U> &bs, int nrhs)
   {
     int i;
@@ -12905,8 +12889,7 @@ namespace wls
     wls::rrqr_rtsolve(&QR[0], n, rank, QR.size(1), nrhs, &bs[0], bs.size(1));
   }
 
-  static inline
-  void wls_buhmann_weights(const ::coder::array<double, 2U> &us, int
+  static void wls_buhmann_weights(const ::coder::array<double, 2U> &us, int
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
     coder::array<double, 2U> &params_pw, ::coder::array<double, 1U> &ws)
   {
@@ -13057,8 +13040,7 @@ namespace wls
     }
   }
 
-  static inline
-  void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
+  static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
     int degree, const ::coder::array<double, 2U> &us_unscaled, const ::coder::
     array<double, 1U> &params_sh, const ::coder::array<double, 2U> &params_pw, ::
     coder::array<double, 1U> &ws)
@@ -13184,8 +13166,7 @@ namespace wls
     }
   }
 
-  static inline
-  void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
+  static void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
     coder::array<double, 2U> &params_pw, ::coder::array<double, 1U> &ws)
   {
@@ -13298,8 +13279,7 @@ namespace wls
     }
   }
 
-  static inline
-  void wls_resize(WlsObject *b_wls, int dim, int npoints, int degree, int
+  static void wls_resize(WlsObject *b_wls, int dim, int npoints, int degree, int
     order, boolean_T use_dag)
   {
     int b_degree;
@@ -13411,7 +13391,6 @@ namespace wls
     b_wls->work.set_size((unnamed_idx_0 << 5) + b_degree);
   }
 
-  static inline
   void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
                  ::coder::array<double, 2U> &fs, int npoints, ::coder::array<
                  double, 2U> &vdops, ::coder::array<double, 2U> &result)
@@ -13532,7 +13511,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, const
                  ::coder::array<double, 2U> &fs, ::coder::array<double, 2U>
                  &vdops, ::coder::array<double, 2U> &result)
@@ -13656,7 +13634,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts, ::
                  coder::array<double, 2U> &vdops)
   {
@@ -13757,7 +13734,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag, int npoints)
@@ -14165,7 +14141,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
   {
     ::coder::array<unsigned char, 1U> dag;
@@ -14541,7 +14516,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight)
   {
@@ -14953,7 +14927,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree)
   {
@@ -15363,7 +15336,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order)
   {
@@ -15770,7 +15742,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order, int interp0)
   {
@@ -16177,7 +16148,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag)
@@ -16584,17 +16554,14 @@ namespace wls
     }
   }
 
-  static inline
   void wls_internal_initialize()
   {
   }
 
-  static inline
   void wls_internal_terminate()
   {
   }
 
-  static inline
   void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                       const ::coder::array<double, 2U> &varargin_2, int
@@ -16785,7 +16752,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                       const ::coder::array<double, 2U> &varargin_2, ::coder::
@@ -16978,7 +16944,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -17132,7 +17097,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
                       &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                       coder::array<double, 2U> &varargout_1)
@@ -17295,7 +17259,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &, int varargin_1, ::coder::array<
@@ -17681,7 +17644,6 @@ namespace wls
     result_size[0] = 3;
   }
 
-  static inline
   void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, const ::
                      coder::array<double, 2U> &fs, ::coder::array<double, 2U>
@@ -18089,7 +18051,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
@@ -18252,7 +18213,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::
                      array<double, 2U> &vdops)
@@ -18639,7 +18599,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &, int varargin_1, ::coder::array<double, 2U> &vdops, const
@@ -19125,7 +19084,6 @@ namespace wls
     result_size[0] = 3;
   }
 
-  static inline
   void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &fs, ::coder::array<double, 2U> &vdops, double result_data[],
@@ -19659,7 +19617,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
@@ -19873,7 +19830,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::array<double, 2U>
     &vdops)
@@ -20360,7 +20316,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                     const ::coder::array<double, 2U> &varargin_2, int varargin_3,
@@ -20584,7 +20539,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                     const ::coder::array<double, 2U> &varargin_2, ::coder::array<
@@ -20810,7 +20764,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -20958,7 +20911,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                     coder::array<double, 2U> &varargout_1)
@@ -21133,7 +21085,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, int
@@ -21286,7 +21237,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, ::coder::
@@ -21441,7 +21391,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -21545,7 +21494,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                      coder::array<double, 2U> &varargout_1)
@@ -21670,7 +21618,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, int
@@ -21885,7 +21832,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, ::coder::
@@ -22102,7 +22048,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -22250,7 +22195,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                      coder::array<double, 2U> &varargout_1)
@@ -22425,7 +22369,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &, int varargin_1, ::coder::array<double, 2U> &vdops, const
@@ -22827,7 +22770,6 @@ namespace wls
     result_size[0] = 3;
   }
 
-  static inline
   void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, const ::coder::array<
     double, 2U> &fs, ::coder::array<double, 2U> &vdops, double result_data[],
@@ -23277,7 +23219,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, ::coder::array<double, 2U> &vdops)
   {
@@ -23487,7 +23428,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U>
     &quad_pnts, const ::coder::array<double, 2U> &ws, ::coder::array<double, 2U>
     &vdops)
@@ -23890,7 +23830,6 @@ namespace wls
     //  compute output value
   }
 
-  static inline
   void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, int
@@ -24106,7 +24045,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                      const ::coder::array<double, 2U> &varargin_2, ::coder::
@@ -24324,7 +24262,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -24473,7 +24410,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U>
                      &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                      coder::array<double, 2U> &varargout_1)
@@ -24649,7 +24585,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                     const ::coder::array<double, 2U> &varargin_2, int varargin_3,
@@ -24823,7 +24758,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1,
                     const ::coder::array<double, 2U> &varargin_2, ::coder::array<
@@ -24999,7 +24933,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, ::coder::array<double, 2U> &varargout_1)
   {
@@ -25136,7 +25069,6 @@ namespace wls
     }
   }
 
-  static inline
   void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U>
                     &quad_pnts, const ::coder::array<double, 2U> &varargin_1, ::
                     coder::array<double, 2U> &varargout_1)

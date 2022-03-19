@@ -3,7 +3,7 @@
  */
 
 /* !defined(MATLAB_MEX_FILE) is added by X. Jiao */
-#if !defined(_mw_coder_bounded_array_h) && !defined(MATLAB_MEX_FILE)
+#if !defined(_mw_coder_bounded_array_h)
 #define _mw_coder_bounded_array_h
 
 #ifdef MATLAB_MEX_FILE

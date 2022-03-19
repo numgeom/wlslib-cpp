@@ -10,15 +10,16 @@
 
 // Include files
 #include "rtwtypes.h"
+#include "m2c_lib.h"
 #include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
 
 // Function Declarations
 namespace wls {
-static inline boolean_T rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag,
-                            int *n1, int rank, ::coder::array<int, 1U> &p,
-                            ::coder::array<int, 2U> &work);
+static inline void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1,
+                       int rank, ::coder::array<int, 1U> &p,
+                       boolean_T *permuted, ::coder::array<int, 2U> &work);
 
 static inline void rrqr_trunc_initialize();
 

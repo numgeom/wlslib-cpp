@@ -10,6 +10,7 @@
 
 // Include files
 #include "rtwtypes.h"
+#include "m2c_lib.h"
 #include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
