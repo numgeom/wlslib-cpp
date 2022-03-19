@@ -45,9 +45,6 @@ namespace wls
 namespace wls
 {
   static inline
-  void compute_distances(const ::coder::array<double, 2U> &us, int
-    npoints, boolean_T infnorm, ::coder::array<double, 1U> &ws);
-  static inline
   double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
     int l, int r);
   static inline
@@ -111,10 +108,8 @@ namespace wls
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
     coder::array<double, 2U> &params_pw, ::coder::array<double, 1U> &ws);
   static inline
-  void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, const ::coder::array<double, 2U> &us_unscaled, const ::coder::
-    array<double, 1U> &params_sh, const ::coder::array<double, 2U> &params_pw, ::
-    coder::array<double, 1U> &ws);
+  void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
+    npoints, double degree, double params_sh, ::coder::array<double, 1U> &ws);
   static inline
   void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
@@ -127,48 +122,6 @@ namespace wls
 // Function Definitions
 namespace wls
 {
-  static void compute_distances(const ::coder::array<double, 2U> &us, int
-    npoints, boolean_T infnorm, ::coder::array<double, 1U> &ws)
-  {
-    //  Compute norms for each point using 2-norm or inf-norm
-    if (!infnorm) {
-      int i;
-
-      //  Compute 2-norm
-      i = us.size(1);
-      for (int b_i{0}; b_i < npoints; b_i++) {
-        double d;
-        double r2;
-        d = us[us.size(1) * b_i];
-        r2 = d * d;
-        for (int j{2}; j <= i; j++) {
-          d = us[(j + us.size(1) * b_i) - 1];
-          r2 += d * d;
-        }
-
-        ws[b_i] = std::sqrt(r2);
-      }
-    } else {
-      int i;
-
-      //  Compute inf-norm for tensor-product
-      i = us.size(1);
-      for (int b_i{0}; b_i < npoints; b_i++) {
-        double r;
-        r = std::abs(us[us.size(1) * b_i]);
-        for (int j{2}; j <= i; j++) {
-          double r1;
-          r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-          if (r1 > r) {
-            r = r1;
-          }
-        }
-
-        ws[b_i] = r;
-      }
-    }
-  }
-
   static double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
     int l, int r)
   {
@@ -230,48 +183,6 @@ namespace wls
     }
 
     return dist;
-  }
-
-  static void gen_vander(const double us_data[], const int us_size[2], int
-    degree, ::coder::array<double, 2U> &V)
-  {
-    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    switch (us_size[1]) {
-     case 1:
-      {
-        int b_n;
-        int n;
-
-        //  Generate (confluent) Vandermonde matrix in 1D.
-        m2cAssert(us_size[1] == 1, "");
-
-        //  Handle input arguments
-        //  Number of row blocks
-        n = (degree + 1);
-
-        b_n = (1);
-        V.set_size(n, b_n);
-
-        //  Compute rows corresponding to function values
-        V[0] = 1.0;
-        V[V.size(1)] = us_data[0];
-        n = degree + 1;
-        for (int ii{2}; ii <= n; ii++) {
-          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
-        }
-
-        //  Add row blocks corresponding to kth derivatives
-      }
-      break;
-
-     case 2:
-      gen_vander_2d(us_data, degree, V);
-      break;
-
-     default:
-      gen_vander_3d(us_data, degree, V);
-      break;
-    }
   }
 
   static void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
@@ -501,6 +412,48 @@ namespace wls
 
      default:
       gen_vander_3d(us, npoints, degree, order, weights, V);
+      break;
+    }
+  }
+
+  static void gen_vander(const double us_data[], const int us_size[2], int
+    degree, ::coder::array<double, 2U> &V)
+  {
+    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
+    switch (us_size[1]) {
+     case 1:
+      {
+        int b_n;
+        int n;
+
+        //  Generate (confluent) Vandermonde matrix in 1D.
+        m2cAssert(us_size[1] == 1, "");
+
+        //  Handle input arguments
+        //  Number of row blocks
+        n = (degree + 1);
+
+        b_n = (1);
+        V.set_size(n, b_n);
+
+        //  Compute rows corresponding to function values
+        V[0] = 1.0;
+        V[V.size(1)] = us_data[0];
+        n = degree + 1;
+        for (int ii{2}; ii <= n; ii++) {
+          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+        }
+
+        //  Add row blocks corresponding to kth derivatives
+      }
+      break;
+
+     case 2:
+      gen_vander_2d(us_data, degree, V);
+      break;
+
+     default:
+      gen_vander_3d(us_data, degree, V);
       break;
     }
   }
@@ -736,6 +689,43 @@ namespace wls
 
     //  a leaf has no child
     dag[dag.size(0) - 1] = static_cast<unsigned char>(degree + 127);
+  }
+
+  static void gen_vander_2d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
+  {
+    int b_n;
+    int c;
+    int n;
+
+    //  Generate generalized/confluent Vandermonde matrix in 2D.
+    n = ((degree + 1) * (degree + 2) / 2);
+
+    b_n = (1);
+    V.set_size(n, b_n);
+
+    //  compute 0th order generalized Vandermonde matrix
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
+    c = 3;
+    if (degree < 0) {
+      n = -degree;
+    } else {
+      n = degree;
+    }
+
+    for (int deg{2}; deg <= n; deg++) {
+      for (int j{0}; j < deg; j++) {
+        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
+        c++;
+      }
+
+      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
+      c++;
+    }
+
+    //  Compute the bi-degree terms if degree<0
   }
 
   static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
@@ -2772,43 +2762,6 @@ namespace wls
     }
   }
 
-  static void gen_vander_2d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
-  {
-    int b_n;
-    int c;
-    int n;
-
-    //  Generate generalized/confluent Vandermonde matrix in 2D.
-    n = ((degree + 1) * (degree + 2) / 2);
-
-    b_n = (1);
-    V.set_size(n, b_n);
-
-    //  compute 0th order generalized Vandermonde matrix
-    V[V.size(1) * 2] = us_data[1];
-    V[V.size(1)] = us_data[0];
-    V[0] = 1.0;
-    c = 3;
-    if (degree < 0) {
-      n = -degree;
-    } else {
-      n = degree;
-    }
-
-    for (int deg{2}; deg <= n; deg++) {
-      for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
-        c++;
-      }
-
-      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
-      c++;
-    }
-
-    //  Compute the bi-degree terms if degree<0
-  }
-
   static void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
@@ -2914,6 +2867,54 @@ namespace wls
     b_degree = (dag.size(0) << 1) - 1;
     dag[((b_degree % dag.size(0)) << 1) + b_degree / dag.size(0)] = static_cast<
       unsigned char>(degree + 127);
+  }
+
+  static void gen_vander_3d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
+  {
+    int b_n;
+    int c;
+    int d;
+    int n;
+
+    //  Generate generalized/confluent Vandermonde matrix in 3D.
+    n = ((degree + 1) * (degree + 2) * (degree + 3) / 6);
+
+    b_n = (1);
+    V.set_size(n, b_n);
+
+    //  compute 0th order generalized Vandermonde matrix
+    V[V.size(1) * 3] = us_data[2];
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
+    c = 4;
+    d = 4;
+    if (degree < 0) {
+      n = -degree;
+    } else {
+      n = degree;
+    }
+
+    for (int deg{2}; deg <= n; deg++) {
+      //  Within each level, use convention of Pascal triangle with x^deg at peak
+      for (int j{0}; j < deg; j++) {
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
+        c++;
+      }
+
+      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
+      c++;
+      for (int j{0}; j <= d - 2; j++) {
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
+        c++;
+      }
+
+      d = (d + deg) + 1;
+    }
+
+    //  Compute the tri-degree terms if degree<0
+    m2cAssert(true, "");
   }
 
   static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
@@ -12530,54 +12531,6 @@ namespace wls
     }
   }
 
-  static void gen_vander_3d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
-  {
-    int b_n;
-    int c;
-    int d;
-    int n;
-
-    //  Generate generalized/confluent Vandermonde matrix in 3D.
-    n = ((degree + 1) * (degree + 2) * (degree + 3) / 6);
-
-    b_n = (1);
-    V.set_size(n, b_n);
-
-    //  compute 0th order generalized Vandermonde matrix
-    V[V.size(1) * 3] = us_data[2];
-    V[V.size(1) * 2] = us_data[1];
-    V[V.size(1)] = us_data[0];
-    V[0] = 1.0;
-    c = 4;
-    d = 4;
-    if (degree < 0) {
-      n = -degree;
-    } else {
-      n = degree;
-    }
-
-    for (int deg{2}; deg <= n; deg++) {
-      //  Within each level, use convention of Pascal triangle with x^deg at peak
-      for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
-        c++;
-      }
-
-      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
-      c++;
-      for (int j{0}; j <= d - 2; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
-        c++;
-      }
-
-      d = (d + deg) + 1;
-    }
-
-    //  Compute the tri-degree terms if degree<0
-    m2cAssert(true, "");
-  }
-
   static void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
@@ -12922,7 +12875,11 @@ namespace wls
   {
     static const double b_dv[7]{ 2.6, 2.0, 1.6, 1.6, 1.6, 1.5, 1.4 };
 
+    double d;
     double dist_k;
+    double r;
+    double r1;
+    double r2;
     double rho;
     double sigma;
     int abs_degree;
@@ -12952,7 +12909,35 @@ namespace wls
     ws.set_size(npoints);
 
     //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
-    compute_distances(us, npoints, degree < 0, ws);
+    if (degree >= 0) {
+      //  Compute 2-norm
+      i = us.size(1);
+      for (int b_i{0}; b_i < npoints; b_i++) {
+        d = us[us.size(1) * b_i];
+        r2 = d * d;
+        for (int j{2}; j <= i; j++) {
+          d = us[(j + us.size(1) * b_i) - 1];
+          r2 += d * d;
+        }
+
+        ws[b_i] = std::sqrt(r2);
+      }
+    } else {
+      //  Compute inf-norm for tensor-product
+      i = us.size(1);
+      for (int b_i{0}; b_i < npoints; b_i++) {
+        r = std::abs(us[us.size(1) * b_i]);
+        for (int j{2}; j <= i; j++) {
+          r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+          if (r1 > r) {
+            r = r1;
+          }
+        }
+
+        ws[b_i] = r;
+      }
+    }
+
     if (us.size(1) == 1) {
       i = abs_degree;
     } else if (us.size(1) == 2) {
@@ -12971,11 +12956,7 @@ namespace wls
     rho = sigma * dist_k;
     if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
       for (int b_i{0}; b_i < npoints; b_i++) {
-        double r;
         if (degree > 0) {
-          double d;
-          double r2;
-
           //  Compute 2-norm
           d = us[us.size(1) * b_i];
           r2 = d * d;
@@ -12991,7 +12972,6 @@ namespace wls
           r = std::abs(us[us.size(1) * b_i]);
           i = us.size(1);
           for (int j{2}; j <= i; j++) {
-            double r1;
             r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
             if (r1 > r) {
               r = r1;
@@ -13019,11 +12999,7 @@ namespace wls
         if (b_gamma <= 0.0) {
           ws[b_i] = 0.0;
         } else {
-          double r;
           if (degree > 0) {
-            double d;
-            double r2;
-
             //  Compute 2-norm
             d = us[us.size(1) * b_i];
             r2 = d * d;
@@ -13039,7 +13015,6 @@ namespace wls
             r = std::abs(us[us.size(1) * b_i]);
             i = us.size(1);
             for (int j{2}; j <= i; j++) {
-              double r1;
               r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
               if (r1 > r) {
                 r = r1;
@@ -13058,126 +13033,6 @@ namespace wls
                                  0.1111111111111111);
           }
         }
-      }
-    }
-  }
-
-  static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
-    int degree, const ::coder::array<double, 2U> &us_unscaled, const ::coder::
-    array<double, 1U> &params_sh, const ::coder::array<double, 2U> &params_pw, ::
-    coder::array<double, 1U> &ws)
-  {
-    double alpha;
-    double b_degree;
-    double c0;
-    double c1;
-    double c1dfg;
-    double epsilon;
-    double epsilon_ENO;
-    double h2bar;
-    double h2bar_tmp;
-    double safegauard;
-
-    //  WLS-ENO weights based on function values
-    m2cAssert(params_sh.size(0) >= 2, "first two shared parameters are required");
-
-    m2cAssert(params_pw.size(0) >= npoints,
-              "size(params_pw,1) should be >=npoints");
-
-    m2cAssert(params_pw.size(1) >= 2, "size(params_pw,2) should be >=2");
-    ws.set_size(npoints);
-
-    //  Compute hbar using ws as buffer space
-    compute_distances(us_unscaled, npoints, degree < 0, ws);
-    h2bar = ws[0] * ws[0];
-    for (int i{2}; i <= npoints; i++) {
-      h2bar_tmp = ws[i - 1];
-      h2bar += h2bar_tmp * h2bar_tmp;
-    }
-
-    h2bar /= static_cast<double>(npoints);
-
-    //  Evaluate the inverse-distance weights as base
-    b_degree = 0.5 - static_cast<double>(degree < 0);
-
-    //  use 0.5 or -0.5
-    if ((params_sh.size(0) >= 5) && (params_sh[4] != 0.0)) {
-      h2bar_tmp = params_sh[4];
-    } else {
-      h2bar_tmp = 0.01;
-    }
-
-    //  Weights based on inverse distance
-    epsilon = 0.01;
-    alpha = std::abs(b_degree) / 2.0;
-    if (h2bar_tmp != 0.0) {
-      epsilon = h2bar_tmp;
-    }
-
-    ws.set_size(npoints);
-    for (int i{0}; i < npoints; i++) {
-      double r;
-      double r2;
-      r = std::abs(us[us.size(1) * i]);
-      if (us.size(1) > 1) {
-        if (b_degree > 0.0) {
-          int b_i;
-
-          //  Compute 2-norm
-          r2 = r * r;
-          b_i = us.size(1);
-          for (int c_i{2}; c_i <= b_i; c_i++) {
-            h2bar_tmp = us[(c_i + us.size(1) * i) - 1];
-            r2 += h2bar_tmp * h2bar_tmp;
-          }
-        } else {
-          int b_i;
-
-          //  Compute inf-norm for tensor-product
-          b_i = us.size(1);
-          for (int c_i{2}; c_i <= b_i; c_i++) {
-            double r1;
-            r1 = std::abs(us[(c_i + us.size(1) * i) - 1]);
-            if (r1 > r) {
-              r = r1;
-            }
-          }
-
-          r2 = r * r;
-        }
-      } else {
-        r2 = r * r;
-      }
-
-      //  Compute weight
-      ws[i] = std::pow(r2 + epsilon, -alpha);
-    }
-
-    if ((params_sh.size(0) >= 3) && (params_sh[2] != 0.0)) {
-      c0 = params_sh[2];
-    } else {
-      c0 = 1.0;
-    }
-
-    if ((params_sh.size(0) >= 4) && (params_sh[3] != 0.0)) {
-      c1 = params_sh[3];
-    } else {
-      c1 = 0.05;
-    }
-
-    c1dfg = c1 * params_sh[1];
-    if ((params_sh.size(0) >= 6) && (params_sh[5] != 0.0)) {
-      epsilon_ENO = params_sh[5];
-    } else {
-      epsilon_ENO = 0.001;
-    }
-
-    safegauard = epsilon_ENO * (params_sh[1] * params_sh[1]) * h2bar;
-    if (params_pw.size(1) > 2) {
-      for (int i{0}; i < npoints; i++) {
-        h2bar_tmp = params_pw[params_pw.size(1) * i] - params_sh[0];
-        ws[i] = ws[i] / ((c0 * (h2bar_tmp * h2bar_tmp) + c1dfg *
-                          params_pw[params_pw.size(1) * i + 1]) + safegauard);
       }
     }
   }
@@ -13286,6 +13141,60 @@ namespace wls
           ws[i] = b_gamma * std::pow(r2 + epsilon, -alpha);
         }
       }
+    }
+  }
+
+  static void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
+    npoints, double degree, double params_sh, ::coder::array<double, 1U> &ws)
+  {
+    double alpha;
+    double epsilon;
+
+    //  Weights based on inverse distance
+    epsilon = 0.01;
+    alpha = std::abs(degree) / 2.0;
+    if (params_sh != 0.0) {
+      epsilon = params_sh;
+    }
+
+    ws.set_size(npoints);
+    for (int i{0}; i < npoints; i++) {
+      double r;
+      double r2;
+      r = std::abs(us[us.size(1) * i]);
+      if (us.size(1) > 1) {
+        if (degree > 0.0) {
+          int b_i;
+
+          //  Compute 2-norm
+          r2 = r * r;
+          b_i = us.size(1);
+          for (int c_i{2}; c_i <= b_i; c_i++) {
+            double d;
+            d = us[(c_i + us.size(1) * i) - 1];
+            r2 += d * d;
+          }
+        } else {
+          int b_i;
+
+          //  Compute inf-norm for tensor-product
+          b_i = us.size(1);
+          for (int c_i{2}; c_i <= b_i; c_i++) {
+            double r1;
+            r1 = std::abs(us[(c_i + us.size(1) * i) - 1]);
+            if (r1 > r) {
+              r = r1;
+            }
+          }
+
+          r2 = r * r;
+        }
+      } else {
+        r2 = r * r;
+      }
+
+      //  Compute weight
+      ws[i] = std::pow(r2 + epsilon, -alpha);
     }
   }
 
@@ -14033,14 +13942,114 @@ namespace wls
           wls_buhmann_weights(b_wls->us, npoints, degree, weight->params_shared,
                               weight->params_pointwise, b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, npoints, degree, us, weight->params_shared,
-                          weight->params_pointwise, b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= npoints,
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(npoints);
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i < npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i < npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(npoints);
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, npoints, 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i < npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
@@ -14818,15 +14827,114 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, us.size(0), degree, us,
-                          weight->params_shared, weight->params_pointwise,
-                          b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(us.size(0));
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(us.size(0));
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
@@ -15227,15 +15335,114 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, us.size(0), degree, us,
-                          weight->params_shared, weight->params_pointwise,
-                          b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(us.size(0));
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(us.size(0));
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
@@ -15633,15 +15840,114 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, us.size(0), degree, us,
-                          weight->params_shared, weight->params_pointwise,
-                          b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(us.size(0));
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(us.size(0));
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
@@ -16039,15 +16345,114 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, us.size(0), degree, us,
-                          weight->params_shared, weight->params_pointwise,
-                          b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(us.size(0));
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(us.size(0));
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
@@ -16445,15 +16850,114 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
+          double c0;
+          double c1;
+          double c1dfg;
+          double epsilon_ENO;
+          double epsilon_ID;
+          double h2bar;
+          double h2bar_tmp;
+          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          wls_eno_weights(b_wls->us, us.size(0), degree, us,
-                          weight->params_shared, weight->params_pointwise,
-                          b_wls->rweights);
+          m2cAssert(weight->params_shared.size(0) >= 2,
+                    "first two shared parameters are required");
+
+          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
+                    "size(params_pw,1) should be >=npoints");
+
+          m2cAssert(weight->params_pointwise.size(1) >= 2,
+                    "size(params_pw,2) should be >=2");
+          b_wls->rweights.set_size(us.size(0));
+
+          //  Compute hbar using ws as buffer space
+          if (degree >= 0) {
+            //  Compute 2-norm
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r2;
+              h2bar_tmp = us[us.size(1) * b_i];
+              r2 = h2bar_tmp * h2bar_tmp;
+              for (int j{2}; j <= i; j++) {
+                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
+                r2 += h2bar_tmp * h2bar_tmp;
+              }
+
+              b_wls->rweights[b_i] = std::sqrt(r2);
+            }
+          } else {
+            //  Compute inf-norm for tensor-product
+            i = us.size(1);
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              double r;
+              r = std::abs(us[us.size(1) * b_i]);
+              for (int j{2}; j <= i; j++) {
+                double r1;
+                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+                if (r1 > r) {
+                  r = r1;
+                }
+              }
+
+              b_wls->rweights[b_i] = r;
+            }
+          }
+
+          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
+          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
+            h2bar_tmp = b_wls->rweights[b_i - 1];
+            h2bar += h2bar_tmp * h2bar_tmp;
+          }
+
+          h2bar /= static_cast<double>(us.size(0));
+
+          //  Evaluate the inverse-distance weights as base
+          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
+               != 0.0)) {
+            epsilon_ID = weight->params_shared[4];
+          } else {
+            epsilon_ID = 0.01;
+          }
+
+          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
+                              (degree < 0), epsilon_ID, b_wls->rweights);
+          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
+               != 0.0)) {
+            c0 = weight->params_shared[2];
+          } else {
+            c0 = 1.0;
+          }
+
+          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
+               != 0.0)) {
+            c1 = weight->params_shared[3];
+          } else {
+            c1 = 0.05;
+          }
+
+          c1dfg = c1 * weight->params_shared[1];
+          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
+               != 0.0)) {
+            epsilon_ENO = weight->params_shared[5];
+          } else {
+            epsilon_ENO = 0.001;
+          }
+
+          safegauard = epsilon_ENO * (weight->params_shared[1] *
+            weight->params_shared[1]) * h2bar;
+          if (weight->params_pointwise.size(1) > 2) {
+            for (int b_i{0}; b_i <= npoints; b_i++) {
+              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
+                (1) * b_i] - weight->params_shared[0];
+              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
+                h2bar_tmp) + c1dfg * weight->params_pointwise
+                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
+            }
+          }
         }
       }
 
