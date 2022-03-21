@@ -33,6 +33,7 @@ struct WlsObject {
   int nrows;
   int ncols;
   int rank;
+  boolean_T fullrank;
   ::coder::array<int, 1U> jpvt;
   ::coder::array<double, 1U> work;
   boolean_T rowmajor;
