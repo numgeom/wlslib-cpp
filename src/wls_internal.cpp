@@ -12692,7 +12692,6 @@ namespace wls
     int i;
     int wsize;
 
-    //  rrqr_factor  Compute rank-revealing QR with column pivoting
     if (m == 0) {
       m = A.size(1) - rowoffset;
     } else {
@@ -13207,7 +13206,6 @@ namespace wls
     int stride;
     int unnamed_idx_0;
 
-    //  wls_resize  Reinitialize the buffers of WlsObject
     b_wls->degree = degree;
     b_wls->order = order;
     b_wls->use_dag = use_dag;
@@ -13321,7 +13319,6 @@ namespace wls
     int u0;
     int u1;
 
-    //  wls_func  Compute wls--fitting at one or more points.
     nDims = pnts.size(1) - 1;
 
     //  scale the coordinates; use wls.us as buffer
@@ -13442,7 +13439,6 @@ namespace wls
     int u0;
     int u1;
 
-    //  wls_func  Compute wls--fitting at one or more points.
     npoints = pnts.size(0) - 1;
     nDims = pnts.size(1) - 1;
 
@@ -13564,7 +13560,6 @@ namespace wls
     int u0;
     int u1;
 
-    //  wls_func  Compute wls--fitting at one or more points.
     npoints = pnts.size(0) - 1;
     nDims = pnts.size(1) - 1;
 
@@ -13660,7 +13655,6 @@ namespace wls
     ::coder::array<unsigned char, 1U> dag;
     int dim;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -14108,6 +14102,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14170,7 +14165,6 @@ namespace wls
     int order;
     boolean_T use_dag;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -14483,6 +14477,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14546,7 +14541,6 @@ namespace wls
     int order;
     boolean_T use_dag;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -14993,6 +14987,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15055,7 +15050,6 @@ namespace wls
     int order;
     boolean_T use_dag;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -15501,6 +15495,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15562,7 +15557,6 @@ namespace wls
     int npoints;
     boolean_T use_dag;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -16006,6 +16000,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16066,7 +16061,6 @@ namespace wls
     int npoints;
     boolean_T use_dag;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -16511,6 +16505,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16571,7 +16566,6 @@ namespace wls
     int dim;
     int npoints;
 
-    //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
@@ -17016,6 +17010,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
+      b_wls->fullrank = (b_wls->rank == ncols - interp0);
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
