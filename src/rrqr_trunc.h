@@ -21,10 +21,6 @@ static inline void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int 
                        int rank, ::coder::array<int, 1U> &p,
                        ::coder::array<int, 2U> &work, boolean_T *permuted);
 
-static inline void rrqr_trunc_initialize();
-
-static inline void rrqr_trunc_terminate();
-
 } // namespace wls
 
 #include "rrqr_trunc.cpp"

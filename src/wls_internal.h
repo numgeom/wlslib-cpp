@@ -61,10 +61,6 @@ static inline void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &
                       const WlsWeight *weight, int degree, int order,
                       int interp0, boolean_T use_dag);
 
-static inline void wls_internal_initialize();
-
-static inline void wls_internal_terminate();
-
 static inline void wls_var_bilap(WlsObject *b_wls,
                            const ::coder::array<double, 2U> &quad_pnts,
                            const ::coder::array<double, 2U> &varargin_1,
