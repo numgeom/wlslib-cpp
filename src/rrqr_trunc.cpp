@@ -10,13 +10,14 @@
 
 // Include files
 #include "rrqr_trunc.h"
-#include "m2c_lib.h"
 #include "coder_array.h"
+#include "m2c_lib.h"
 #include <cstdio>
 #include <stdexcept>
 
 // Function Definitions
 namespace wls {
+//  rrqr_trunc  Truncate the output from QRCP based on DAG
 void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
                 ::coder::array<int, 1U> &p, ::coder::array<int, 2U> &work,
                 boolean_T *permuted)
@@ -25,7 +26,6 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
   int child;
   int n;
   int nChanged;
-  //  Truncate the output from QRCP based on DAG
   n = dag.size(1) - 2;
   //  Last column of dag is for signature
   work.set_size(4, dag.size(1) - 1);

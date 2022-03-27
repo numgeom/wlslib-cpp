@@ -9,9 +9,9 @@
 #define WLS_INTERNAL_TYPES_H
 
 // Include files
-#include "rtwtypes.h"
 #include "coder_array.h"
 #include "coder_bounded_array.h"
+#include "rtwtypes.h"
 
 // Type Definitions
 namespace wls {
