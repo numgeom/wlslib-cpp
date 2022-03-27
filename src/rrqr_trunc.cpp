@@ -33,7 +33,7 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
   for (int i{0}; i <= n; i++) {
     work[4 * (p[i] - 1)] = i + 1;
     //  first column for inverse permute
-    work[4 * (p[i] - 1) + 1] = (i + 1 > rank);
+    work[4 * (p[i] - 1) + 1] = i + 1 > rank;
     //  second column for tagging truncation
     work[4 * i + 3] = 0;
     //  third column for stack, and last column for marks
@@ -63,7 +63,7 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
       }
     }
   }
-  *permuted = (nChanged + 1 != 0);
+  *permuted = nChanged + 1 != 0;
   //  If a monomial is truncated but some of its children are not, then make
   while (nChanged + 1 != 0) {
     int c;
@@ -110,14 +110,6 @@ void rrqr_trunc(const ::coder::array<unsigned char, 2U> &dag, int *n1, int rank,
     }
     m2cAssert(*n1 == n2, "Post-condition check failed");
   }
-}
-
-void rrqr_trunc_initialize()
-{
-}
-
-void rrqr_trunc_terminate()
-{
 }
 
 } // namespace wls

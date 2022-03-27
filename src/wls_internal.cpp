@@ -59,7 +59,7 @@ namespace wls
     degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
     coder::array<double, 2U> &V);
   static inline
-  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 1U>
+  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag);
   static inline
   void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
@@ -108,8 +108,10 @@ namespace wls
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
     coder::array<double, 2U> &params_pw, ::coder::array<double, 1U> &ws);
   static inline
-  void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
-    npoints, double degree, double params_sh, ::coder::array<double, 1U> &ws);
+  void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
+    int degree, const ::coder::array<double, 2U> &us_unscaled, const ::coder::
+    array<double, 1U> &params_sh, const ::coder::array<double, 2U> &params_pw, ::
+    coder::array<double, 1U> &ws);
   static inline
   void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
@@ -232,9 +234,9 @@ namespace wls
           break;
         }
 
-        n = (degree + 1);
+        n = degree + 1;
 
-        b_n = (us.size(0) * nrblks);
+        b_n = us.size(0) * nrblks;
         V.set_size(n, b_n);
 
         //  Compute rows corresponding to function values
@@ -416,48 +418,6 @@ namespace wls
     }
   }
 
-  static void gen_vander(const double us_data[], const int us_size[2], int
-    degree, ::coder::array<double, 2U> &V)
-  {
-    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
-    switch (us_size[1]) {
-     case 1:
-      {
-        int b_n;
-        int n;
-
-        //  Generate (confluent) Vandermonde matrix in 1D.
-        m2cAssert(us_size[1] == 1, "");
-
-        //  Handle input arguments
-        //  Number of row blocks
-        n = (degree + 1);
-
-        b_n = (1);
-        V.set_size(n, b_n);
-
-        //  Compute rows corresponding to function values
-        V[0] = 1.0;
-        V[V.size(1)] = us_data[0];
-        n = degree + 1;
-        for (int ii{2}; ii <= n; ii++) {
-          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
-        }
-
-        //  Add row blocks corresponding to kth derivatives
-      }
-      break;
-
-     case 2:
-      gen_vander_2d(us_data, degree, V);
-      break;
-
-     default:
-      gen_vander_3d(us_data, degree, V);
-      break;
-    }
-  }
-
   static void gen_vander(const ::coder::array<double, 2U> &us, int npoints, int
     degree, int order, const double hs_inv_data[], const int hs_inv_size[2], ::
     coder::array<double, 2U> &V)
@@ -518,9 +478,9 @@ namespace wls
           break;
         }
 
-        n = (degree + 1);
+        n = degree + 1;
 
-        b_n = (us.size(0) * nrblks);
+        b_n = us.size(0) * nrblks;
         V.set_size(n, b_n);
 
         //  Compute rows corresponding to function values
@@ -675,12 +635,54 @@ namespace wls
     }
   }
 
+  static void gen_vander(const double us_data[], const int us_size[2], int
+    degree, ::coder::array<double, 2U> &V)
+  {
+    //  Wrapper function for computing confluent Vandermonde matrix in 1D, 2D, or 3D.
+    switch (us_size[1]) {
+     case 1:
+      {
+        int b_n;
+        int n;
+
+        //  Generate (confluent) Vandermonde matrix in 1D.
+        m2cAssert(us_size[1] == 1, "");
+
+        //  Handle input arguments
+        //  Number of row blocks
+        n = degree + 1;
+
+        b_n = 1;
+        V.set_size(n, b_n);
+
+        //  Compute rows corresponding to function values
+        V[0] = 1.0;
+        V[V.size(1)] = us_data[0];
+        n = degree + 1;
+        for (int ii{2}; ii <= n; ii++) {
+          V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+        }
+
+        //  Add row blocks corresponding to kth derivatives
+      }
+      break;
+
+     case 2:
+      gen_vander_2d(us_data, degree, V);
+      break;
+
+     default:
+      gen_vander_3d(us_data, degree, V);
+      break;
+    }
+  }
+
   static inline
-  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 1U>
+  void gen_vander_1d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
     //  Build a dag for Vandermonde matrix in 1D.
-    dag.set_size(degree + 2);
+    dag.set_size(degree + 2, 1);
     for (int i{0}; i < degree; i++) {
       dag[i] = 1U;
     }
@@ -689,43 +691,6 @@ namespace wls
 
     //  a leaf has no child
     dag[dag.size(0) - 1] = static_cast<unsigned char>(degree + 127);
-  }
-
-  static void gen_vander_2d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
-  {
-    int b_n;
-    int c;
-    int n;
-
-    //  Generate generalized/confluent Vandermonde matrix in 2D.
-    n = ((degree + 1) * (degree + 2) / 2);
-
-    b_n = (1);
-    V.set_size(n, b_n);
-
-    //  compute 0th order generalized Vandermonde matrix
-    V[V.size(1) * 2] = us_data[1];
-    V[V.size(1)] = us_data[0];
-    V[0] = 1.0;
-    c = 3;
-    if (degree < 0) {
-      n = -degree;
-    } else {
-      n = degree;
-    }
-
-    for (int deg{2}; deg <= n; deg++) {
-      for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
-        c++;
-      }
-
-      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
-      c++;
-    }
-
-    //  Compute the bi-degree terms if degree<0
   }
 
   static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
@@ -781,9 +746,9 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree);
     }
 
-    n = (b_degree);
+    n = b_degree;
 
-    b_n = (us.size(0) * nrblks);
+    b_n = us.size(0) * nrblks;
     V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
@@ -1808,9 +1773,9 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree);
     }
 
-    n = (b_degree);
+    n = b_degree;
 
-    b_n = (us.size(0) * nrblks);
+    b_n = us.size(0) * nrblks;
     V.set_size(n, b_n);
 
     //  compute 0th order generalized Vandermonde matrix
@@ -2762,6 +2727,43 @@ namespace wls
     }
   }
 
+  static void gen_vander_2d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
+  {
+    int b_n;
+    int c;
+    int n;
+
+    //  Generate generalized/confluent Vandermonde matrix in 2D.
+    n = (degree + 1) * (degree + 2) / 2;
+
+    b_n = 1;
+    V.set_size(n, b_n);
+
+    //  compute 0th order generalized Vandermonde matrix
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
+    c = 3;
+    if (degree < 0) {
+      n = -degree;
+    } else {
+      n = degree;
+    }
+
+    for (int deg{2}; deg <= n; deg++) {
+      for (int j{0}; j < deg; j++) {
+        V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
+        c++;
+      }
+
+      V[V.size(1) * c] = V[V.size(1) * ((c - deg) - 1)] * us_data[1];
+      c++;
+    }
+
+    //  Compute the bi-degree terms if degree<0
+  }
+
   static void gen_vander_2d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
@@ -2869,54 +2871,6 @@ namespace wls
       unsigned char>(degree + 127);
   }
 
-  static void gen_vander_3d(const double us_data[], int degree, ::coder::array<
-    double, 2U> &V)
-  {
-    int b_n;
-    int c;
-    int d;
-    int n;
-
-    //  Generate generalized/confluent Vandermonde matrix in 3D.
-    n = ((degree + 1) * (degree + 2) * (degree + 3) / 6);
-
-    b_n = (1);
-    V.set_size(n, b_n);
-
-    //  compute 0th order generalized Vandermonde matrix
-    V[V.size(1) * 3] = us_data[2];
-    V[V.size(1) * 2] = us_data[1];
-    V[V.size(1)] = us_data[0];
-    V[0] = 1.0;
-    c = 4;
-    d = 4;
-    if (degree < 0) {
-      n = -degree;
-    } else {
-      n = degree;
-    }
-
-    for (int deg{2}; deg <= n; deg++) {
-      //  Within each level, use convention of Pascal triangle with x^deg at peak
-      for (int j{0}; j < deg; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
-        c++;
-      }
-
-      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
-      c++;
-      for (int j{0}; j <= d - 2; j++) {
-        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
-        c++;
-      }
-
-      d = (d + deg) + 1;
-    }
-
-    //  Compute the tri-degree terms if degree<0
-    m2cAssert(true, "");
-  }
-
   static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     int degree, int order, const ::coder::array<double, 1U> &weights, ::coder::
     array<double, 2U> &V)
@@ -2976,9 +2930,9 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree) * (1 - degree);
     }
 
-    b_degree = (b_degree);
+    b_degree = b_degree;
 
-    n = (us.size(0) * nrblks);
+    n = us.size(0) * nrblks;
     V.set_size(b_degree, n);
 
     //  compute 0th order generalized Vandermonde matrix
@@ -7740,9 +7694,9 @@ namespace wls
       b_degree = (1 - degree) * (1 - degree) * (1 - degree);
     }
 
-    b_degree = (b_degree);
+    b_degree = b_degree;
 
-    n = (us.size(0) * nrblks);
+    n = us.size(0) * nrblks;
     V.set_size(b_degree, n);
 
     //  compute 0th order generalized Vandermonde matrix
@@ -12531,6 +12485,54 @@ namespace wls
     }
   }
 
+  static void gen_vander_3d(const double us_data[], int degree, ::coder::array<
+    double, 2U> &V)
+  {
+    int b_n;
+    int c;
+    int d;
+    int n;
+
+    //  Generate generalized/confluent Vandermonde matrix in 3D.
+    n = (degree + 1) * (degree + 2) * (degree + 3) / 6;
+
+    b_n = 1;
+    V.set_size(n, b_n);
+
+    //  compute 0th order generalized Vandermonde matrix
+    V[V.size(1) * 3] = us_data[2];
+    V[V.size(1) * 2] = us_data[1];
+    V[V.size(1)] = us_data[0];
+    V[0] = 1.0;
+    c = 4;
+    d = 4;
+    if (degree < 0) {
+      n = -degree;
+    } else {
+      n = degree;
+    }
+
+    for (int deg{2}; deg <= n; deg++) {
+      //  Within each level, use convention of Pascal triangle with x^deg at peak
+      for (int j{0}; j < deg; j++) {
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
+        c++;
+      }
+
+      V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
+      c++;
+      for (int j{0}; j <= d - 2; j++) {
+        V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
+        c++;
+      }
+
+      d = (d + deg) + 1;
+    }
+
+    //  Compute the tri-degree terms if degree<0
+    m2cAssert(true, "");
+  }
+
   static void gen_vander_3d_dag(int degree, ::coder::array<unsigned char, 2U>
     &dag)
   {
@@ -12730,55 +12732,6 @@ namespace wls
   }
 
   static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-    int rank, ::coder::array<double, 2U> &bs, ::coder::array<double, 1U> &work)
-  {
-    int stride_bs;
-    int u1;
-    int wsize;
-
-    //  Perform Q*bs, where Q is stored implicitly in QR
-    stride_bs = bs.size(1);
-
-    //  Obtain input arguments
-    if (m == 0) {
-      m = QR.size(1);
-    }
-
-    if (n == 0) {
-      n = QR.size(0) - 1;
-    }
-
-    if (rank == 0) {
-      rank = n;
-    }
-
-    u1 = n;
-    if (m <= n) {
-      u1 = m;
-    }
-
-    if ((rank > u1) || (rank < 1)) {
-      m2cErrMsgIdAndTxt("wlslib:WrongRank",
-                        "Rank %d must be a positive value no greater than min(%d, %d).",
-                        rank, m, n);
-    }
-
-    //  Resize work space if needed
-    wsize = wls::query_work_size(m, n);
-    work.set_size(wsize);
-
-    //  zero out extra rows in bs to avoid errors in LAPACK
-    u1 = n + 1;
-    for (int i{u1}; i <= m; i++) {
-      bs[i - 1] = 0.0;
-    }
-
-    //  Invoke C++ function
-    wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), 1, &bs[0], stride_bs,
-                     &(work.data())[0], wsize);
-  }
-
-  static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
     int rank, ::coder::array<double, 2U> &bs, int nrhs, ::coder::array<double,
     1U> &work)
   {
@@ -12831,6 +12784,55 @@ namespace wls
 
     //  Invoke C++ function
     wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), nrhs, &bs[0], stride_bs,
+                     &(work.data())[0], wsize);
+  }
+
+  static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
+    int rank, ::coder::array<double, 2U> &bs, ::coder::array<double, 1U> &work)
+  {
+    int stride_bs;
+    int u1;
+    int wsize;
+
+    //  Perform Q*bs, where Q is stored implicitly in QR
+    stride_bs = bs.size(1);
+
+    //  Obtain input arguments
+    if (m == 0) {
+      m = QR.size(1);
+    }
+
+    if (n == 0) {
+      n = QR.size(0) - 1;
+    }
+
+    if (rank == 0) {
+      rank = n;
+    }
+
+    u1 = n;
+    if (m <= n) {
+      u1 = m;
+    }
+
+    if ((rank > u1) || (rank < 1)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongRank",
+                        "Rank %d must be a positive value no greater than min(%d, %d).",
+                        rank, m, n);
+    }
+
+    //  Resize work space if needed
+    wsize = wls::query_work_size(m, n);
+    work.set_size(wsize);
+
+    //  zero out extra rows in bs to avoid errors in LAPACK
+    u1 = n + 1;
+    for (int i{u1}; i <= m; i++) {
+      bs[i - 1] = 0.0;
+    }
+
+    //  Invoke C++ function
+    wls::rrqr_qmulti(&QR[0], m, n, rank, QR.size(1), 1, &bs[0], stride_bs,
                      &(work.data())[0], wsize);
   }
 
@@ -12905,7 +12907,12 @@ namespace wls
       sigma = b_dv[abs_degree - 2];
     }
 
-    ws.set_size(npoints);
+    if (ws.size(0) == 0) {
+      ws.set_size(npoints);
+    } else {
+      m2cAssert(ws.size(0) >= npoints,
+                "length of ws cannot be smaller than npoints");
+    }
 
     //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
     if (degree >= 0) {
@@ -13036,6 +13043,158 @@ namespace wls
     }
   }
 
+  static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
+    int degree, const ::coder::array<double, 2U> &us_unscaled, const ::coder::
+    array<double, 1U> &params_sh, const ::coder::array<double, 2U> &params_pw, ::
+    coder::array<double, 1U> &ws)
+  {
+    double alpha;
+    double b_degree;
+    double c0;
+    double c1;
+    double c1dfg;
+    double epsilon;
+    double epsilon_ENO;
+    double h2bar;
+    double h2bar_tmp;
+    double r;
+    double r1;
+    double r2;
+    double safegauard;
+    int i;
+
+    //  WLS-ENO weights based on function values
+    m2cAssert(params_sh.size(0) >= 2, "first two shared parameters are required");
+
+    m2cAssert(params_pw.size(0) >= npoints,
+              "size(params_pw,1) should be >=npoints");
+
+    m2cAssert(params_pw.size(1) >= 2, "size(params_pw,2) should be >=2");
+    if (ws.size(0) == 0) {
+      ws.set_size(npoints);
+    } else {
+      m2cAssert(ws.size(0) >= npoints,
+                "length of ws cannot be smaller than npoints");
+    }
+
+    //  Compute hbar using ws as buffer space
+    if (degree >= 0) {
+      //  Compute 2-norm
+      i = us_unscaled.size(1);
+      for (int b_i{0}; b_i < npoints; b_i++) {
+        h2bar_tmp = us_unscaled[us_unscaled.size(1) * b_i];
+        r2 = h2bar_tmp * h2bar_tmp;
+        for (int j{2}; j <= i; j++) {
+          h2bar_tmp = us_unscaled[(j + us_unscaled.size(1) * b_i) - 1];
+          r2 += h2bar_tmp * h2bar_tmp;
+        }
+
+        ws[b_i] = std::sqrt(r2);
+      }
+    } else {
+      //  Compute inf-norm for tensor-product
+      i = us_unscaled.size(1);
+      for (int b_i{0}; b_i < npoints; b_i++) {
+        r = std::abs(us_unscaled[us_unscaled.size(1) * b_i]);
+        for (int j{2}; j <= i; j++) {
+          r1 = std::abs(us_unscaled[(j + us_unscaled.size(1) * b_i) - 1]);
+          if (r1 > r) {
+            r = r1;
+          }
+        }
+
+        ws[b_i] = r;
+      }
+    }
+
+    h2bar = ws[0] * ws[0];
+    for (int b_i{2}; b_i <= npoints; b_i++) {
+      h2bar_tmp = ws[b_i - 1];
+      h2bar += h2bar_tmp * h2bar_tmp;
+    }
+
+    h2bar /= static_cast<double>(npoints);
+
+    //  Evaluate the inverse-distance weights as base
+    b_degree = 0.5 - static_cast<double>(degree < 0);
+
+    //  use 0.5 or -0.5
+    if ((params_sh.size(0) >= 5) && (params_sh[4] != 0.0)) {
+      h2bar_tmp = params_sh[4];
+    } else {
+      h2bar_tmp = 0.01;
+    }
+
+    //  Weights based on inverse distance
+    epsilon = 0.01;
+    alpha = std::abs(b_degree) / 2.0;
+    if (h2bar_tmp != 0.0) {
+      epsilon = h2bar_tmp;
+    }
+
+    m2cAssert(ws.size(0) >= npoints,
+              "length of ws cannot be smaller than npoints");
+    for (int b_i{0}; b_i < npoints; b_i++) {
+      r = std::abs(us[us.size(1) * b_i]);
+      if (us.size(1) > 1) {
+        if (b_degree > 0.0) {
+          //  Compute 2-norm
+          r2 = r * r;
+          i = us.size(1);
+          for (int c_i{2}; c_i <= i; c_i++) {
+            h2bar_tmp = us[(c_i + us.size(1) * b_i) - 1];
+            r2 += h2bar_tmp * h2bar_tmp;
+          }
+        } else {
+          //  Compute inf-norm for tensor-product
+          i = us.size(1);
+          for (int c_i{2}; c_i <= i; c_i++) {
+            r1 = std::abs(us[(c_i + us.size(1) * b_i) - 1]);
+            if (r1 > r) {
+              r = r1;
+            }
+          }
+
+          r2 = r * r;
+        }
+      } else {
+        r2 = r * r;
+      }
+
+      //  Compute weight
+      ws[b_i] = std::pow(r2 + epsilon, -alpha);
+    }
+
+    if ((params_sh.size(0) >= 3) && (params_sh[2] != 0.0)) {
+      c0 = params_sh[2];
+    } else {
+      c0 = 1.0;
+    }
+
+    if ((params_sh.size(0) >= 4) && (params_sh[3] != 0.0)) {
+      c1 = params_sh[3];
+    } else {
+      c1 = 0.05;
+    }
+
+    c1dfg = c1 * params_sh[1];
+    if ((params_sh.size(0) >= 6) && (params_sh[5] != 0.0)) {
+      epsilon_ENO = params_sh[5];
+    } else {
+      epsilon_ENO = 0.001;
+    }
+
+    safegauard = epsilon_ENO * (params_sh[1] * params_sh[1]) * h2bar;
+    if (params_pw.size(1) > 2) {
+      for (int b_i{0}; b_i < npoints; b_i++) {
+        h2bar_tmp = params_pw[params_pw.size(1) * b_i] - params_sh[0];
+        ws[b_i] = ws[b_i] / ((c0 * (h2bar_tmp * h2bar_tmp) + c1dfg *
+                              params_pw[params_pw.size(1) * b_i + 1]) +
+                             safegauard);
+      }
+    }
+  }
+
   static void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
     npoints, int degree, const ::coder::array<double, 1U> &params_sh, const ::
     coder::array<double, 2U> &params_pw, ::coder::array<double, 1U> &ws)
@@ -13061,7 +13220,13 @@ namespace wls
       alpha = params_sh[1];
     }
 
-    ws.set_size(npoints);
+    if (ws.size(0) == 0) {
+      ws.set_size(npoints);
+    } else {
+      m2cAssert(ws.size(0) >= npoints,
+                "length of ws cannot be smaller than npoints");
+    }
+
     if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
       for (int i{0}; i < npoints; i++) {
         double r;
@@ -13140,60 +13305,6 @@ namespace wls
           ws[i] = b_gamma * std::pow(r2 + epsilon, -alpha);
         }
       }
-    }
-  }
-
-  static void wls_invdist_weights(const ::coder::array<double, 2U> &us, int
-    npoints, double degree, double params_sh, ::coder::array<double, 1U> &ws)
-  {
-    double alpha;
-    double epsilon;
-
-    //  Weights based on inverse distance
-    epsilon = 0.01;
-    alpha = std::abs(degree) / 2.0;
-    if (params_sh != 0.0) {
-      epsilon = params_sh;
-    }
-
-    ws.set_size(npoints);
-    for (int i{0}; i < npoints; i++) {
-      double r;
-      double r2;
-      r = std::abs(us[us.size(1) * i]);
-      if (us.size(1) > 1) {
-        if (degree > 0.0) {
-          int b_i;
-
-          //  Compute 2-norm
-          r2 = r * r;
-          b_i = us.size(1);
-          for (int c_i{2}; c_i <= b_i; c_i++) {
-            double d;
-            d = us[(c_i + us.size(1) * i) - 1];
-            r2 += d * d;
-          }
-        } else {
-          int b_i;
-
-          //  Compute inf-norm for tensor-product
-          b_i = us.size(1);
-          for (int c_i{2}; c_i <= b_i; c_i++) {
-            double r1;
-            r1 = std::abs(us[(c_i + us.size(1) * i) - 1]);
-            if (r1 > r) {
-              r = r1;
-            }
-          }
-
-          r2 = r * r;
-        }
-      } else {
-        r2 = r * r;
-      }
-
-      //  Compute weight
-      ws[i] = std::pow(r2 + epsilon, -alpha);
     }
   }
 
@@ -13652,14 +13763,13 @@ namespace wls
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag, int npoints)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int dim;
 
     m2cAssert(us.size(1) >= 1, "");
 
     //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = (interp0 != 0);
+    b_wls->interp0 = interp0 != 0;
     interp0 = b_wls->interp0;
     b_wls->use_dag = use_dag;
     if (npoints <= 0) {
@@ -13675,8 +13785,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -13686,18 +13796,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -13724,28 +13829,28 @@ namespace wls
             b = true;
             b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i < npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -13790,28 +13895,28 @@ namespace wls
             b = true;
             b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i < npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -13846,8 +13951,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i < npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -13885,9 +13990,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i < npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -13922,9 +14027,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -13936,114 +14041,14 @@ namespace wls
           wls_buhmann_weights(b_wls->us, npoints, degree, weight->params_shared,
                               weight->params_pointwise, b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= npoints,
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(npoints);
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i < npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i < npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(npoints);
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, npoints, 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i < npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, npoints, degree, us, weight->params_shared,
+                          weight->params_pointwise, b_wls->rweights);
         }
       }
 
@@ -14076,16 +14081,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -14102,7 +14107,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14157,7 +14162,6 @@ namespace wls
 
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int degree;
     int dim;
     int interp0;
@@ -14184,8 +14188,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -14194,18 +14198,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -14230,31 +14229,31 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               int i1;
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 i1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > i1) {
-                    loop_ub -= i1;
+                  b_us += us.size(1);
+                  if (b_us > i1) {
+                    b_us -= i1;
                   }
                 }
               }
 
               i1 = b_wls->us.size(0);
-              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[loop_ub] -
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us] -
                 us[0];
             }
           }
@@ -14297,31 +14296,31 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               int i1;
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 i1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > i1) {
-                    loop_ub -= i1;
+                  b_us += us.size(1);
+                  if (b_us > i1) {
+                    b_us -= i1;
                   }
                 }
               }
 
               i1 = b_wls->us.size(0);
-              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[loop_ub];
+              b_wls->us[b_i % i1 * b_wls->us.size(1) + b_i / i1] = us[b_us];
             }
           }
           break;
@@ -14356,8 +14355,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -14395,9 +14394,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -14431,9 +14430,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
 
         //  unit weights
-        loop_ub = b_wls->rweights.size(0);
-        b_wls->rweights.set_size(loop_ub);
-        for (i = 0; i < loop_ub; i++) {
+        b_us = b_wls->rweights.size(0);
+        b_wls->rweights.set_size(b_us);
+        for (i = 0; i < b_us; i++) {
           b_wls->rweights[i] = 1.0;
         }
       }
@@ -14477,7 +14476,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -14533,7 +14532,6 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int degree;
     int dim;
     int interp0;
@@ -14558,8 +14556,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -14569,18 +14567,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -14605,30 +14598,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -14671,30 +14664,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -14729,8 +14722,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -14768,9 +14761,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -14805,9 +14798,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -14821,114 +14814,15 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(us.size(0));
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(us.size(0));
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, us.size(0), degree, us,
+                          weight->params_shared, weight->params_pointwise,
+                          b_wls->rweights);
         }
       }
 
@@ -14961,16 +14855,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -14987,7 +14881,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15043,7 +14937,6 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int interp0;
     int npoints;
@@ -15066,8 +14959,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -15077,18 +14970,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -15113,30 +15001,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -15179,30 +15067,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -15237,8 +15125,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -15276,9 +15164,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -15313,9 +15201,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -15329,114 +15217,15 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(us.size(0));
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(us.size(0));
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, us.size(0), degree, us,
+                          weight->params_shared, weight->params_pointwise,
+                          b_wls->rweights);
         }
       }
 
@@ -15469,16 +15258,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -15495,7 +15284,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -15551,7 +15340,6 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int interp0;
     int npoints;
@@ -15571,8 +15359,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -15582,18 +15370,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -15618,30 +15401,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -15684,30 +15467,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -15742,8 +15525,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -15781,9 +15564,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -15818,9 +15601,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -15834,114 +15617,15 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(us.size(0));
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(us.size(0));
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, us.size(0), degree, us,
+                          weight->params_shared, weight->params_pointwise,
+                          b_wls->rweights);
         }
       }
 
@@ -15974,16 +15658,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -16000,7 +15684,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16056,7 +15740,6 @@ namespace wls
   void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us, const
                  WlsWeight *weight, int degree, int order, int interp0)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int npoints;
     boolean_T use_dag;
@@ -16065,7 +15748,7 @@ namespace wls
 
     //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = (interp0 != 0);
+    b_wls->interp0 = interp0 != 0;
     interp0 = b_wls->interp0;
     use_dag = b_wls->use_dag;
     npoints = us.size(0) - 1;
@@ -16076,8 +15759,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -16087,18 +15770,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -16123,30 +15801,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -16189,30 +15867,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -16247,8 +15925,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -16286,9 +15964,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -16323,9 +16001,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -16339,114 +16017,15 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(us.size(0));
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(us.size(0));
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, us.size(0), degree, us,
+                          weight->params_shared, weight->params_pointwise,
+                          b_wls->rweights);
         }
       }
 
@@ -16479,16 +16058,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -16505,7 +16084,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -16562,7 +16141,6 @@ namespace wls
                  WlsWeight *weight, int degree, int order, int interp0,
                  boolean_T use_dag)
   {
-    ::coder::array<unsigned char, 1U> dag;
     int dim;
     int npoints;
 
@@ -16570,7 +16148,7 @@ namespace wls
 
     //  Process input arguments
     dim = us.size(1) - 1;
-    b_wls->interp0 = (interp0 != 0);
+    b_wls->interp0 = interp0 != 0;
     interp0 = b_wls->interp0;
     b_wls->use_dag = use_dag;
     npoints = us.size(0) - 1;
@@ -16581,8 +16159,8 @@ namespace wls
       double maxx;
       double maxx_inv;
       double thres;
+      int b_us;
       int i;
-      int loop_ub;
       int ncols;
       int nrblks;
       int src;
@@ -16592,18 +16170,13 @@ namespace wls
       //  Recompute DAG if use_dag and its signature does not match
       if (use_dag) {
         i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
-        loop_ub = b_wls->dag.size(0);
-        if (b_wls->dag[i % loop_ub * b_wls->dag.size(1) + i / loop_ub] != degree
-            + 127) {
+        b_us = b_wls->dag.size(0);
+        if (b_wls->dag[i % b_us * b_wls->dag.size(1) + i / b_us] != degree + 127)
+        {
           //  Wrapper function for building DAG in nD.
           switch (us.size(1)) {
            case 1:
-            gen_vander_1d_dag(degree, dag);
-            b_wls->dag.set_size(dag.size(0), 1);
-            loop_ub = dag.size(0);
-            for (i = 0; i < loop_ub; i++) {
-              b_wls->dag[i] = dag[i];
-            }
+            gen_vander_1d_dag(degree, b_wls->dag);
             break;
 
            case 2:
@@ -16628,30 +16201,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = us[0];
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub] -
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us] -
                 us[0];
             }
           }
@@ -16694,30 +16267,30 @@ namespace wls
             b_wls->origin.size[0] = 1;
             b_wls->origin.data[0] = 0.0;
             b = true;
-            b1 = (us.size(1) <= 0);
+            b1 = us.size(1) <= 0;
             i = us.size(1) * us.size(0);
-            loop_ub = 0;
+            b_us = 0;
             for (int b_i{0}; b_i <= npoints; b_i++) {
               if (b1 || (b_i >= i)) {
-                loop_ub = 0;
+                b_us = 0;
                 b = true;
               } else if (b) {
                 b = false;
-                loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
               } else {
                 u1 = us.size(1) * us.size(0) - 1;
-                if (loop_ub > MAX_int32_T - us.size(1)) {
-                  loop_ub = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
+                if (b_us > MAX_int32_T - us.size(1)) {
+                  b_us = b_i % us.size(0) * us.size(1) + b_i / us.size(0);
                 } else {
-                  loop_ub += us.size(1);
-                  if (loop_ub > u1) {
-                    loop_ub -= u1;
+                  b_us += us.size(1);
+                  if (b_us > u1) {
+                    b_us -= u1;
                   }
                 }
               }
 
               u1 = b_wls->us.size(0);
-              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[loop_ub];
+              b_wls->us[b_i % u1 * b_wls->us.size(1) + b_i / u1] = us[b_us];
             }
           }
           break;
@@ -16752,8 +16325,8 @@ namespace wls
       maxx = 0.0;
       switch (us.size(1)) {
        case 1:
-        i = b_wls->us.size(0);
         for (int b_i{0}; b_i <= npoints; b_i++) {
+          i = b_wls->us.size(0);
           maxx = std::fmax(maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1)
             + b_i / i]));
         }
@@ -16791,9 +16364,9 @@ namespace wls
          case 1:
           for (int b_i{0}; b_i <= npoints; b_i++) {
             i = b_wls->us.size(0);
-            loop_ub = b_wls->us.size(0);
+            b_us = b_wls->us.size(0);
             b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] = b_wls->us[b_i %
-              loop_ub * b_wls->us.size(1) + b_i / loop_ub] * maxx_inv;
+              b_us * b_wls->us.size(1) + b_i / b_us] * maxx_inv;
           }
           break;
 
@@ -16828,9 +16401,9 @@ namespace wls
         b_wls->rweights.set_size(b_wls->V.size(1));
         if ((weight->name.size(1) == 0) || (weight->name[0] == 'U')) {
           //  unit weights
-          loop_ub = b_wls->rweights.size(0);
-          b_wls->rweights.set_size(loop_ub);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->rweights.size(0);
+          b_wls->rweights.set_size(b_us);
+          for (i = 0; i < b_us; i++) {
             b_wls->rweights[i] = 1.0;
           }
         } else if ((weight->name[0] == 'I') || (weight->name[0] == 'i')) {
@@ -16844,114 +16417,15 @@ namespace wls
                               weight->params_shared, weight->params_pointwise,
                               b_wls->rweights);
         } else {
-          double c0;
-          double c1;
-          double c1dfg;
-          double epsilon_ENO;
-          double epsilon_ID;
-          double h2bar;
-          double h2bar_tmp;
-          double safegauard;
           if ((weight->name[0] != 'E') && (weight->name[0] != 'e')) {
             m2cErrMsgIdAndTxt("wlslib:WrongWeightName",
                               "Weighting scheme must be unit, inverse, Buhmann, or WLS-ENO.");
           }
 
           //  WLS-ENO
-          m2cAssert(weight->params_shared.size(0) >= 2,
-                    "first two shared parameters are required");
-
-          m2cAssert(weight->params_pointwise.size(0) >= us.size(0),
-                    "size(params_pw,1) should be >=npoints");
-
-          m2cAssert(weight->params_pointwise.size(1) >= 2,
-                    "size(params_pw,2) should be >=2");
-          b_wls->rweights.set_size(us.size(0));
-
-          //  Compute hbar using ws as buffer space
-          if (degree >= 0) {
-            //  Compute 2-norm
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r2;
-              h2bar_tmp = us[us.size(1) * b_i];
-              r2 = h2bar_tmp * h2bar_tmp;
-              for (int j{2}; j <= i; j++) {
-                h2bar_tmp = us[(j + us.size(1) * b_i) - 1];
-                r2 += h2bar_tmp * h2bar_tmp;
-              }
-
-              b_wls->rweights[b_i] = std::sqrt(r2);
-            }
-          } else {
-            //  Compute inf-norm for tensor-product
-            i = us.size(1);
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              double r;
-              r = std::abs(us[us.size(1) * b_i]);
-              for (int j{2}; j <= i; j++) {
-                double r1;
-                r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-                if (r1 > r) {
-                  r = r1;
-                }
-              }
-
-              b_wls->rweights[b_i] = r;
-            }
-          }
-
-          h2bar = b_wls->rweights[0] * b_wls->rweights[0];
-          for (int b_i{2}; b_i <= npoints + 1; b_i++) {
-            h2bar_tmp = b_wls->rweights[b_i - 1];
-            h2bar += h2bar_tmp * h2bar_tmp;
-          }
-
-          h2bar /= static_cast<double>(us.size(0));
-
-          //  Evaluate the inverse-distance weights as base
-          if ((weight->params_shared.size(0) >= 5) && (weight->params_shared[4]
-               != 0.0)) {
-            epsilon_ID = weight->params_shared[4];
-          } else {
-            epsilon_ID = 0.01;
-          }
-
-          wls_invdist_weights(b_wls->us, us.size(0), 0.5 - static_cast<double>
-                              (degree < 0), epsilon_ID, b_wls->rweights);
-          if ((weight->params_shared.size(0) >= 3) && (weight->params_shared[2]
-               != 0.0)) {
-            c0 = weight->params_shared[2];
-          } else {
-            c0 = 1.0;
-          }
-
-          if ((weight->params_shared.size(0) >= 4) && (weight->params_shared[3]
-               != 0.0)) {
-            c1 = weight->params_shared[3];
-          } else {
-            c1 = 0.05;
-          }
-
-          c1dfg = c1 * weight->params_shared[1];
-          if ((weight->params_shared.size(0) >= 6) && (weight->params_shared[5]
-               != 0.0)) {
-            epsilon_ENO = weight->params_shared[5];
-          } else {
-            epsilon_ENO = 0.001;
-          }
-
-          safegauard = epsilon_ENO * (weight->params_shared[1] *
-            weight->params_shared[1]) * h2bar;
-          if (weight->params_pointwise.size(1) > 2) {
-            for (int b_i{0}; b_i <= npoints; b_i++) {
-              h2bar_tmp = weight->params_pointwise[weight->params_pointwise.size
-                (1) * b_i] - weight->params_shared[0];
-              b_wls->rweights[b_i] = b_wls->rweights[b_i] / ((c0 * (h2bar_tmp *
-                h2bar_tmp) + c1dfg * weight->params_pointwise
-                [weight->params_pointwise.size(1) * b_i + 1]) + safegauard);
-            }
-          }
+          wls_eno_weights(b_wls->us, us.size(0), degree, us,
+                          weight->params_shared, weight->params_pointwise,
+                          b_wls->rweights);
         }
       }
 
@@ -16984,16 +16458,16 @@ namespace wls
       b_wls->ncols = ncols;
 
       //  Omit rows in CVM if needed
-      loop_ub = weight->omit_rows.size(0);
+      b_us = weight->omit_rows.size(0);
       u1 = b_wls->nrows;
-      if (loop_ub <= u1) {
-        u1 = loop_ub;
+      if (b_us <= u1) {
+        u1 = b_us;
       }
 
       for (int b_i{0}; b_i < u1; b_i++) {
         if (weight->omit_rows[b_i]) {
-          loop_ub = b_wls->V.size(0);
-          for (i = 0; i < loop_ub; i++) {
+          b_us = b_wls->V.size(0);
+          for (i = 0; i < b_us; i++) {
             b_wls->V[b_i + b_wls->V.size(1) * i] = 0.0;
           }
         }
@@ -17010,7 +16484,7 @@ namespace wls
       rrqr_factor(b_wls->V, thres, interp0, interp0, b_wls->nrows - interp0,
                   ncols - interp0, b_wls->QR, b_wls->jpvt, &b_wls->rank,
                   b_wls->work);
-      b_wls->fullrank = (b_wls->rank == ncols - interp0);
+      b_wls->fullrank = b_wls->rank == ncols - interp0;
       if ((b_wls->rweights.size(0) != 0) && (order > 0)) {
         //  Compute weights for derivatives
         if (order <= 2) {
@@ -17061,14 +16535,6 @@ namespace wls
         }
       }
     }
-  }
-
-  void wls_internal_initialize()
-  {
-  }
-
-  void wls_internal_terminate()
-  {
   }
 
   void wls_var_bilap(WlsObject *b_wls, const ::coder::array<double, 2U>
@@ -17161,7 +16627,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -17202,7 +16668,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -17232,18 +16698,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -17353,7 +16819,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -17394,7 +16860,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -17424,18 +16890,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -17542,7 +17008,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -17575,7 +17041,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -17696,7 +17162,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -17737,7 +17203,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -17822,7 +17288,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -17876,7 +17342,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -18001,7 +17467,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -18064,7 +17530,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -18213,7 +17679,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -18267,7 +17733,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -18391,7 +17857,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -18454,7 +17920,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -18612,7 +18078,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (9);
+    u0 = 9;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -18657,7 +18123,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-    u0 = (9);
+    u0 = 9;
     vdops.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -18777,7 +18243,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -18831,7 +18297,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -18958,7 +18424,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (9);
+      u0 = 9;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -19021,7 +18487,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (9);
+      u0 = 9;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -19194,7 +18660,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (hess_size);
+      u0 = hess_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -19248,7 +18714,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (hess_size);
+      u0 = hess_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -19424,7 +18890,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -19490,7 +18956,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -19684,7 +19150,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (hess_size);
+      u0 = hess_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -19738,7 +19204,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (hess_size);
+      u0 = hess_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -19910,7 +19376,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -19976,7 +19442,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -20209,7 +19675,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (hess_size);
+    u0 = hess_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -20254,7 +19720,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-    u0 = (hess_size);
+    u0 = hess_size;
     vdops.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -20426,7 +19892,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (hess_size);
+      u0 = hess_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -20480,7 +19946,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (hess_size);
+      u0 = hess_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -20658,7 +20124,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -20724,7 +20190,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size_idx_0);
+      u0 = grad_div_size_idx_0;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -20910,7 +20376,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (grad_size);
+    u1 = grad_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -20962,7 +20428,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u1 = (grad_size);
+    u1 = grad_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -21000,9 +20466,9 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (1);
+      u1 = 1;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -21011,9 +20477,9 @@ namespace wls
     } else {
       int iFunc;
 
-      u1 = (1);
+      u1 = 1;
 
-      u0 = (grad_size);
+      u0 = grad_size;
       u0 /= quad_pnts.size(1);
       varargout_2.set_size(u0, u1);
       u0 *= u1;
@@ -21135,7 +20601,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (grad_size);
+    u1 = grad_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -21187,7 +20653,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u1 = (grad_size);
+    u1 = grad_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -21225,9 +20691,9 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (1);
+      u1 = 1;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -21236,9 +20702,9 @@ namespace wls
     } else {
       int iFunc;
 
-      u1 = (1);
+      u1 = 1;
 
-      u0 = (grad_size);
+      u0 = grad_size;
       u0 /= quad_pnts.size(1);
       varargout_2.set_size(u0, u1);
       u0 *= u1;
@@ -21348,7 +20814,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (grad_size);
+    u0 = grad_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -21382,7 +20848,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u0 = (grad_size);
+    u0 = grad_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -21504,7 +20970,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (grad_size);
+    u0 = grad_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -21556,7 +21022,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u0 = (grad_size);
+    u0 = grad_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -21642,7 +21108,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     varargin_3_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, varargin_3_idx_0_tmp_tmp);
     u0 = varargin_3_idx_0_tmp_tmp * u1;
@@ -21675,7 +21141,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -21717,18 +21183,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -21796,7 +21262,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     quad_pnts_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, quad_pnts_idx_0_tmp_tmp);
     u0 = quad_pnts_idx_0_tmp_tmp * u1;
@@ -21829,7 +21295,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -21871,18 +21337,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -21947,7 +21413,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -21972,7 +21438,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -22051,7 +21517,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -22084,7 +21550,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -22212,7 +21678,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (grad_size);
+    u1 = grad_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -22264,7 +21730,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u1 = (grad_size);
+    u1 = grad_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -22302,18 +21768,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (grad_size);
+      u0 = grad_size;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -22428,7 +21894,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (grad_size);
+    u1 = grad_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -22480,7 +21946,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u1 = (grad_size);
+    u1 = grad_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -22518,18 +21984,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (grad_size);
+      u0 = grad_size;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -22632,7 +22098,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (grad_size);
+    u0 = grad_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -22666,7 +22132,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u0 = (grad_size);
+    u0 = grad_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -22788,7 +22254,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (grad_size);
+    u0 = grad_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -22840,7 +22306,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, grad_size,
                 b_wls->work);
 
-    u0 = (grad_size);
+    u0 = grad_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -22964,7 +22430,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -23018,7 +22484,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -23184,7 +22650,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -23236,7 +22702,7 @@ namespace wls
                   b_wls->interp0, b_wls->rank, b_wls->vdops, grad_div_size,
                   b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -23370,7 +22836,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -23424,7 +22890,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -23586,7 +23052,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -23638,7 +23104,7 @@ namespace wls
                   b_wls->interp0, b_wls->rank, b_wls->vdops, grad_div_size,
                   b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -23811,7 +23277,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (hess_size);
+    u0 = hess_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -23856,7 +23322,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-    u0 = (hess_size);
+    u0 = hess_size;
     vdops.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -24024,7 +23490,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -24078,7 +23544,7 @@ namespace wls
       rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                   b_wls->interp0, b_wls->rank, b_wls->vdops, nOps, b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -24246,7 +23712,7 @@ namespace wls
       }
 
       //  Force wls.vdops to be varsize and each operator to be stored contiguously
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       u1 = nrows_vdops - b_wls->interp0;
       b_wls->vdops.set_size(u0, u1);
       u0 *= u1;
@@ -24298,7 +23764,7 @@ namespace wls
                   b_wls->interp0, b_wls->rank, b_wls->vdops, grad_div_size,
                   b_wls->work);
 
-      u0 = (grad_div_size);
+      u0 = grad_div_size;
       vdops.set_size(nrows_vdops, u0);
 
       //  Transpose the operator for row-major
@@ -24425,7 +23891,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (hess_size);
+    u1 = hess_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -24477,7 +23943,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, hess_size,
                 b_wls->work);
 
-    u1 = (hess_size);
+    u1 = hess_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -24515,18 +23981,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (hess_size);
+      u0 = hess_size;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -24642,7 +24108,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (hess_size);
+    u1 = hess_size;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -24694,7 +24160,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, hess_size,
                 b_wls->work);
 
-    u1 = (hess_size);
+    u1 = hess_size;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -24732,18 +24198,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (hess_size);
+      u0 = hess_size;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -24847,7 +24313,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (hess_size);
+    u0 = hess_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -24881,7 +24347,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, hess_size,
                 b_wls->work);
 
-    u0 = (hess_size);
+    u0 = hess_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -25004,7 +24470,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (hess_size);
+    u0 = hess_size;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -25056,7 +24522,7 @@ namespace wls
                 b_wls->interp0, b_wls->rank, b_wls->vdops, hess_size,
                 b_wls->work);
 
-    u0 = (hess_size);
+    u0 = hess_size;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -25167,7 +24633,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -25208,7 +24674,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -25238,18 +24704,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -25342,7 +24808,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u1 = (1);
+    u1 = 1;
     stride_idx_0_tmp_tmp = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u1, stride_idx_0_tmp_tmp);
     u0 = stride_idx_0_tmp_tmp * u1;
@@ -25383,7 +24849,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u1 = (1);
+    u1 = 1;
     varargout_1.set_size(nrows_vdops, u1);
 
     //  Transpose the operator for row-major
@@ -25413,18 +24879,18 @@ namespace wls
     }
 
     if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-      u1 = (b_wls->ncols);
+      u1 = b_wls->ncols;
 
-      u0 = (0);
+      u0 = 0;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
         varargout_2[u1] = 0.0;
       }
     } else {
-      u1 = (varargin_2.size(1));
+      u1 = varargin_2.size(1);
 
-      u0 = (1);
+      u0 = 1;
       varargout_2.set_size(u0, u1);
       u0 *= u1;
       for (u1 = 0; u1 < u0; u1++) {
@@ -25514,7 +24980,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -25547,7 +25013,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
@@ -25651,7 +25117,7 @@ namespace wls
     }
 
     //  Force wls.vdops to be varsize and each operator to be stored contiguously
-    u0 = (1);
+    u0 = 1;
     u1 = nrows_vdops - b_wls->interp0;
     b_wls->vdops.set_size(u0, u1);
     u0 *= u1;
@@ -25692,7 +25158,7 @@ namespace wls
     rrqr_qmulti(b_wls->QR, b_wls->nrows - b_wls->interp0, b_wls->ncols -
                 b_wls->interp0, b_wls->rank, b_wls->vdops, 1, b_wls->work);
 
-    u0 = (1);
+    u0 = 1;
     varargout_1.set_size(nrows_vdops, u0);
 
     //  Transpose the operator for row-major
