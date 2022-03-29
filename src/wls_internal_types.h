@@ -9,9 +9,20 @@
 #define WLS_INTERNAL_TYPES_H
 
 // Include files
+#include "rtwtypes.h"
+#ifndef CODER_ARRAY_SIZE_TYPE_DEFINED
+#define CODER_ARRAY_SIZE_TYPE_DEFINED
+namespace coder {
+#ifdef M2C_SIZETYPE64
+typedef int64_T SizeType;
+#else
+typedef int SizeType;
+#endif // M2C_SIZETYPE64
+} // namespace coder
+#endif // CODER_ARRAY_SIZE_TYPE_DEFINED
+
 #include "coder_array.h"
 #include "coder_bounded_array.h"
-#include "rtwtypes.h"
 
 // Type Definitions
 namespace wls {

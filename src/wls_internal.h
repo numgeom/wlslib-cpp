@@ -12,6 +12,7 @@
 #include "coder_array.h"
 #include "m2c_lib.h"
 #include "rtwtypes.h"
+#include "wls_internal_types.h"
 #include <cstddef>
 #include <cstdlib>
 
@@ -25,11 +26,10 @@ struct WlsWeight;
 
 // Function Declarations
 namespace wls {
-static inline void wls_func(WlsObject *b_wls,
-                            const ::coder::array<double, 2U> &pnts,
-                            const ::coder::array<double, 2U> &fs, int npoints,
-                            ::coder::array<double, 2U> &vdops,
-                            ::coder::array<double, 2U> &result);
+static inline void
+wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
+         const ::coder::array<double, 2U> &fs, coder::SizeType npoints,
+         ::coder::array<double, 2U> &vdops, ::coder::array<double, 2U> &result);
 
 static inline void wls_func(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &pnts,
@@ -43,8 +43,9 @@ static inline void wls_func(WlsObject *b_wls,
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us,
-                            const WlsWeight *weight, int degree, int order,
-                            int interp0, boolean_T use_dag, int npoints);
+                            const WlsWeight *weight, coder::SizeType degree,
+                            coder::SizeType order, coder::SizeType interp0,
+                            boolean_T use_dag, coder::SizeType npoints);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us);
@@ -55,27 +56,29 @@ static inline void wls_init(WlsObject *b_wls,
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us,
-                            const WlsWeight *weight, int degree);
+                            const WlsWeight *weight, coder::SizeType degree);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us,
-                            const WlsWeight *weight, int degree, int order);
+                            const WlsWeight *weight, coder::SizeType degree,
+                            coder::SizeType order);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us,
-                            const WlsWeight *weight, int degree, int order,
-                            int interp0);
+                            const WlsWeight *weight, coder::SizeType degree,
+                            coder::SizeType order, coder::SizeType interp0);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<double, 2U> &us,
-                            const WlsWeight *weight, int degree, int order,
-                            int interp0, boolean_T use_dag);
+                            const WlsWeight *weight, coder::SizeType degree,
+                            coder::SizeType order, coder::SizeType interp0,
+                            boolean_T use_dag);
 
 static inline void wls_var_bilap(WlsObject *b_wls,
                                  const ::coder::array<double, 2U> &quad_pnts,
                                  const ::coder::array<double, 2U> &varargin_1,
                                  const ::coder::array<double, 2U> &varargin_2,
-                                 int varargin_3,
+                                 coder::SizeType varargin_3,
                                  ::coder::array<double, 2U> &varargout_1,
                                  ::coder::array<double, 2U> &varargout_2);
 
@@ -95,20 +98,20 @@ static inline void wls_var_bilap(WlsObject *b_wls,
                                  const ::coder::array<double, 2U> &varargin_1,
                                  ::coder::array<double, 2U> &varargout_1);
 
-static inline void wls_var_curl(WlsObject *b_wls,
-                                const ::coder::array<double, 2U> &quad_pnts,
-                                const ::coder::array<double, 2U> &ws,
-                                const ::coder::array<double, 2U> &fs,
-                                int varargin_1,
-                                ::coder::array<double, 2U> &vdops,
-                                const double result_data[], int result_size[2]);
+static inline void
+wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
+             const ::coder::array<double, 2U> &ws,
+             const ::coder::array<double, 2U> &fs, coder::SizeType varargin_1,
+             ::coder::array<double, 2U> &vdops, const double result_data[],
+             coder::SizeType result_size[2]);
 
 static inline void wls_var_curl(WlsObject *b_wls,
                                 const ::coder::array<double, 2U> &quad_pnts,
                                 const ::coder::array<double, 2U> &ws,
                                 const ::coder::array<double, 2U> &fs,
                                 ::coder::array<double, 2U> &vdops,
-                                double result_data[], int result_size[2]);
+                                double result_data[],
+                                coder::SizeType result_size[2]);
 
 static inline void wls_var_curl(WlsObject *b_wls,
                                 const ::coder::array<double, 2U> &quad_pnts,
@@ -122,16 +125,16 @@ static inline void wls_var_curl(WlsObject *b_wls,
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &ws,
-                  const ::coder::array<double, 2U> &fs, int varargin_1,
-                  ::coder::array<double, 2U> &vdops, const double result_data[],
-                  int result_size[2]);
+                  const ::coder::array<double, 2U> &fs,
+                  coder::SizeType varargin_1, ::coder::array<double, 2U> &vdops,
+                  const double result_data[], coder::SizeType result_size[2]);
 
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &ws,
                   const ::coder::array<double, 2U> &fs,
                   ::coder::array<double, 2U> &vdops, double result_data[],
-                  int result_size[2]);
+                  coder::SizeType result_size[2]);
 
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
@@ -146,7 +149,7 @@ static inline void wls_var_div(WlsObject *b_wls,
                                const ::coder::array<double, 2U> &quad_pnts,
                                const ::coder::array<double, 2U> &varargin_1,
                                const ::coder::array<double, 2U> &varargin_2,
-                               int varargin_3,
+                               coder::SizeType varargin_3,
                                ::coder::array<double, 2U> &varargout_1,
                                ::coder::array<double, 2U> &varargout_2);
 
@@ -170,7 +173,7 @@ static inline void wls_var_func(WlsObject *b_wls,
                                 const ::coder::array<double, 2U> &quad_pnts,
                                 const ::coder::array<double, 2U> &varargin_1,
                                 const ::coder::array<double, 2U> &varargin_2,
-                                int varargin_3,
+                                coder::SizeType varargin_3,
                                 ::coder::array<double, 2U> &varargout_1,
                                 ::coder::array<double, 2U> &varargout_2);
 
@@ -194,7 +197,7 @@ static inline void wls_var_grad(WlsObject *b_wls,
                                 const ::coder::array<double, 2U> &quad_pnts,
                                 const ::coder::array<double, 2U> &varargin_1,
                                 const ::coder::array<double, 2U> &varargin_2,
-                                int varargin_3,
+                                coder::SizeType varargin_3,
                                 ::coder::array<double, 2U> &varargout_1,
                                 ::coder::array<double, 2U> &varargout_2);
 
@@ -217,16 +220,17 @@ static inline void wls_var_grad(WlsObject *b_wls,
 static inline void
 wls_var_grad_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  const ::coder::array<double, 2U> &ws,
-                 const ::coder::array<double, 2U> &fs, int varargin_1,
-                 ::coder::array<double, 2U> &vdops, const double result_data[],
-                 int result_size[2]);
+                 const ::coder::array<double, 2U> &fs,
+                 coder::SizeType varargin_1, ::coder::array<double, 2U> &vdops,
+                 const double result_data[], coder::SizeType result_size[2]);
 
 static inline void wls_var_grad_div(WlsObject *b_wls,
                                     const ::coder::array<double, 2U> &quad_pnts,
                                     const ::coder::array<double, 2U> &ws,
                                     const ::coder::array<double, 2U> &fs,
                                     ::coder::array<double, 2U> &vdops,
-                                    double result_data[], int result_size[2]);
+                                    double result_data[],
+                                    coder::SizeType result_size[2]);
 
 static inline void wls_var_grad_div(WlsObject *b_wls,
                                     const ::coder::array<double, 2U> &quad_pnts,
@@ -241,7 +245,7 @@ static inline void wls_var_hess(WlsObject *b_wls,
                                 const ::coder::array<double, 2U> &quad_pnts,
                                 const ::coder::array<double, 2U> &varargin_1,
                                 const ::coder::array<double, 2U> &varargin_2,
-                                int varargin_3,
+                                coder::SizeType varargin_3,
                                 ::coder::array<double, 2U> &varargout_1,
                                 ::coder::array<double, 2U> &varargout_2);
 
@@ -265,7 +269,7 @@ static inline void wls_var_lap(WlsObject *b_wls,
                                const ::coder::array<double, 2U> &quad_pnts,
                                const ::coder::array<double, 2U> &varargin_1,
                                const ::coder::array<double, 2U> &varargin_2,
-                               int varargin_3,
+                               coder::SizeType varargin_3,
                                ::coder::array<double, 2U> &varargout_1,
                                ::coder::array<double, 2U> &varargout_2);
 

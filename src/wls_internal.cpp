@@ -49,109 +49,132 @@ static const signed char iv6[9]{5, 6, 8, 6, 7, 9, 8, 9, 10};
 // Function Declarations
 namespace wls {
 static inline double find_kth_shortest_dist(::coder::array<double, 1U> &arr,
-                                            int k, int l, int r);
+                                            coder::SizeType k,
+                                            coder::SizeType l,
+                                            coder::SizeType r);
 
-static inline void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
-                              int degree, int order, const double hs_inv_data[],
-                              const int hs_inv_size[2],
-                              ::coder::array<double, 2U> &V);
-
-static inline void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
-                              int degree, int order,
+static inline void gen_vander(const ::coder::array<double, 2U> &us,
+                              coder::SizeType npoints, coder::SizeType degree,
+                              coder::SizeType order,
                               const ::coder::array<double, 1U> &weights,
                               ::coder::array<double, 2U> &V);
 
-static inline void gen_vander(const double us_data[], const int us_size[2],
-                              int degree, ::coder::array<double, 2U> &V);
+static inline void gen_vander(const double us_data[],
+                              const coder::SizeType us_size[2],
+                              coder::SizeType degree,
+                              ::coder::array<double, 2U> &V);
 
-static inline void gen_vander_1d_dag(int degree,
+static inline void gen_vander(const ::coder::array<double, 2U> &us,
+                              coder::SizeType npoints, coder::SizeType degree,
+                              coder::SizeType order, const double hs_inv_data[],
+                              const coder::SizeType hs_inv_size[2],
+                              ::coder::array<double, 2U> &V);
+
+static inline void gen_vander_1d_dag(coder::SizeType degree,
                                      ::coder::array<unsigned char, 2U> &dag);
 
 static inline void gen_vander_2d(const ::coder::array<double, 2U> &us,
-                                 int npoints, int degree, int order,
-                                 const double hs_inv_data[],
-                                 const int hs_inv_size[2],
+                                 coder::SizeType npoints,
+                                 coder::SizeType degree, coder::SizeType order,
+                                 const ::coder::array<double, 1U> &weights,
                                  ::coder::array<double, 2U> &V);
 
-static inline void gen_vander_2d(const double us_data[], int degree,
+static inline void gen_vander_2d(const double us_data[], coder::SizeType degree,
                                  ::coder::array<double, 2U> &V);
 
 static inline void gen_vander_2d(const ::coder::array<double, 2U> &us,
-                                 int npoints, int degree, int order,
-                                 const ::coder::array<double, 1U> &weights,
+                                 coder::SizeType npoints,
+                                 coder::SizeType degree, coder::SizeType order,
+                                 const double hs_inv_data[],
+                                 const coder::SizeType hs_inv_size[2],
                                  ::coder::array<double, 2U> &V);
 
-static inline void gen_vander_2d_dag(int degree,
+static inline void gen_vander_2d_dag(coder::SizeType degree,
                                      ::coder::array<unsigned char, 2U> &dag);
 
 static inline void gen_vander_3d(const ::coder::array<double, 2U> &us,
-                                 int npoints, int degree, int order,
-                                 const double hs_inv_data[],
-                                 const int hs_inv_size[2],
-                                 ::coder::array<double, 2U> &V);
-
-static inline void gen_vander_3d(const ::coder::array<double, 2U> &us,
-                                 int npoints, int degree, int order,
+                                 coder::SizeType npoints,
+                                 coder::SizeType degree, coder::SizeType order,
                                  const ::coder::array<double, 1U> &weights,
                                  ::coder::array<double, 2U> &V);
 
-static inline void gen_vander_3d(const double us_data[], int degree,
+static inline void gen_vander_3d(const double us_data[], coder::SizeType degree,
                                  ::coder::array<double, 2U> &V);
 
-static inline void gen_vander_3d_dag(int degree,
+static inline void gen_vander_3d(const ::coder::array<double, 2U> &us,
+                                 coder::SizeType npoints,
+                                 coder::SizeType degree, coder::SizeType order,
+                                 const double hs_inv_data[],
+                                 const coder::SizeType hs_inv_size[2],
+                                 ::coder::array<double, 2U> &V);
+
+static inline void gen_vander_3d_dag(coder::SizeType degree,
                                      ::coder::array<unsigned char, 2U> &dag);
 
 static inline void rrqr_factor(const ::coder::array<double, 2U> &A,
-                               double thres, int rowoffset, int coloffset,
-                               int m, int n, ::coder::array<double, 2U> &QR,
+                               double thres, coder::SizeType rowoffset,
+                               coder::SizeType coloffset, coder::SizeType m,
+                               coder::SizeType n,
+                               ::coder::array<double, 2U> &QR,
                                ::coder::array<int, 1U> &p, int *rank,
                                ::coder::array<double, 1U> &work);
 
-static inline void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m,
-                               int n, int rank, ::coder::array<double, 2U> &bs,
+static inline void rrqr_qmulti(const ::coder::array<double, 2U> &QR,
+                               coder::SizeType m, coder::SizeType n,
+                               coder::SizeType rank,
+                               ::coder::array<double, 2U> &bs,
                                ::coder::array<double, 1U> &work);
 
-static inline void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m,
-                               int n, int rank, ::coder::array<double, 2U> &bs,
-                               int nrhs, ::coder::array<double, 1U> &work);
+static inline void rrqr_qmulti(const ::coder::array<double, 2U> &QR,
+                               coder::SizeType m, coder::SizeType n,
+                               coder::SizeType rank,
+                               ::coder::array<double, 2U> &bs,
+                               coder::SizeType nrhs,
+                               ::coder::array<double, 1U> &work);
 
-static inline void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n,
-                                int rank, ::coder::array<double, 2U> &bs,
-                                int nrhs);
+static inline void rrqr_rtsolve(const ::coder::array<double, 2U> &QR,
+                                coder::SizeType n, coder::SizeType rank,
+                                ::coder::array<double, 2U> &bs,
+                                coder::SizeType nrhs);
 
 static inline void
-wls_buhmann_weights(const ::coder::array<double, 2U> &us, int npoints,
-                    int degree, const ::coder::array<double, 1U> &params_sh,
+wls_buhmann_weights(const ::coder::array<double, 2U> &us,
+                    coder::SizeType npoints, coder::SizeType degree,
+                    const ::coder::array<double, 1U> &params_sh,
                     const ::coder::array<double, 2U> &params_pw,
                     ::coder::array<double, 1U> &ws);
 
 static inline void
-wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints, int degree,
+wls_eno_weights(const ::coder::array<double, 2U> &us, coder::SizeType npoints,
+                coder::SizeType degree,
                 const ::coder::array<double, 2U> &us_unscaled,
                 const ::coder::array<double, 1U> &params_sh,
                 const ::coder::array<double, 2U> &params_pw,
                 ::coder::array<double, 1U> &ws);
 
 static inline void
-wls_invdist_weights(const ::coder::array<double, 2U> &us, int npoints,
-                    int degree, const ::coder::array<double, 1U> &params_sh,
+wls_invdist_weights(const ::coder::array<double, 2U> &us,
+                    coder::SizeType npoints, coder::SizeType degree,
+                    const ::coder::array<double, 1U> &params_sh,
                     const ::coder::array<double, 2U> &params_pw,
                     ::coder::array<double, 1U> &ws);
 
-static inline void wls_resize(WlsObject *b_wls, int dim, int npoints,
-                              int degree, int order, boolean_T use_dag);
+static inline void wls_resize(WlsObject *b_wls, coder::SizeType dim,
+                              coder::SizeType npoints, coder::SizeType degree,
+                              coder::SizeType order, boolean_T use_dag);
 
 } // namespace wls
 
 // Function Definitions
 namespace wls {
-static double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
-                                     int l, int r)
+static double find_kth_shortest_dist(::coder::array<double, 1U> &arr,
+                                     coder::SizeType k, coder::SizeType l,
+                                     coder::SizeType r)
 {
   double dist;
   double val;
-  int i;
-  int j;
+  coder::SizeType i;
+  coder::SizeType j;
   //  Find the kth smallest number in arr(l:r).
   if (k < l) {
     k = l;
@@ -165,7 +188,7 @@ static double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
   while (i <= j) {
     double d;
     double d1;
-    int exitg1;
+    coder::SizeType exitg1;
     do {
       exitg1 = 0;
       d = arr[i - 1];
@@ -202,20 +225,227 @@ static double find_kth_shortest_dist(::coder::array<double, 1U> &arr, int k,
 }
 
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
-                       int degree, int order, const double hs_inv_data[],
-                       const int hs_inv_size[2], ::coder::array<double, 2U> &V)
+static void gen_vander(const ::coder::array<double, 2U> &us,
+                       coder::SizeType npoints, coder::SizeType degree,
+                       coder::SizeType order,
+                       const ::coder::array<double, 1U> &weights,
+                       ::coder::array<double, 2U> &V)
+{
+  switch (us.size(1)) {
+  case 1: {
+    coder::SizeType b_n;
+    coder::SizeType i;
+    coder::SizeType n;
+    coder::SizeType nrblks;
+    coder::SizeType r;
+    coder::SizeType stride;
+    boolean_T b;
+    boolean_T b1;
+    m2cAssert(us.size(1) == 1, "");
+    //  Handle input arguments
+    m2cAssert(npoints <= us.size(0), "Input us is too small.");
+    m2cAssert(degree >= 0, "Degree must be nonnegative");
+    if ((order < -4) || (order == -3)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                        "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
+    }
+    stride = us.size(0);
+    nrblks = order + 1;
+    //  Number of row blocks
+    switch (order) {
+    case -1:
+      nrblks = 2;
+      break;
+    case -2:
+      nrblks = 3;
+      break;
+    case -4:
+      nrblks = 4;
+      break;
+    }
+    n = degree + 1;
+    b_n = us.size(0) * nrblks;
+    V.set_size(n, b_n);
+    //  Compute rows corresponding to function values
+    if (weights.size(0) == 0) {
+      if (degree != 0) {
+        b = true;
+        b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+        i = us.size(1) * us.size(0);
+        b_n = 0;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          if (b1 || (iPnt >= i)) {
+            b_n = 0;
+            b = true;
+          } else if (b) {
+            b = false;
+            b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            n = us.size(1) * us.size(0) - 1;
+            if (b_n > MAX_int32_T - us.size(1)) {
+              b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+            } else {
+              b_n += us.size(1);
+              if (b_n > n) {
+                b_n -= n;
+              }
+            }
+          }
+          V[iPnt] = 1.0;
+          V[iPnt + V.size(1)] = us[b_n];
+        }
+      } else {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt] = 1.0;
+        }
+      }
+    } else if (degree != 0) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      i = us.size(1) * us.size(0);
+      b_n = 0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        if (b1 || (iPnt >= i)) {
+          b_n = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          n = us.size(1) * us.size(0) - 1;
+          if (b_n > MAX_int32_T - us.size(1)) {
+            b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            b_n += us.size(1);
+            if (b_n > n) {
+              b_n -= n;
+            }
+          }
+        }
+        V[iPnt] = weights[iPnt];
+        V[iPnt + V.size(1)] = us[b_n] * weights[iPnt];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = weights[iPnt];
+      }
+    }
+    b_n = order;
+    if (order > 0) {
+      b_n = 0;
+    }
+    i = (degree + b_n) + 1;
+    for (coder::SizeType ii{2}; ii <= i; ii++) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      b_n = us.size(1) * us.size(0);
+      n = 0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        if (b1 || (iPnt >= b_n)) {
+          n = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          coder::SizeType i1;
+          i1 = us.size(1) * us.size(0) - 1;
+          if (n > MAX_int32_T - us.size(1)) {
+            n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            n += us.size(1);
+            if (n > i1) {
+              n -= i1;
+            }
+          }
+        }
+        V[iPnt + V.size(1) * (ii - 1)] = V[iPnt + V.size(1) * (ii - 2)] * us[n];
+      }
+    }
+    //  Add row blocks corresponding to kth derivatives
+    r = us.size(0);
+    if (order >= 0) {
+      for (coder::SizeType k{0}; k < order; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_n = r + iPnt;
+            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)] *
+                                     static_cast<double>(j);
+          }
+        }
+        r += stride;
+      }
+    } else {
+      //      computing negative orders
+      if (-order > 2) {
+        i = 2;
+      } else {
+        i = -order;
+      }
+      for (coder::SizeType k{0}; k < i; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_n = r + iPnt;
+            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)] *
+                                     static_cast<double>(j);
+          }
+        }
+        r += stride;
+      }
+      //      Calculate Biharmonic if order = -4
+      if (order == -4) {
+        for (coder::SizeType j{0}; j < 4; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{2}; j <= degree; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_n = r + iPnt;
+            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 2)] *
+                                     static_cast<double>(j) *
+                                     (static_cast<double>(j) - 1.0);
+          }
+        }
+      }
+    }
+  } break;
+  case 2:
+    gen_vander_2d(us, npoints, degree, order, weights, V);
+    break;
+  default:
+    gen_vander_3d(us, npoints, degree, order, weights, V);
+    break;
+  }
+}
+
+//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
+static void gen_vander(const ::coder::array<double, 2U> &us,
+                       coder::SizeType npoints, coder::SizeType degree,
+                       coder::SizeType order, const double hs_inv_data[],
+                       const coder::SizeType hs_inv_size[2],
+                       ::coder::array<double, 2U> &V)
 {
   switch (us.size(1)) {
   case 1: {
     double h_inv_;
-    int b_n;
-    int b_npoints;
-    int i;
-    int n;
-    int nrblks;
-    int r;
-    int stride;
+    coder::SizeType b_n;
+    coder::SizeType b_npoints;
+    coder::SizeType i;
+    coder::SizeType n;
+    coder::SizeType nrblks;
+    coder::SizeType r;
+    coder::SizeType stride;
     boolean_T b;
     boolean_T b1;
     b_npoints = npoints - 1;
@@ -259,7 +489,7 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
       b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
       i = us.size(1) * us.size(0);
       b_n = 0;
-      for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
         if (b1 || (iPnt >= i)) {
           b_n = 0;
           b = true;
@@ -281,7 +511,7 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
         V[iPnt + V.size(1)] = us[b_n];
       }
     } else {
-      for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
         V[iPnt] = 1.0;
       }
     }
@@ -290,12 +520,12 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
       b_n = 0;
     }
     i = (degree + b_n) + 1;
-    for (int ii{2}; ii <= i; ii++) {
+    for (coder::SizeType ii{2}; ii <= i; ii++) {
       b = true;
       b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
       b_n = us.size(1) * us.size(0);
       n = 0;
-      for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
         if (b1 || (iPnt >= b_n)) {
           n = 0;
           b = true;
@@ -303,7 +533,7 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
           b = false;
           n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
         } else {
-          int i1;
+          coder::SizeType i1;
           i1 = us.size(1) * us.size(0) - 1;
           if (n > MAX_int32_T - us.size(1)) {
             n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
@@ -320,16 +550,16 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
     //  Add row blocks corresponding to kth derivatives
     r = us.size(0);
     if (order >= 0) {
-      for (int k{0}; k < order; k++) {
-        for (int j{0}; j <= k; j++) {
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+      for (coder::SizeType k{0}; k < order; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             V[(r + iPnt) + V.size(1) * j] = 0.0;
           }
         }
-        for (int j{k + 1}; j <= degree; j++) {
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
           double s;
           s = h_inv_ * static_cast<double>(j);
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             b_n = r + iPnt;
             V[b_n + V.size(1) * j] =
                 V[(b_n - stride) + V.size(1) * (j - 1)] * s;
@@ -345,15 +575,15 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
       } else {
         i = -order;
       }
-      for (int k{0}; k < i; k++) {
-        for (int j{0}; j <= k; j++) {
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+      for (coder::SizeType k{0}; k < i; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             V[(r + iPnt) + V.size(1) * j] = 0.0;
           }
         }
-        for (int j{k + 1}; j <= degree; j++) {
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
           s = h_inv_ * static_cast<double>(j);
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             b_n = r + iPnt;
             V[b_n + V.size(1) * j] =
                 V[(b_n - stride) + V.size(1) * (j - 1)] * s;
@@ -363,14 +593,14 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
       }
       //      Calculate Biharmonic if order = -4
       if (order == -4) {
-        for (int j{0}; j < 4; j++) {
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        for (coder::SizeType j{0}; j < 4; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             V[(r + iPnt) + V.size(1) * j] = 0.0;
           }
         }
-        for (int j{2}; j <= degree; j++) {
+        for (coder::SizeType j{2}; j <= degree; j++) {
           s = h_inv_ * static_cast<double>(j);
-          for (int iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
             b_n = r + iPnt;
             V[b_n + V.size(1) * j] =
                 V[(b_n - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
@@ -389,217 +619,13 @@ static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
 }
 
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const ::coder::array<double, 2U> &us, int npoints,
-                       int degree, int order,
-                       const ::coder::array<double, 1U> &weights,
-                       ::coder::array<double, 2U> &V)
-{
-  switch (us.size(1)) {
-  case 1: {
-    int b_n;
-    int i;
-    int n;
-    int nrblks;
-    int r;
-    int stride;
-    boolean_T b;
-    boolean_T b1;
-    m2cAssert(us.size(1) == 1, "");
-    //  Handle input arguments
-    m2cAssert(npoints <= us.size(0), "Input us is too small.");
-    m2cAssert(degree >= 0, "Degree must be nonnegative");
-    if ((order < -4) || (order == -3)) {
-      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                        "Order %d must be 0, 1, 2, -1, -2, or -4", order);
-    }
-    stride = us.size(0);
-    nrblks = order + 1;
-    //  Number of row blocks
-    switch (order) {
-    case -1:
-      nrblks = 2;
-      break;
-    case -2:
-      nrblks = 3;
-      break;
-    case -4:
-      nrblks = 4;
-      break;
-    }
-    n = degree + 1;
-    b_n = us.size(0) * nrblks;
-    V.set_size(n, b_n);
-    //  Compute rows corresponding to function values
-    if (weights.size(0) == 0) {
-      if (degree != 0) {
-        b = true;
-        b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-        i = us.size(1) * us.size(0);
-        b_n = 0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          if (b1 || (iPnt >= i)) {
-            b_n = 0;
-            b = true;
-          } else if (b) {
-            b = false;
-            b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            n = us.size(1) * us.size(0) - 1;
-            if (b_n > MAX_int32_T - us.size(1)) {
-              b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-            } else {
-              b_n += us.size(1);
-              if (b_n > n) {
-                b_n -= n;
-              }
-            }
-          }
-          V[iPnt] = 1.0;
-          V[iPnt + V.size(1)] = us[b_n];
-        }
-      } else {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt] = 1.0;
-        }
-      }
-    } else if (degree != 0) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      i = us.size(1) * us.size(0);
-      b_n = 0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        if (b1 || (iPnt >= i)) {
-          b_n = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          n = us.size(1) * us.size(0) - 1;
-          if (b_n > MAX_int32_T - us.size(1)) {
-            b_n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            b_n += us.size(1);
-            if (b_n > n) {
-              b_n -= n;
-            }
-          }
-        }
-        V[iPnt] = weights[iPnt];
-        V[iPnt + V.size(1)] = us[b_n] * weights[iPnt];
-      }
-    } else {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = weights[iPnt];
-      }
-    }
-    b_n = order;
-    if (order > 0) {
-      b_n = 0;
-    }
-    i = (degree + b_n) + 1;
-    for (int ii{2}; ii <= i; ii++) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      b_n = us.size(1) * us.size(0);
-      n = 0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        if (b1 || (iPnt >= b_n)) {
-          n = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          int i1;
-          i1 = us.size(1) * us.size(0) - 1;
-          if (n > MAX_int32_T - us.size(1)) {
-            n = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            n += us.size(1);
-            if (n > i1) {
-              n -= i1;
-            }
-          }
-        }
-        V[iPnt + V.size(1) * (ii - 1)] = V[iPnt + V.size(1) * (ii - 2)] * us[n];
-      }
-    }
-    //  Add row blocks corresponding to kth derivatives
-    r = us.size(0);
-    if (order >= 0) {
-      for (int k{0}; k < order; k++) {
-        for (int j{0}; j <= k; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (int j{k + 1}; j <= degree; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = r + iPnt;
-            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)] *
-                                     static_cast<double>(j);
-          }
-        }
-        r += stride;
-      }
-    } else {
-      //      computing negative orders
-      if (-order > 2) {
-        i = 2;
-      } else {
-        i = -order;
-      }
-      for (int k{0}; k < i; k++) {
-        for (int j{0}; j <= k; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (int j{k + 1}; j <= degree; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = r + iPnt;
-            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 1)] *
-                                     static_cast<double>(j);
-          }
-        }
-        r += stride;
-      }
-      //      Calculate Biharmonic if order = -4
-      if (order == -4) {
-        for (int j{0}; j < 4; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (int j{2}; j <= degree; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_n = r + iPnt;
-            V[b_n + V.size(1) * j] = V[(b_n - stride) + V.size(1) * (j - 2)] *
-                                     static_cast<double>(j) *
-                                     (static_cast<double>(j) - 1.0);
-          }
-        }
-      }
-    }
-  } break;
-  case 2:
-    gen_vander_2d(us, npoints, degree, order, weights, V);
-    break;
-  default:
-    gen_vander_3d(us, npoints, degree, order, weights, V);
-    break;
-  }
-}
-
-//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const double us_data[], const int us_size[2], int degree,
-                       ::coder::array<double, 2U> &V)
+static void gen_vander(const double us_data[], const coder::SizeType us_size[2],
+                       coder::SizeType degree, ::coder::array<double, 2U> &V)
 {
   switch (us_size[1]) {
   case 1: {
-    int b_n;
-    int n;
+    coder::SizeType b_n;
+    coder::SizeType n;
     m2cAssert(us_size[1] == 1, "");
     //  Handle input arguments
     //  Number of row blocks
@@ -610,7 +636,7 @@ static void gen_vander(const double us_data[], const int us_size[2], int degree,
     V[0] = 1.0;
     V[V.size(1)] = us_data[0];
     n = degree + 1;
-    for (int ii{2}; ii <= n; ii++) {
+    for (coder::SizeType ii{2}; ii <= n; ii++) {
       V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
     }
     //  Add row blocks corresponding to kth derivatives
@@ -624,11 +650,11 @@ static void gen_vander(const double us_data[], const int us_size[2], int degree,
   }
 }
 
-static inline void gen_vander_1d_dag(int degree,
+static inline void gen_vander_1d_dag(coder::SizeType degree,
                                      ::coder::array<unsigned char, 2U> &dag)
 {
   dag.set_size(degree + 2, 1);
-  for (int i{0}; i < degree; i++) {
+  for (coder::SizeType i{0}; i < degree; i++) {
     dag[i] = 1U;
   }
   dag[degree] = 0U;
@@ -637,26 +663,27 @@ static inline void gen_vander_1d_dag(int degree,
 }
 
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
-static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
-                          int degree, int order,
+static void gen_vander_2d(const ::coder::array<double, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          coder::SizeType order,
                           const ::coder::array<double, 1U> &weights,
                           ::coder::array<double, 2U> &V)
 {
-  int b_degree;
-  int b_n;
-  int c;
-  int deg;
-  int i;
-  int n;
-  int nrblks;
-  int stride;
-  int x_tmp_tmp;
+  coder::SizeType b_degree;
+  coder::SizeType b_n;
+  coder::SizeType c;
+  coder::SizeType deg;
+  coder::SizeType i;
+  coder::SizeType n;
+  coder::SizeType nrblks;
+  coder::SizeType stride;
+  coder::SizeType x_tmp_tmp;
   if (npoints > us.size(0)) {
     m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
   }
   if ((order < -4) || (order == -3)) {
     m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                      "Order %d must be 0, 1, 2, -1, -2, or -4", order);
+                      "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
   }
   stride = us.size(0);
   nrblks = (order + 1) * (order + 2) / 2;
@@ -688,24 +715,24 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   //  compute 0th order generalized Vandermonde matrix
   if (weights.size(0) == 0) {
     if (degree != 0) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt] = 1.0;
         V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
         V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
       }
     } else {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt] = 1.0;
       }
     }
   } else if (degree != 0) {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = weights[iPnt];
       V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
       V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
     }
   } else {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = weights[iPnt];
     }
   }
@@ -732,14 +759,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   }
   i = b_degree - b_n;
   for (deg = 2; deg <= i; deg++) {
-    for (int j{0}; j < deg; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
       }
       c++;
     }
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt + V.size(1) * c] =
           V[iPnt + V.size(1) * ((c - deg) - 1)] * us[us.size(1) * iPnt + 1];
     }
@@ -748,8 +775,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   //  Compute the bi-degree terms if degree<0
   i = 1 - n;
   for (deg = x_tmp_tmp; deg >= i; deg--) {
-    for (int k{0}; k < deg; k++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType k{0}; k < deg; k++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
       }
@@ -760,11 +787,11 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   if (order != 0) {
     double scaleu;
     double scalev;
-    int offset;
+    coder::SizeType offset;
     //  This is an optimized version of update_vander_ordern for first-order CVM
     m2cAssert(degree != 0, "");
     //  Compute derivative with respect to u
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[stride + iPnt] = 0.0;
       V[(stride + iPnt) + V.size(1)] = V[iPnt];
       V[(stride + iPnt) + V.size(1) * 2] = 0.0;
@@ -792,30 +819,30 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     i = b_degree - b_n;
     for (deg = 2; deg <= i; deg++) {
       scaleu = deg;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(stride + iPnt) + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * static_cast<double>(deg);
       }
       c++;
-      for (int j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType j{0}; j <= deg - 2; j++) {
         scaleu--;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - deg)] * scaleu;
         }
         c++;
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(stride + iPnt) + V.size(1) * c] = 0.0;
       }
       c++;
     }
     //  Compute the bi-degree terms if degree<0
-    for (int len{x_tmp_tmp}; len >= n; len--) {
+    for (coder::SizeType len{x_tmp_tmp}; len >= n; len--) {
       scaleu = 1 - degree;
-      for (int k{0}; k < len; k++) {
+      for (coder::SizeType k{0}; k < len; k++) {
         scaleu--;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - len)] * scaleu;
         }
@@ -824,7 +851,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //  Compute derivative with respect to v
     offset = us.size(0) + us.size(0);
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       b_n = offset + iPnt;
       V[b_n] = 0.0;
       V[b_n + V.size(1)] = 0.0;
@@ -848,12 +875,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     i = b_degree - b_n;
     for (deg = 2; deg <= i; deg++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * c] = 0.0;
       }
       c++;
-      for (int j{0}; j < deg; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType j{0}; j < deg; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * ((c - deg) - 1)] *
               (static_cast<double>(j) + 1.0);
@@ -863,12 +890,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //  Compute the bi-degree terms if degree<0
     deg = -degree;
-    for (int len{x_tmp_tmp}; len >= n; len--) {
+    for (coder::SizeType len{x_tmp_tmp}; len >= n; len--) {
       deg++;
       scalev = (deg + degree) - 1;
-      for (int k{0}; k < len; k++) {
+      for (coder::SizeType k{0}; k < len; k++) {
         scalev++;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * ((c - len) - 1)] * scalev;
         }
@@ -877,8 +904,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //      compute regular orders if order > 0
     if (order > 0) {
-      for (int dd{2}; dd <= order; dd++) {
-        int offset_prev;
+      for (coder::SizeType dd{2}; dd <= order; dd++) {
+        coder::SizeType offset_prev;
         //  Compute order-N CVM row blocks from order-(N-1) CVM.
         m2cAssert(degree != 0, "");
         b_degree = dd * (dd + 1) / 2;
@@ -890,12 +917,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         } else {
           i = degree;
         }
-        for (int b_i{0}; b_i < dd; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < dd; b_i++) {
           //  Initialize block to zero
           n = offset + 1;
           b_n = offset + npoints;
-          for (int col{0}; col < b_degree; col++) {
-            for (int row{n}; row <= b_n; row++) {
+          for (coder::SizeType col{0}; col < b_degree; col++) {
+            for (coder::SizeType row{n}; row <= b_n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -903,25 +930,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = dd; deg <= i; deg++) {
             scaleu = deg + 1;
             n = deg - 1;
-            for (int j{0}; j <= n; j++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
               scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
           //  Compute the bi-degree terms if degree<0
-          for (int len{x_tmp_tmp}; len >= 0; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= 0; len--) {
             scaleu = 1 - degree;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
               }
@@ -934,8 +961,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         //  Compute derivative with respect to v
         i = offset + 1;
         n = offset + npoints;
-        for (int col{0}; col < b_degree; col++) {
-          for (int row{i}; row <= n; row++) {
+        for (coder::SizeType col{0}; col < b_degree; col++) {
+          for (coder::SizeType row{i}; row <= n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -947,14 +974,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         }
         for (deg = dd; deg <= i; deg++) {
           n = dd - 1;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int j{dd}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{dd}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - deg) - 1)] *
@@ -965,12 +992,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         }
         //  Compute the bi-degree terms if degree<0
         deg = -degree;
-        for (int len{x_tmp_tmp}; len >= 0; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= 0; len--) {
           deg++;
           scalev = (deg + degree) - 1;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scalev++;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - len) - 1)] *
@@ -984,7 +1011,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
       //          compute efficient laplacian and bi-laplacian
       switch (order) {
       case -2: {
-        int offset_prev;
+        coder::SizeType offset_prev;
         //  Compute order-N CVM row blocks from order-(N-1) CVM.
         m2cAssert(degree != 0, "");
         offset = 3 * us.size(0);
@@ -998,8 +1025,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         //  Initialize block to zero
         n = offset + 1;
         b_n = offset + npoints;
-        for (int col{0}; col < 3; col++) {
-          for (int row{n}; row <= b_n; row++) {
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{n}; row <= b_n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -1007,25 +1034,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         for (deg = 2; deg <= i; deg++) {
           scaleu = deg + 1;
           n = deg - 1;
-          for (int j{0}; j <= n; j++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
             scaleu--;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
             }
             c++;
           }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
         //  Compute the bi-degree terms if degree<0
-        for (int len{x_tmp_tmp}; len >= -2; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
           scaleu = 1 - degree;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scaleu--;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
             }
@@ -1037,8 +1064,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         offset_prev = (us.size(0) + us.size(0)) + us.size(0);
         i = offset + 1;
         n = offset + npoints;
-        for (int col{0}; col < 3; col++) {
-          for (int row{i}; row <= n; row++) {
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{i}; row <= n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -1049,14 +1076,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           i = degree;
         }
         for (deg = 2; deg <= i; deg++) {
-          for (int j{0}; j < 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j < 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int j{2}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{2}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - deg) - 1)] *
@@ -1067,12 +1094,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         }
         //  Compute the bi-degree terms if degree<0
         deg = -degree;
-        for (int len{x_tmp_tmp}; len >= -2; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
           deg++;
           scalev = (deg + degree) - 1;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scalev++;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - len) - 1)] *
@@ -1084,15 +1111,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
       } break;
       case -4: {
         if (degree > 0) {
-          int offset_prev;
+          coder::SizeType offset_prev;
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
           m2cAssert(true, "");
           offset = 3 * us.size(0);
           //  Compute derivative with respect to u
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1100,15 +1127,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = 2; deg <= degree; deg++) {
             scaleu = deg + 1;
             i = deg - 1;
-            for (int j{0}; j <= i; j++) {
+            for (coder::SizeType j{0}; j <= i; j++) {
               scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(us.size(0) + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -1119,21 +1146,21 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = (us.size(0) + us.size(0)) + us.size(0);
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
           c = 3;
           for (deg = 2; deg <= degree; deg++) {
-            for (int j{0}; j < 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{2}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{2}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -1147,11 +1174,11 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = 3 * us.size(0);
           m2cAssert(degree >= 4, "");
           //  compute du^4 and du^2*dv^2
-          for (int terms{0}; terms < 2; terms++) {
+          for (coder::SizeType terms{0}; terms < 2; terms++) {
             i = offset + 1;
             n = offset + npoints;
-            for (int col{0}; col < 10; col++) {
-              for (int row{i}; row <= n; row++) {
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{i}; row <= n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -1159,9 +1186,9 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 4; deg <= degree; deg++) {
               scaleu = deg + 1;
               i = deg - 1;
-              for (int j{0}; j <= i; j++) {
+              for (coder::SizeType j{0}; j <= i; j++) {
                 scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) +
                         V.size(1) * ((c - (deg << 1)) + 1)] *
@@ -1169,7 +1196,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
@@ -1180,21 +1207,21 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  compute dv^4
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 10; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
           c = 10;
           for (deg = 4; deg <= degree; deg++) {
-            for (int j{0}; j < 4; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{4}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{4}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - (deg << 1)) - 1)] *
@@ -1204,7 +1231,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             }
           }
         } else {
-          int offset_prev;
+          coder::SizeType offset_prev;
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
           m2cAssert(degree != 0, "");
           offset = 3 * us.size(0);
@@ -1218,8 +1245,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  Initialize block to zero
           n = offset + 1;
           b_n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{n}; row <= b_n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{n}; row <= b_n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1227,25 +1254,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = 2; deg <= i; deg++) {
             scaleu = deg + 1;
             n = deg - 1;
-            for (int j{0}; j <= n; j++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
               scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
           //  Compute the bi-degree terms if degree<0
-          for (int len{x_tmp_tmp}; len >= -2; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
             scaleu = 1 - degree;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scaleu--;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
               }
@@ -1257,8 +1284,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = (us.size(0) + us.size(0)) + us.size(0);
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1269,14 +1296,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             i = 0;
           }
           for (deg = 2; deg <= i; deg++) {
-            for (int j{0}; j < 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{2}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{2}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -1287,12 +1314,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -2; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
             deg++;
             scalev = (deg + degree) - 1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev++;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -1311,12 +1338,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           } else {
             i = 0;
           }
-          for (int b_i{0}; b_i < 2; b_i++) {
+          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
             //  Initialize block to zero
             n = offset + 1;
             b_n = offset + npoints;
-            for (int col{0}; col < 6; col++) {
-              for (int row{n}; row <= b_n; row++) {
+            for (coder::SizeType col{0}; col < 6; col++) {
+              for (coder::SizeType row{n}; row <= b_n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -1324,25 +1351,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 3; deg <= i; deg++) {
               scaleu = deg + 1;
               n = deg - 1;
-              for (int j{0}; j <= n; j++) {
+              for (coder::SizeType j{0}; j <= n; j++) {
                 scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
             //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= -3; len--) {
+            for (coder::SizeType len{x_tmp_tmp}; len >= -3; len--) {
               scaleu = 1 - degree;
-              for (int k{0}; k < len; k++) {
+              for (coder::SizeType k{0}; k < len; k++) {
                 scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
                 }
@@ -1355,8 +1382,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  Compute derivative with respect to v
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 6; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 6; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1367,14 +1394,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             i = 0;
           }
           for (deg = 3; deg <= i; deg++) {
-            for (int j{0}; j < 3; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 3; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{3}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{3}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -1385,12 +1412,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -3; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -3; len--) {
             deg++;
             scalev = (deg + degree) - 1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev++;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -1409,12 +1436,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           } else {
             i = 0;
           }
-          for (int b_i{0}; b_i < 2; b_i++) {
+          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
             //  Initialize block to zero
             n = offset + 1;
             b_n = offset + npoints;
-            for (int col{0}; col < 10; col++) {
-              for (int row{n}; row <= b_n; row++) {
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{n}; row <= b_n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -1422,25 +1449,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 4; deg <= i; deg++) {
               scaleu = deg + 1;
               n = deg - 1;
-              for (int j{0}; j <= n; j++) {
+              for (coder::SizeType j{0}; j <= n; j++) {
                 scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
             //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= -4; len--) {
+            for (coder::SizeType len{x_tmp_tmp}; len >= -4; len--) {
               scaleu = 1 - degree;
-              for (int k{0}; k < len; k++) {
+              for (coder::SizeType k{0}; k < len; k++) {
                 scaleu--;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
                 }
@@ -1454,8 +1481,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev += us.size(0);
           i = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 10; col++) {
-            for (int row{i}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{i}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1466,14 +1493,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             i = 0;
           }
           for (deg = 4; deg <= i; deg++) {
-            for (int j{0}; j < 4; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{4}; j <= deg; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{4}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -1484,12 +1511,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -4; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -4; len--) {
             deg++;
             scalev = (deg + degree) - 1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev++;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -1509,21 +1536,22 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
 }
 
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
-static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
-                          int degree, int order, const double hs_inv_data[],
-                          const int hs_inv_size[2],
+static void gen_vander_2d(const ::coder::array<double, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          coder::SizeType order, const double hs_inv_data[],
+                          const coder::SizeType hs_inv_size[2],
                           ::coder::array<double, 2U> &V)
 {
   double hs_inv__idx_0;
   double hs_inv__idx_1;
-  int b_degree;
-  int b_n;
-  int c;
-  int deg;
-  int n;
-  int nrblks;
-  int stride;
-  int x_tmp_tmp;
+  coder::SizeType b_degree;
+  coder::SizeType b_n;
+  coder::SizeType c;
+  coder::SizeType deg;
+  coder::SizeType n;
+  coder::SizeType nrblks;
+  coder::SizeType stride;
+  coder::SizeType x_tmp_tmp;
   if (npoints == 0) {
     npoints = us.size(0);
   } else if (npoints > us.size(0)) {
@@ -1569,13 +1597,13 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   V.set_size(n, b_n);
   //  compute 0th order generalized Vandermonde matrix
   if (degree != 0) {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = 1.0;
       V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
       V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
     }
   } else {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = 1.0;
     }
   }
@@ -1602,14 +1630,14 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   }
   b_degree -= b_n;
   for (deg = 2; deg <= b_degree; deg++) {
-    for (int j{0}; j < deg; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
       }
       c++;
     }
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt + V.size(1) * c] =
           V[iPnt + V.size(1) * ((c - deg) - 1)] * us[us.size(1) * iPnt + 1];
     }
@@ -1618,8 +1646,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   //  Compute the bi-degree terms if degree<0
   b_degree = 1 - n;
   for (deg = x_tmp_tmp; deg >= b_degree; deg--) {
-    for (int k{0}; k < deg; k++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType k{0}; k < deg; k++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
       }
@@ -1630,11 +1658,11 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
   if (order != 0) {
     double scaleu;
     double scalev;
-    int offset;
+    coder::SizeType offset;
     //  This is an optimized version of update_vander_ordern for first-order CVM
     m2cAssert(degree != 0, "");
     //  Compute derivative with respect to u
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       b_n = stride + iPnt;
       V[b_n] = 0.0;
       V[b_n + V.size(1)] = V[iPnt] * hs_inv__idx_0;
@@ -1663,30 +1691,30 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     b_degree -= b_n;
     for (deg = 2; deg <= b_degree; deg++) {
       scaleu = static_cast<double>(deg) * hs_inv__idx_0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(stride + iPnt) + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - deg)] * scaleu;
       }
       c++;
-      for (int j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType j{0}; j <= deg - 2; j++) {
         scaleu -= hs_inv__idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - deg)] * scaleu;
         }
         c++;
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(stride + iPnt) + V.size(1) * c] = 0.0;
       }
       c++;
     }
     //  Compute the bi-degree terms if degree<0
-    for (int len{x_tmp_tmp}; len >= n; len--) {
+    for (coder::SizeType len{x_tmp_tmp}; len >= n; len--) {
       scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-      for (int k{0}; k < len; k++) {
+      for (coder::SizeType k{0}; k < len; k++) {
         scaleu -= hs_inv__idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - len)] * scaleu;
         }
@@ -1695,7 +1723,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //  Compute derivative with respect to v
     offset = us.size(0) + us.size(0);
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       b_n = offset + iPnt;
       V[b_n] = 0.0;
       V[b_n + V.size(1)] = 0.0;
@@ -1719,13 +1747,13 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     b_degree -= b_n;
     for (deg = 2; deg <= b_degree; deg++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * c] = 0.0;
       }
       c++;
-      for (int j{0}; j < deg; j++) {
+      for (coder::SizeType j{0}; j < deg; j++) {
         scalev = (static_cast<double>(j) + 1.0) * hs_inv__idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * ((c - deg) - 1)] * scalev;
         }
@@ -1734,12 +1762,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //  Compute the bi-degree terms if degree<0
     deg = -degree;
-    for (int len{x_tmp_tmp}; len >= n; len--) {
+    for (coder::SizeType len{x_tmp_tmp}; len >= n; len--) {
       deg++;
       scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-      for (int k{0}; k < len; k++) {
+      for (coder::SizeType k{0}; k < len; k++) {
         scalev += hs_inv__idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * ((c - len) - 1)] * scalev;
         }
@@ -1748,8 +1776,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
     }
     //      compute regular orders if order > 0
     if (order > 0) {
-      for (int dd{2}; dd <= order; dd++) {
-        int offset_prev;
+      for (coder::SizeType dd{2}; dd <= order; dd++) {
+        coder::SizeType offset_prev;
         //  Compute order-N CVM row blocks from order-(N-1) CVM.
         m2cAssert(degree != 0, "");
         offset = 3 * stride;
@@ -1760,12 +1788,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         } else {
           b_degree = degree;
         }
-        for (int i{0}; i < 2; i++) {
+        for (coder::SizeType i{0}; i < 2; i++) {
           //  Initialize block to zero
           n = offset + 1;
           b_n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{n}; row <= b_n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{n}; row <= b_n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1773,25 +1801,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = 2; deg <= b_degree; deg++) {
             scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
             n = deg - 1;
-            for (int j{0}; j <= n; j++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
               scaleu -= hs_inv__idx_0;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
           //  Compute the bi-degree terms if degree<0
-          for (int len{x_tmp_tmp}; len >= 0; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= 0; len--) {
             scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scaleu -= hs_inv__idx_0;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
               }
@@ -1804,8 +1832,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         //  Compute derivative with respect to v
         b_degree = offset + 1;
         n = offset + npoints;
-        for (int col{0}; col < 3; col++) {
-          for (int row{b_degree}; row <= n; row++) {
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{b_degree}; row <= n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -1816,15 +1844,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           b_degree = degree;
         }
         for (deg = 2; deg <= b_degree; deg++) {
-          for (int j{0}; j < 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j < 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int j{2}; j <= deg; j++) {
+          for (coder::SizeType j{2}; j <= deg; j++) {
             scalev = static_cast<double>(j) * hs_inv__idx_1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - deg) - 1)] *
@@ -1835,12 +1863,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         }
         //  Compute the bi-degree terms if degree<0
         deg = -degree;
-        for (int len{x_tmp_tmp}; len >= 0; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= 0; len--) {
           deg++;
           scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scalev += hs_inv__idx_1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - len) - 1)] *
@@ -1854,7 +1882,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
       //          compute efficient laplacian and bi-laplacian
       switch (order) {
       case -2: {
-        int offset_prev;
+        coder::SizeType offset_prev;
         //  Compute order-N CVM row blocks from order-(N-1) CVM.
         m2cAssert(degree != 0, "");
         offset = 3 * us.size(0);
@@ -1868,8 +1896,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         //  Initialize block to zero
         n = offset + 1;
         b_n = offset + npoints;
-        for (int col{0}; col < 3; col++) {
-          for (int row{n}; row <= b_n; row++) {
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{n}; row <= b_n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -1877,25 +1905,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         for (deg = 2; deg <= b_degree; deg++) {
           scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
           n = deg - 1;
-          for (int j{0}; j <= n; j++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
             scaleu -= hs_inv__idx_0;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
             }
             c++;
           }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
         //  Compute the bi-degree terms if degree<0
-        for (int len{x_tmp_tmp}; len >= -2; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
           scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scaleu -= hs_inv__idx_0;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
             }
@@ -1907,8 +1935,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         offset_prev = (us.size(0) + us.size(0)) + us.size(0);
         b_degree = offset + 1;
         n = offset + npoints;
-        for (int col{0}; col < 3; col++) {
-          for (int row{b_degree}; row <= n; row++) {
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{b_degree}; row <= n; row++) {
             V[(row + V.size(1) * col) - 1] = 0.0;
           }
         }
@@ -1919,15 +1947,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           b_degree = degree;
         }
         for (deg = 2; deg <= b_degree; deg++) {
-          for (int j{0}; j < 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j < 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int j{2}; j <= deg; j++) {
+          for (coder::SizeType j{2}; j <= deg; j++) {
             scalev = static_cast<double>(j) * hs_inv__idx_1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - deg) - 1)] *
@@ -1938,12 +1966,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
         }
         //  Compute the bi-degree terms if degree<0
         deg = -degree;
-        for (int len{x_tmp_tmp}; len >= -2; len--) {
+        for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
           deg++;
           scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-          for (int k{0}; k < len; k++) {
+          for (coder::SizeType k{0}; k < len; k++) {
             scalev += hs_inv__idx_1;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[((offset_prev - stride) + iPnt) +
                     V.size(1) * ((c - len) - 1)] *
@@ -1955,15 +1983,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
       } break;
       case -4: {
         if (degree > 0) {
-          int offset_prev;
+          coder::SizeType offset_prev;
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
           m2cAssert(true, "");
           offset = 3 * us.size(0);
           //  Compute derivative with respect to u
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -1971,15 +1999,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = 2; deg <= degree; deg++) {
             scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
             b_degree = deg - 1;
-            for (int j{0}; j <= b_degree; j++) {
+            for (coder::SizeType j{0}; j <= b_degree; j++) {
               scaleu -= hs_inv__idx_0;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(us.size(0) + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -1990,22 +2018,22 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = (us.size(0) + us.size(0)) + us.size(0);
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
           c = 3;
           for (deg = 2; deg <= degree; deg++) {
-            for (int j{0}; j < 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{2}; j <= deg; j++) {
+            for (coder::SizeType j{2}; j <= deg; j++) {
               scalev = static_cast<double>(j) * hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -2019,11 +2047,11 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = 3 * us.size(0);
           m2cAssert(degree >= 4, "");
           //  compute du^4 and du^2*dv^2
-          for (int terms{0}; terms < 2; terms++) {
+          for (coder::SizeType terms{0}; terms < 2; terms++) {
             b_degree = offset + 1;
             n = offset + npoints;
-            for (int col{0}; col < 10; col++) {
-              for (int row{b_degree}; row <= n; row++) {
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{b_degree}; row <= n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -2031,9 +2059,9 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 4; deg <= degree; deg++) {
               scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
               b_degree = deg - 1;
-              for (int j{0}; j <= b_degree; j++) {
+              for (coder::SizeType j{0}; j <= b_degree; j++) {
                 scaleu -= hs_inv__idx_0;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) +
                         V.size(1) * ((c - (deg << 1)) + 1)] *
@@ -2041,7 +2069,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
@@ -2052,22 +2080,22 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  compute dv^4
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 10; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
           c = 10;
           for (deg = 4; deg <= degree; deg++) {
-            for (int j{0}; j < 4; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{4}; j <= deg; j++) {
+            for (coder::SizeType j{4}; j <= deg; j++) {
               scalev = static_cast<double>(j) * (hs_inv__idx_1 * hs_inv__idx_1);
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - (deg << 1)) - 1)] *
@@ -2077,7 +2105,7 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             }
           }
         } else {
-          int offset_prev;
+          coder::SizeType offset_prev;
           //  Compute order-N CVM row blocks from order-(N-1) CVM.
           m2cAssert(degree != 0, "");
           offset = 3 * us.size(0);
@@ -2091,8 +2119,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  Initialize block to zero
           n = offset + 1;
           b_n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{n}; row <= b_n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{n}; row <= b_n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -2100,25 +2128,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           for (deg = 2; deg <= b_degree; deg++) {
             scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
             n = deg - 1;
-            for (int j{0}; j <= n; j++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
               scaleu -= hs_inv__idx_0;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
               }
               c++;
             }
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
           //  Compute the bi-degree terms if degree<0
-          for (int len{x_tmp_tmp}; len >= -2; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
             scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scaleu -= hs_inv__idx_0;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
               }
@@ -2130,8 +2158,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev = (us.size(0) + us.size(0)) + us.size(0);
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 3; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -2142,15 +2170,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             b_degree = 0;
           }
           for (deg = 2; deg <= b_degree; deg++) {
-            for (int j{0}; j < 2; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{2}; j <= deg; j++) {
+            for (coder::SizeType j{2}; j <= deg; j++) {
               scalev = static_cast<double>(j) * hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -2161,12 +2189,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -2; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -2; len--) {
             deg++;
             scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev += hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -2185,12 +2213,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           } else {
             b_degree = 0;
           }
-          for (int i{0}; i < 2; i++) {
+          for (coder::SizeType i{0}; i < 2; i++) {
             //  Initialize block to zero
             n = offset + 1;
             b_n = offset + npoints;
-            for (int col{0}; col < 6; col++) {
-              for (int row{n}; row <= b_n; row++) {
+            for (coder::SizeType col{0}; col < 6; col++) {
+              for (coder::SizeType row{n}; row <= b_n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -2198,25 +2226,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 3; deg <= b_degree; deg++) {
               scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
               n = deg - 1;
-              for (int j{0}; j <= n; j++) {
+              for (coder::SizeType j{0}; j <= n; j++) {
                 scaleu -= hs_inv__idx_0;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
             //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= -3; len--) {
+            for (coder::SizeType len{x_tmp_tmp}; len >= -3; len--) {
               scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-              for (int k{0}; k < len; k++) {
+              for (coder::SizeType k{0}; k < len; k++) {
                 scaleu -= hs_inv__idx_0;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
                 }
@@ -2229,8 +2257,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           //  Compute derivative with respect to v
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 6; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 6; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -2241,15 +2269,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             b_degree = 0;
           }
           for (deg = 3; deg <= b_degree; deg++) {
-            for (int j{0}; j < 3; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 3; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{3}; j <= deg; j++) {
+            for (coder::SizeType j{3}; j <= deg; j++) {
               scalev = static_cast<double>(j) * hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -2260,12 +2288,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -3; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -3; len--) {
             deg++;
             scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev += hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -2284,12 +2312,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           } else {
             b_degree = 0;
           }
-          for (int i{0}; i < 2; i++) {
+          for (coder::SizeType i{0}; i < 2; i++) {
             //  Initialize block to zero
             n = offset + 1;
             b_n = offset + npoints;
-            for (int col{0}; col < 10; col++) {
-              for (int row{n}; row <= b_n; row++) {
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{n}; row <= b_n; row++) {
                 V[(row + V.size(1) * col) - 1] = 0.0;
               }
             }
@@ -2297,25 +2325,25 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             for (deg = 4; deg <= b_degree; deg++) {
               scaleu = static_cast<double>(deg + 1) * hs_inv__idx_0;
               n = deg - 1;
-              for (int j{0}; j <= n; j++) {
+              for (coder::SizeType j{0}; j <= n; j++) {
                 scaleu -= hs_inv__idx_0;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
                 }
                 c++;
               }
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
             //  Compute the bi-degree terms if degree<0
-            for (int len{x_tmp_tmp}; len >= -4; len--) {
+            for (coder::SizeType len{x_tmp_tmp}; len >= -4; len--) {
               scaleu = static_cast<double>(1 - degree) * hs_inv__idx_0;
-              for (int k{0}; k < len; k++) {
+              for (coder::SizeType k{0}; k < len; k++) {
                 scaleu -= hs_inv__idx_0;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(offset + iPnt) + V.size(1) * c] =
                       V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
                 }
@@ -2329,8 +2357,8 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           offset_prev += us.size(0);
           b_degree = offset + 1;
           n = offset + npoints;
-          for (int col{0}; col < 10; col++) {
-            for (int row{b_degree}; row <= n; row++) {
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{b_degree}; row <= n; row++) {
               V[(row + V.size(1) * col) - 1] = 0.0;
             }
           }
@@ -2341,15 +2369,15 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
             b_degree = 0;
           }
           for (deg = 4; deg <= b_degree; deg++) {
-            for (int j{0}; j < 4; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
             }
-            for (int j{4}; j <= deg; j++) {
+            for (coder::SizeType j{4}; j <= deg; j++) {
               scalev = static_cast<double>(j) * hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - deg) - 1)] *
@@ -2360,12 +2388,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
           }
           //  Compute the bi-degree terms if degree<0
           deg = -degree;
-          for (int len{x_tmp_tmp}; len >= -4; len--) {
+          for (coder::SizeType len{x_tmp_tmp}; len >= -4; len--) {
             deg++;
             scalev = static_cast<double>((deg + degree) - 1) * hs_inv__idx_1;
-            for (int k{0}; k < len; k++) {
+            for (coder::SizeType k{0}; k < len; k++) {
               scalev += hs_inv__idx_1;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((offset_prev - stride) + iPnt) +
                       V.size(1) * ((c - len) - 1)] *
@@ -2385,12 +2413,12 @@ static void gen_vander_2d(const ::coder::array<double, 2U> &us, int npoints,
 }
 
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
-static void gen_vander_2d(const double us_data[], int degree,
+static void gen_vander_2d(const double us_data[], coder::SizeType degree,
                           ::coder::array<double, 2U> &V)
 {
-  int b_n;
-  int c;
-  int n;
+  coder::SizeType b_n;
+  coder::SizeType c;
+  coder::SizeType n;
   n = (degree + 1) * (degree + 2) / 2;
   b_n = 1;
   V.set_size(n, b_n);
@@ -2404,8 +2432,8 @@ static void gen_vander_2d(const double us_data[], int degree,
   } else {
     n = degree;
   }
-  for (int deg{2}; deg <= n; deg++) {
-    for (int j{0}; j < deg; j++) {
+  for (coder::SizeType deg{2}; deg <= n; deg++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
       V[V.size(1) * c] = V[V.size(1) * (c - deg)] * us_data[0];
       c++;
     }
@@ -2415,12 +2443,12 @@ static void gen_vander_2d(const double us_data[], int degree,
   //  Compute the bi-degree terms if degree<0
 }
 
-static void gen_vander_2d_dag(int degree,
+static void gen_vander_2d_dag(coder::SizeType degree,
                               ::coder::array<unsigned char, 2U> &dag)
 {
-  int b_degree;
-  int c;
-  int j;
+  coder::SizeType b_degree;
+  coder::SizeType c;
+  coder::SizeType j;
   if (degree >= 0) {
     b_degree = (degree + 1) * (degree + 2) / 2;
   } else {
@@ -2443,7 +2471,7 @@ static void gen_vander_2d_dag(int degree,
   } else {
     b_degree = degree;
   }
-  for (int deg{2}; deg <= b_degree; deg++) {
+  for (coder::SizeType deg{2}; deg <= b_degree; deg++) {
     dag[2 * ((c - deg) + 1)] = static_cast<unsigned char>(deg);
     //  x-child
     c += 2;
@@ -2469,7 +2497,7 @@ static void gen_vander_2d_dag(int degree,
   } else if (degree < 0) {
     //  Compute the bi-degree terms if degree<0
     b_degree = -degree;
-    for (int deg{b_degree}; deg >= 1; deg--) {
+    for (coder::SizeType deg{b_degree}; deg >= 1; deg--) {
       j = c - deg;
       dag[2 * j] = 0U;
       //  no x-child
@@ -2478,7 +2506,7 @@ static void gen_vander_2d_dag(int degree,
       dag[2 * (j + 1)] = static_cast<unsigned char>(deg);
       //  x-child
       c++;
-      for (int k{2}; k <= deg; k++) {
+      for (coder::SizeType k{2}; k <= deg; k++) {
         j = (c + k) - deg;
         dag[2 * (j - 1)] = static_cast<unsigned char>(deg);
         //  x-child
@@ -2499,31 +2527,4025 @@ static void gen_vander_2d_dag(int degree,
 }
 
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
-                          int degree, int order, const double hs_inv_data[],
-                          const int hs_inv_size[2],
+static void gen_vander_3d(const ::coder::array<double, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          coder::SizeType order,
+                          const ::coder::array<double, 1U> &weights,
+                          ::coder::array<double, 2U> &V)
+{
+  coder::SizeType b_degree;
+  coder::SizeType c;
+  coder::SizeType cornerTriangle;
+  coder::SizeType counterBottomRow;
+  coder::SizeType d;
+  coder::SizeType deg;
+  coder::SizeType excess;
+  coder::SizeType i;
+  coder::SizeType i1;
+  coder::SizeType maxLayers;
+  coder::SizeType n;
+  coder::SizeType nTermsInLayer;
+  coder::SizeType nTermsInPrevLayer;
+  coder::SizeType nrblks;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType x_tmp_tmp;
+  if (npoints > us.size(0)) {
+    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
+  }
+  if ((order < -4) || (order == -3)) {
+    m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                      "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
+  }
+  stride = us.size(0);
+  nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
+  switch (order) {
+  case -1:
+    nrblks = 4;
+    break;
+  case -2:
+    nrblks = 7;
+    break;
+  case -4:
+    if (degree > 0) {
+      nrblks = 13;
+    } else {
+      nrblks = 19;
+    }
+    break;
+  }
+  //  Allocate storage for V
+  if (degree >= 0) {
+    b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
+  } else {
+    b_degree = (1 - degree) * (1 - degree) * (1 - degree);
+  }
+  b_degree = b_degree;
+  n = us.size(0) * nrblks;
+  V.set_size(b_degree, n);
+  //  compute 0th order generalized Vandermonde matrix
+  if (weights.size(0) == 0) {
+    if (degree != 0) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
+        V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
+  } else if (degree != 0) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = weights[iPnt];
+      V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
+      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
+      V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2] * weights[iPnt];
+    }
+  } else {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = weights[iPnt];
+    }
+  }
+  c = 4;
+  d = 3;
+  u0 = order;
+  if (order > 0) {
+    u0 = 0;
+  }
+  x_tmp_tmp = -degree;
+  n = -degree;
+  if (-degree > 0) {
+    n = 1;
+  } else if (-degree < 0) {
+    n = -1;
+  }
+  n *= u0;
+  if (degree < 0) {
+    b_degree = -degree;
+  } else {
+    b_degree = degree;
+  }
+  if (n < 0) {
+    n = 0;
+  }
+  i = b_degree - n;
+  for (deg = 2; deg <= i; deg++) {
+    //  Within each level, use convention of Pascal triangle with x^deg at peak
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * us[us.size(1) * iPnt];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt + V.size(1) * c] =
+          V[iPnt + V.size(1) * ((c - d) - 1)] * us[us.size(1) * iPnt + 1];
+    }
+    c++;
+    for (coder::SizeType j{0}; j < d; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                                  us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    d = (d + deg) + 1;
+  }
+  //  Compute the tri-degree terms if degree<0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3 + u0;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      coder::SizeType gap;
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
+                                    us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      n = ((degree + degree) + p) - 1;
+      if (n < 0) {
+        n = 0;
+      }
+      excess += n;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      gap = (nTermsInPrevLayer + counterBottomRow) - 1;
+      i1 = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= i1; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  m2cAssert(order <= 2, "");
+  if (order != 0) {
+    //      compute higher order confluent Vandermonde matrix blocks
+    switch (order) {
+    case 1: {
+      coder::SizeType balance;
+      coder::SizeType offset;
+      //  Compute order-1 CVM row blocks from order-0 GVM.
+      m2cAssert(degree != 0, "");
+      // compute derivatives with respect to u
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 3;
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        double scaleu;
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * (c + 1)] =
+                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to v
+      offset = us.size(0) + us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        b_degree = offset + iPnt;
+        V[b_degree] = 0.0;
+        V[b_degree + V.size(1)] = 0.0;
+        V[b_degree + V.size(1) * 2] = V[iPnt];
+        V[b_degree + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 4;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        double scalev;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 1;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to w
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = V[iPnt];
+      }
+      c = 4;
+      d = 3;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            coder::SizeType partition;
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[iPnt + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+    } break;
+    case 2: {
+      double scaleu;
+      double scalev;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
+      //  Compute order-1 CVM row blocks from order-0 GVM.
+      m2cAssert(degree != 0, "");
+      // compute derivatives with respect to u
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 3;
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * (c + 1)] =
+                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to v
+      offset = us.size(0) + us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        b_degree = offset + iPnt;
+        V[b_degree] = 0.0;
+        V[b_degree + V.size(1)] = 0.0;
+        V[b_degree + V.size(1) * 2] = V[iPnt];
+        V[b_degree + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 4;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 1;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to w
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = V[iPnt];
+      }
+      c = 4;
+      d = 3;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[iPnt + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute du^2
+      offset = us.size(0) << 2;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = 0.0;
+        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+        for (i = 0; i < 5; i++) {
+          V[n + V.size(1) * (i + 5)] = 0.0;
+        }
+      }
+      c = 10;
+      d = 6;
+      u0 = order + 2;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      if (degree < 0) {
+        i = -degree;
+      } else {
+        i = degree;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = i - n;
+      for (deg = 3; deg <= i1; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + stride) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * (c + 1)] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // compute tri degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dv
+        offset += us.size(0);
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 5; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 5] = V[iPnt];
+          V[n + V.size(1) * 6] = 0.0;
+          V[n + V.size(1) * 7] = 0.0;
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 7;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          scalev = 1.0;
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
+            }
+            scalev++;
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] *
+                static_cast<double>(deg);
+          }
+          c++;
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * ((c - d) - deg)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          d = (d + deg) + 1;
+        }
+        // compute the tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d - 2;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  implicitly calculating number of elements in corner Pascal
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((stride << 1) + iPnt) +
+                      V.size(1) * (c - nTermsInLayer)] *
+                    static_cast<double>(-degree - kdegree);
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            n = (((p + degree) << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer + 1;
+            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+            balance = nTermsInPrevLayer + counterBottomRow;
+            n = nTermsInLayer - counterBottomRow;
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] =
+                    V[b_degree + V.size(1) * (c - balance)] *
+                    us[us.size(1) * iPnt + 2];
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute dv^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i1 = 0; i1 < 6; i1++) {
+          V[n + V.size(1) * i1] = 0.0;
+        }
+        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+        V[n + V.size(1) * 7] = 0.0;
+        V[n + V.size(1) * 8] = 0.0;
+        V[n + V.size(1) * 9] = 0.0;
+      }
+      c = 10;
+      d = 7;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = b_degree - n;
+      for (deg = 3; deg <= i1; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 2;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dw
+        offset = (offset + us.size(0)) - 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = (offset + iPnt) + 1;
+          for (i1 = 0; i1 < 7; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 7] = V[iPnt];
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] =
+                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((iPnt + offset) + V.size(1) * c) + 1] =
+                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+        //      compute dv*dw
+        offset = (offset + us.size(0)) + 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 8; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 8] = V[iPnt];
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(iPnt + (stride << 1)) +
+                      V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i = 1 - degree;
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(iPnt + offset) + V.size(1) * c] =
+                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+      }
+      //  compute dw^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i = 0; i < 9; i++) {
+          V[n + V.size(1) * i] = 0.0;
+        }
+        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+      }
+      c = 10;
+      d = 6;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 3; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 2;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+    } break;
+    case -1: {
+      coder::SizeType balance;
+      coder::SizeType offset;
+      //  Compute order-1 CVM row blocks from order-0 GVM.
+      m2cAssert(degree != 0, "");
+      // compute derivatives with respect to u
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 3;
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        double scaleu;
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * (c + 1)] =
+                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to v
+      offset = us.size(0) + us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        b_degree = offset + iPnt;
+        V[b_degree] = 0.0;
+        V[b_degree + V.size(1)] = 0.0;
+        V[b_degree + V.size(1) * 2] = V[iPnt];
+        V[b_degree + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 4;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        double scalev;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 1;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to w
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = V[iPnt];
+      }
+      c = 4;
+      d = 3;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            coder::SizeType partition;
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[iPnt + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+    } break;
+    case -2: {
+      double scaleu;
+      double scalev;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
+      //  Compute order-1 CVM row blocks from order-0 GVM.
+      m2cAssert(degree != 0, "");
+      // compute derivatives with respect to u
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 3;
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * (c + 1)] =
+                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to v
+      offset = us.size(0) + us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        b_degree = offset + iPnt;
+        V[b_degree] = 0.0;
+        V[b_degree + V.size(1)] = 0.0;
+        V[b_degree + V.size(1) * 2] = V[iPnt];
+        V[b_degree + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 4;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 1;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to w
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = V[iPnt];
+      }
+      c = 4;
+      d = 3;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[iPnt + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute du^2
+      offset = us.size(0) << 2;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = 0.0;
+        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+        for (i = 0; i < 5; i++) {
+          V[n + V.size(1) * (i + 5)] = 0.0;
+        }
+      }
+      c = 10;
+      d = 6;
+      u0 = order + 2;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      if (degree < 0) {
+        i = -degree;
+      } else {
+        i = degree;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = i - n;
+      for (deg = 3; deg <= i1; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + stride) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * (c + 1)] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // compute tri degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dv
+        offset += us.size(0);
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 5; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 5] = V[iPnt];
+          V[n + V.size(1) * 6] = 0.0;
+          V[n + V.size(1) * 7] = 0.0;
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 7;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          scalev = 1.0;
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
+            }
+            scalev++;
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] *
+                static_cast<double>(deg);
+          }
+          c++;
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * ((c - d) - deg)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          d = (d + deg) + 1;
+        }
+        // compute the tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d - 2;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  implicitly calculating number of elements in corner Pascal
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((stride << 1) + iPnt) +
+                      V.size(1) * (c - nTermsInLayer)] *
+                    static_cast<double>(-degree - kdegree);
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            n = (((p + degree) << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer + 1;
+            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+            balance = nTermsInPrevLayer + counterBottomRow;
+            n = nTermsInLayer - counterBottomRow;
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] =
+                    V[b_degree + V.size(1) * (c - balance)] *
+                    us[us.size(1) * iPnt + 2];
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute dv^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i1 = 0; i1 < 6; i1++) {
+          V[n + V.size(1) * i1] = 0.0;
+        }
+        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+        V[n + V.size(1) * 7] = 0.0;
+        V[n + V.size(1) * 8] = 0.0;
+        V[n + V.size(1) * 9] = 0.0;
+      }
+      c = 10;
+      d = 7;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = b_degree - n;
+      for (deg = 3; deg <= i1; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        n = order + 2;
+        if (n > 0) {
+          n = 0;
+        }
+        maxLayers = -degree * 3 + n;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dw
+        offset = (offset + us.size(0)) - 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = (offset + iPnt) + 1;
+          for (i1 = 0; i1 < 7; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 7] = V[iPnt];
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] =
+                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((iPnt + offset) + V.size(1) * c) + 1] =
+                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+        //      compute dv*dw
+        offset = (offset + us.size(0)) + 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 8; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 8] = V[iPnt];
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(iPnt + (stride << 1)) +
+                      V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i = 1 - degree;
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(iPnt + offset) + V.size(1) * c] =
+                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+      }
+      //  compute dw^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i = 0; i < 9; i++) {
+          V[n + V.size(1) * i] = 0.0;
+        }
+        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+      }
+      c = 10;
+      d = 6;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 3; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 2;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+    } break;
+    case -4: {
+      double scaleu;
+      double scalev;
+      double uu4_tmp;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
+      m2cAssert(degree > 0, "Biharnomic is only supported for "
+                            "Pascal-tetrahedral monomials in 3D.");
+      //  Compute order-1 CVM row blocks from order-0 GVM.
+      m2cAssert(degree != 0, "");
+      // compute derivatives with respect to u
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[stride + iPnt] = 0.0;
+        V[(stride + iPnt) + V.size(1)] = V[iPnt];
+        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 3;
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(stride + iPnt) + V.size(1) * (c + 1)] =
+                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(stride + iPnt) + V.size(1) * c] =
+                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to v
+      offset = us.size(0) + us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        b_degree = offset + iPnt;
+        V[b_degree] = 0.0;
+        V[b_degree + V.size(1)] = 0.0;
+        V[b_degree + V.size(1) * 2] = V[iPnt];
+        V[b_degree + V.size(1) * 3] = 0.0;
+      }
+      c = 4;
+      d = 4;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          i1 = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      // compute derivatives with respect to w
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = V[iPnt];
+      }
+      c = 4;
+      d = 3;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      u0 = order + 1;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 2; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 1;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[iPnt + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute du^2
+      offset = us.size(0) << 2;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        V[n] = 0.0;
+        V[n + V.size(1)] = 0.0;
+        V[n + V.size(1) * 2] = 0.0;
+        V[n + V.size(1) * 3] = 0.0;
+        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
+        for (i = 0; i < 5; i++) {
+          V[n + V.size(1) * (i + 5)] = 0.0;
+        }
+      }
+      c = 10;
+      d = 6;
+      u0 = order + 2;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      if (degree < 0) {
+        i = -degree;
+      } else {
+        i = degree;
+      }
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      n *= u0;
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = i - n;
+      for (deg = 3; deg <= i1; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + stride) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * (c + 1)] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      // compute tri degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 1;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt + 1];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dv
+        offset += us.size(0);
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 5; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 5] = V[iPnt];
+          V[n + V.size(1) * 6] = 0.0;
+          V[n + V.size(1) * 7] = 0.0;
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 7;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          scalev = 1.0;
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
+            }
+            scalev++;
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + stride) + V.size(1) * (c - d)] *
+                static_cast<double>(deg);
+          }
+          c++;
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * ((c - d) - deg)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+          d = (d + deg) + 1;
+        }
+        // compute the tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d - 2;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  implicitly calculating number of elements in corner Pascal
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((stride << 1) + iPnt) +
+                      V.size(1) * (c - nTermsInLayer)] *
+                    static_cast<double>(-degree - kdegree);
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            n = (((p + degree) << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer + 1;
+            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+            balance = nTermsInPrevLayer + counterBottomRow;
+            n = nTermsInLayer - counterBottomRow;
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                b_degree = offset + iPnt;
+                V[b_degree + V.size(1) * c] =
+                    V[b_degree + V.size(1) * (c - balance)] *
+                    us[us.size(1) * iPnt + 2];
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute dv^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i1 = 0; i1 < 6; i1++) {
+          V[n + V.size(1) * i1] = 0.0;
+        }
+        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
+        V[n + V.size(1) * 7] = 0.0;
+        V[n + V.size(1) * 8] = 0.0;
+        V[n + V.size(1) * 9] = 0.0;
+      }
+      c = 10;
+      d = 7;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      u0 = order + 2;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i1 = b_degree - n;
+      for (deg = 3; deg <= i1; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
+              static_cast<double>(deg);
+        }
+        c++;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        d = (d + deg) + 1;
+      }
+      // compute the tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 2;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d - 2;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i1 = 1 - degree;
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
+                  us[us.size(1) * iPnt];
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          n = (((p + degree) << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer + 1;
+          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+          balance = nTermsInPrevLayer + counterBottomRow;
+          n = nTermsInLayer - counterBottomRow;
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              b_degree = offset + iPnt;
+              V[b_degree + V.size(1) * c] =
+                  V[b_degree + V.size(1) * (c - balance)] *
+                  us[us.size(1) * iPnt + 2];
+            }
+            c++;
+          }
+        }
+      }
+      if (order > 0) {
+        //      compute du*dw
+        offset = (offset + us.size(0)) - 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = (offset + iPnt) + 1;
+          for (i1 = 0; i1 < 7; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 7] = V[iPnt];
+          V[n + V.size(1) * 8] = 0.0;
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] =
+                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i1 = 1 - degree;
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[((iPnt + offset) + V.size(1) * c) + 1] =
+                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+        //      compute dv*dw
+        offset = (offset + us.size(0)) + 1;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          n = offset + iPnt;
+          for (i1 = 0; i1 < 8; i1++) {
+            V[n + V.size(1) * i1] = 0.0;
+          }
+          V[n + V.size(1) * 8] = V[iPnt];
+          V[n + V.size(1) * 9] = 0.0;
+        }
+        c = 10;
+        d = 6;
+        for (deg = 3; deg <= i; deg++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType k{0}; k < deg; k++) {
+            i1 = (deg - k) - 1;
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(iPnt + (stride << 1)) +
+                      V.size(1) * (((c - d) - deg) - 1)] *
+                    (static_cast<double>(k) + 1.0);
+              }
+              c++;
+            }
+          }
+          d = (d + deg) + 1;
+        }
+        // compute tri-degree terms if degree < 0
+        if (degree < 0) {
+          deg = -degree;
+          maxLayers = -degree * 3 + 1;
+          // max number of layers needed in the Pascal tetrahedron
+          cornerTriangle = 0;
+          // number of elements subtracted in each corner Pascal triangle
+          nTermsInLayer = d;
+          // initializing number of elements in layer
+          excess = 0;
+          // excess based on overlapping of growing Pascal triangles
+          i = 1 - degree;
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
+            //  Within each level, x^deg is at the peak of Pascal triangle
+            cornerTriangle = (cornerTriangle + p) + degree;
+            counterBottomRow = 0;
+            // counter for the bottom row to be subtracted later
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+              counterBottomRow++;
+            }
+            deg--;
+            b_degree = p + degree;
+            n = ((b_degree << 1) - p) - 1;
+            if (n < 0) {
+              n = 0;
+            }
+            excess += n;
+            d = (d + p) + 1;
+            // number of terms in Pascal tetrahedron
+            nTermsInPrevLayer = nTermsInLayer;
+            nTermsInLayer = d + 3 * (excess - cornerTriangle);
+            balance = nTermsInPrevLayer + counterBottomRow;
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+              n = (b_degree - k) - 1;
+              if (n < 0) {
+                n = -n;
+              }
+              partition = -degree - n;
+              for (coder::SizeType j{0}; j <= partition; j++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(iPnt + offset) + V.size(1) * c] =
+                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
+                      static_cast<double>(k + 1);
+                }
+                c++;
+              }
+            }
+          }
+        }
+      }
+      //  compute dw^2
+      offset += us.size(0);
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        n = offset + iPnt;
+        for (i = 0; i < 9; i++) {
+          V[n + V.size(1) * i] = 0.0;
+        }
+        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
+      }
+      c = 10;
+      d = 6;
+      n = -degree;
+      if (-degree > 0) {
+        n = 1;
+      } else if (-degree < 0) {
+        n = -1;
+      }
+      u0 = order + 2;
+      if (u0 > 0) {
+        u0 = 0;
+      }
+      n *= u0;
+      if (degree < 0) {
+        b_degree = -degree;
+      } else {
+        b_degree = degree;
+      }
+      if (n < 0) {
+        n = 0;
+      }
+      i = b_degree - n;
+      for (deg = 3; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      // compute tri-degree terms if degree < 0
+      if (degree < 0) {
+        deg = -degree;
+        u0 = order + 2;
+        if (u0 > 0) {
+          u0 = 0;
+        }
+        maxLayers = -degree * 3 + u0;
+        // max number of layers needed in the Pascal tetrahedron
+        cornerTriangle = 0;
+        // number of elements subtracted in each corner Pascal triangle
+        nTermsInLayer = d;
+        // initializing number of elements in layer
+        excess = 0;
+        // excess based on overlapping of growing Pascal triangles
+        i = 1 - degree;
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
+          //  Within each level, x^deg is at the peak of Pascal triangle
+          cornerTriangle = (cornerTriangle + p) + degree;
+          counterBottomRow = 0;
+          // counter for the bottom row to be subtracted later
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+            counterBottomRow++;
+          }
+          deg--;
+          b_degree = p + degree;
+          n = ((b_degree << 1) - p) - 1;
+          if (n < 0) {
+            n = 0;
+          }
+          excess += n;
+          d = (d + p) + 1;
+          // number of terms in Pascal tetrahedron
+          nTermsInPrevLayer = nTermsInLayer;
+          nTermsInLayer = d + 3 * (excess - cornerTriangle);
+          balance = nTermsInPrevLayer + counterBottomRow;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            n = (b_degree - k) - 1;
+            if (n < 0) {
+              n = -n;
+            }
+            partition = -degree - n;
+            for (coder::SizeType j{0}; j <= partition; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(iPnt + offset) + V.size(1) * c] =
+                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
+                    static_cast<double>(k + 1);
+              }
+              c++;
+            }
+          }
+        }
+      }
+      //  compute du^4
+      offset = us.size(0) * 7;
+      uu4_tmp = 24.0 * std::pow(1.0, 4.0);
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 20] = uu4_tmp * V[iPnt];
+      }
+      c = 35;
+      d = 15;
+      if (degree < 0) {
+        i = -degree;
+      } else {
+        i = degree;
+      }
+      for (deg = 5; deg <= i; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+                scaleu * (scaleu - 1.0);
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * (c + 1)] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      //  compute du^2dv^2
+      offset = us.size(0) << 3;
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 22] = 4.0 * V[iPnt];
+      }
+      c = 35;
+      d = 15;
+      for (deg = 5; deg <= i; deg++) {
+        scaleu = deg;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
+        }
+        c++;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          scaleu--;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] =
+                V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+                scaleu * (scaleu - 1.0);
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * (c + 1)] =
+                V[b_degree + V.size(1) * ((c - d) - deg)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        c += 2;
+        d = (d + deg) + 1;
+      }
+      //  compute dv^4
+      offset = us.size(0) * 9;
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 24] = uu4_tmp * V[iPnt];
+      }
+      c = 34;
+      d = 15;
+      for (deg = 5; deg <= degree; deg++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+        }
+        scalev = 1.0;
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * (c + 2)] =
+                V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+                scalev * (scalev - 1.0);
+          }
+          scalev++;
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * (c + 2)] =
+              V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] *
+              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
+        }
+        c += 3;
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            b_degree = offset + iPnt;
+            V[b_degree + V.size(1) * c] =
+                V[b_degree + V.size(1) * (((c - d) - deg) - 1)] *
+                us[us.size(1) * iPnt + 2];
+          }
+          c++;
+        }
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        d = (d + deg) + 1;
+      }
+      //  compute du^2*dw^2
+      offset += us.size(0);
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 29] = 4.0 * V[iPnt];
+      }
+      c = 35;
+      d = 15;
+      for (deg = 5; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + (stride << 2)) +
+                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0) *
+                  ((static_cast<double>(k) + 1.0) - 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      //  compute dv^2*dw^2
+      offset += us.size(0);
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 31] = 4.0 * V[iPnt];
+      }
+      c = 35;
+      d = 15;
+      for (deg = 5; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + 5 * stride) +
+                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0) *
+                  ((static_cast<double>(k) + 1.0) - 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+      //  compute dw^4
+      offset += us.size(0);
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+        }
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * 34] = uu4_tmp * V[iPnt];
+      }
+      c = 35;
+      d = 15;
+      for (deg = 5; deg <= i; deg++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        for (coder::SizeType k{0}; k < deg; k++) {
+          i1 = (deg - k) - 1;
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(iPnt + 6 * stride) +
+                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+                  (static_cast<double>(k) + 1.0) *
+                  ((static_cast<double>(k) + 1.0) - 1.0);
+            }
+            c++;
+          }
+        }
+        d = (d + deg) + 1;
+      }
+    } break;
+    default:
+      m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
+      break;
+    }
+  }
+}
+
+//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
+static void gen_vander_3d(const ::coder::array<double, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          coder::SizeType order, const double hs_inv_data[],
+                          const coder::SizeType hs_inv_size[2],
                           ::coder::array<double, 2U> &V)
 {
   double hs_inv_idx_0;
   double hs_inv_idx_1;
   double hs_inv_idx_2;
-  int b_degree;
-  int c;
-  int cornerTriangle;
-  int counterBottomRow;
-  int d;
-  int deg;
-  int excess;
-  int i;
-  int i1;
-  int maxLayers;
-  int n;
-  int nTermsInLayer;
-  int nTermsInPrevLayer;
-  int nrblks;
-  int stride;
-  int u0;
-  int x_tmp_tmp;
+  coder::SizeType b_degree;
+  coder::SizeType c;
+  coder::SizeType cornerTriangle;
+  coder::SizeType counterBottomRow;
+  coder::SizeType d;
+  coder::SizeType deg;
+  coder::SizeType excess;
+  coder::SizeType i;
+  coder::SizeType i1;
+  coder::SizeType maxLayers;
+  coder::SizeType n;
+  coder::SizeType nTermsInLayer;
+  coder::SizeType nTermsInPrevLayer;
+  coder::SizeType nrblks;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType x_tmp_tmp;
   if (npoints == 0) {
     npoints = us.size(0);
   } else if (npoints > us.size(0)) {
@@ -2570,14 +6592,14 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
   V.set_size(b_degree, n);
   //  compute 0th order generalized Vandermonde matrix
   if (degree != 0) {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = 1.0;
       V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
       V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
       V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
     }
   } else {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt] = 1.0;
     }
   }
@@ -2606,20 +6628,20 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
   i = b_degree - n;
   for (deg = 2; deg <= i; deg++) {
     //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (int j{0}; j < deg; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
             V[iPnt + V.size(1) * (c - d)] * us[us.size(1) * iPnt];
       }
       c++;
     }
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
       V[iPnt + V.size(1) * c] =
           V[iPnt + V.size(1) * ((c - d) - 1)] * us[us.size(1) * iPnt + 1];
     }
     c++;
-    for (int j{0}; j < d; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+    for (coder::SizeType j{0}; j < d; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
                                   us[us.size(1) * iPnt + 2];
       }
@@ -2639,14 +6661,14 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     excess = 0;
     // excess based on overlapping of growing Pascal triangles
     i = 1 - degree;
-    for (int p{i}; p <= maxLayers; p++) {
-      int gap;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      coder::SizeType gap;
       //  Within each level, x^deg is at the peak of Pascal triangle
       cornerTriangle = (cornerTriangle + p) + degree;
       counterBottomRow = 1;
       // counter for the bottom row to be subtracted later
-      for (int k{0}; k < deg; k++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
                                     us[us.size(1) * iPnt + 1];
         }
@@ -2665,8 +6687,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       nTermsInLayer = d + 3 * (excess - cornerTriangle);
       gap = (nTermsInPrevLayer + counterBottomRow) - 1;
       i1 = nTermsInLayer - counterBottomRow;
-      for (int j{0}; j <= i1; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType j{0}; j <= i1; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[iPnt + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
         }
@@ -2680,12 +6702,12 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     switch (order) {
     case 1: {
       double scalew;
-      int balance;
-      int offset;
+      coder::SizeType balance;
+      coder::SizeType offset;
       //  Compute order-1 CVM row blocks from order-0 GVM.
       m2cAssert(degree != 0, "");
       // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = stride + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
@@ -2717,24 +6739,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       for (deg = 2; deg <= i; deg++) {
         double scaleu;
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(stride + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = stride + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -2742,7 +6764,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -2760,13 +6782,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -2787,8 +6809,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -2800,7 +6822,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to v
       offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = offset + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = 0.0;
@@ -2827,13 +6849,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
         double scalev;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scalev;
           }
@@ -2841,13 +6863,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -2855,7 +6877,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -2877,13 +6899,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -2904,8 +6926,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -2917,7 +6939,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to w
       offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -2943,17 +6965,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
             }
@@ -2978,13 +7000,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -3002,16 +7024,16 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            int partition;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            coder::SizeType partition;
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[iPnt + V.size(1) * (c - balance)] * scalew;
               }
@@ -3028,13 +7050,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       double uu2;
       double vv2;
       double ww2;
-      int balance;
-      int offset;
-      int partition;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
       //  Compute order-1 CVM row blocks from order-0 GVM.
       m2cAssert(degree != 0, "");
       // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = stride + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
@@ -3065,24 +7087,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(stride + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = stride + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -3090,7 +7112,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -3108,13 +7130,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -3135,8 +7157,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -3148,7 +7170,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to v
       offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = offset + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = 0.0;
@@ -3174,13 +7196,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scalev;
           }
@@ -3188,13 +7210,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -3202,7 +7224,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -3224,13 +7246,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -3251,8 +7273,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -3264,7 +7286,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to w
       offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -3290,17 +7312,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
             }
@@ -3325,13 +7347,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -3349,15 +7371,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[iPnt + V.size(1) * (c - balance)] * scalew;
               }
@@ -3369,7 +7391,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute du^2
       offset = us.size(0) << 2;
       uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -3404,24 +7426,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i1 = i - n;
       for (deg = 3; deg <= i1; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -3429,7 +7451,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -3447,13 +7469,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -3474,8 +7496,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -3490,7 +7512,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dv
         offset += us.size(0);
         uv = hs_inv_idx_0 * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 5; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -3504,13 +7526,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 7;
         for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
           scalev = hs_inv_idx_1;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
             }
@@ -3518,13 +7540,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             c++;
           }
           scalev = static_cast<double>(deg) * hs_inv_idx_1;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
           }
           c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -3532,7 +7554,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             }
             c++;
           }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
@@ -3550,13 +7572,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  implicitly calculating number of elements in corner Pascal
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((stride << 1) + iPnt) +
                       V.size(1) * (c - nTermsInLayer)] *
@@ -3577,8 +7599,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
             balance = nTermsInPrevLayer + counterBottomRow;
             n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 b_degree = offset + iPnt;
                 V[b_degree + V.size(1) * c] =
                     V[b_degree + V.size(1) * (c - balance)] *
@@ -3592,7 +7614,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dv^2
       offset += us.size(0);
       vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i1 = 0; i1 < 6; i1++) {
           V[n + V.size(1) * i1] = 0.0;
@@ -3621,13 +7643,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i1 = b_degree - n;
       for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
           }
@@ -3635,13 +7657,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -3649,7 +7671,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -3671,13 +7693,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -3698,8 +7720,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -3715,7 +7737,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dw
         offset = (offset + us.size(0)) - 1;
         uw = hs_inv_idx_0 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = (offset + iPnt) + 1;
           for (i1 = 0; i1 < 7; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -3727,17 +7749,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] =
                     V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
                     scalew;
@@ -3759,13 +7781,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
               }
               c++;
@@ -3783,15 +7805,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[((iPnt + offset) + V.size(1) * c) + 1] =
                       V[(iPnt + stride) + V.size(1) * (c - balance)] * scalew;
                 }
@@ -3803,7 +7825,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute dv*dw
         offset = (offset + us.size(0)) + 1;
         vw = hs_inv_idx_1 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 8; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -3814,17 +7836,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(iPnt + (stride << 1)) +
                       V.size(1) * (((c - d) - deg) - 1)] *
@@ -3847,13 +7869,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
@@ -3871,15 +7893,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(iPnt + offset) + V.size(1) * c] =
                       V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
                       scalew;
@@ -3893,7 +7915,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dw^2
       offset += us.size(0);
       ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i = 0; i < 9; i++) {
           V[n + V.size(1) * i] = 0.0;
@@ -3919,17 +7941,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
                   scalew;
@@ -3955,13 +7977,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -3979,15 +8001,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
               }
@@ -3999,12 +8021,12 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
     } break;
     case -1: {
       double scalew;
-      int balance;
-      int offset;
+      coder::SizeType balance;
+      coder::SizeType offset;
       //  Compute order-1 CVM row blocks from order-0 GVM.
       m2cAssert(degree != 0, "");
       // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = stride + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
@@ -4036,24 +8058,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       for (deg = 2; deg <= i; deg++) {
         double scaleu;
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(stride + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = stride + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4061,7 +8083,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -4079,13 +8101,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -4106,8 +8128,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -4119,7 +8141,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to v
       offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = offset + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = 0.0;
@@ -4146,13 +8168,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
         double scalev;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scalev;
           }
@@ -4160,13 +8182,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4174,7 +8196,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -4196,13 +8218,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -4223,8 +8245,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -4236,7 +8258,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to w
       offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -4262,17 +8284,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
             }
@@ -4297,13 +8319,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -4321,16 +8343,16 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            int partition;
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
+            coder::SizeType partition;
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[iPnt + V.size(1) * (c - balance)] * scalew;
               }
@@ -4347,13 +8369,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       double uu2;
       double vv2;
       double ww2;
-      int balance;
-      int offset;
-      int partition;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
       //  Compute order-1 CVM row blocks from order-0 GVM.
       m2cAssert(degree != 0, "");
       // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = stride + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
@@ -4384,24 +8406,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(stride + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = stride + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4409,7 +8431,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -4427,13 +8449,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -4454,8 +8476,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -4467,7 +8489,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to v
       offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = offset + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = 0.0;
@@ -4493,13 +8515,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scalev;
           }
@@ -4507,13 +8529,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4521,7 +8543,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -4543,13 +8565,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -4570,8 +8592,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -4583,7 +8605,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to w
       offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -4609,17 +8631,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
             }
@@ -4644,13 +8666,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -4668,15 +8690,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[iPnt + V.size(1) * (c - balance)] * scalew;
               }
@@ -4688,7 +8710,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute du^2
       offset = us.size(0) << 2;
       uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -4723,24 +8745,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i1 = i - n;
       for (deg = 3; deg <= i1; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4748,7 +8770,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -4766,13 +8788,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -4793,8 +8815,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -4809,7 +8831,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dv
         offset += us.size(0);
         uv = hs_inv_idx_0 * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 5; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -4823,13 +8845,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 7;
         for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
           scalev = hs_inv_idx_1;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
             }
@@ -4837,13 +8859,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             c++;
           }
           scalev = static_cast<double>(deg) * hs_inv_idx_1;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
           }
           c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4851,7 +8873,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             }
             c++;
           }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
@@ -4869,13 +8891,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  implicitly calculating number of elements in corner Pascal
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((stride << 1) + iPnt) +
                       V.size(1) * (c - nTermsInLayer)] *
@@ -4896,8 +8918,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
             balance = nTermsInPrevLayer + counterBottomRow;
             n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 b_degree = offset + iPnt;
                 V[b_degree + V.size(1) * c] =
                     V[b_degree + V.size(1) * (c - balance)] *
@@ -4911,7 +8933,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dv^2
       offset += us.size(0);
       vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i1 = 0; i1 < 6; i1++) {
           V[n + V.size(1) * i1] = 0.0;
@@ -4940,13 +8962,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i1 = b_degree - n;
       for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
           }
@@ -4954,13 +8976,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -4968,7 +8990,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -4990,13 +9012,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -5017,8 +9039,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -5034,7 +9056,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dw
         offset = (offset + us.size(0)) - 1;
         uw = hs_inv_idx_0 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = (offset + iPnt) + 1;
           for (i1 = 0; i1 < 7; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -5046,17 +9068,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] =
                     V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
                     scalew;
@@ -5078,13 +9100,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
               }
               c++;
@@ -5102,15 +9124,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[((iPnt + offset) + V.size(1) * c) + 1] =
                       V[(iPnt + stride) + V.size(1) * (c - balance)] * scalew;
                 }
@@ -5122,7 +9144,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute dv*dw
         offset = (offset + us.size(0)) + 1;
         vw = hs_inv_idx_1 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 8; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -5133,17 +9155,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(iPnt + (stride << 1)) +
                       V.size(1) * (((c - d) - deg) - 1)] *
@@ -5166,13 +9188,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
@@ -5190,15 +9212,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(iPnt + offset) + V.size(1) * c] =
                       V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
                       scalew;
@@ -5212,7 +9234,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dw^2
       offset += us.size(0);
       ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i = 0; i < 9; i++) {
           V[n + V.size(1) * i] = 0.0;
@@ -5238,17 +9260,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
                   scalew;
@@ -5274,13 +9296,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -5298,15 +9320,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
               }
@@ -5332,15 +9354,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       double vv2;
       double ww2;
       double ww4;
-      int balance;
-      int offset;
-      int partition;
+      coder::SizeType balance;
+      coder::SizeType offset;
+      coder::SizeType partition;
       m2cAssert(degree > 0, "Biharnomic is only supported for "
                             "Pascal-tetrahedral monomials in 3D.");
       //  Compute order-1 CVM row blocks from order-0 GVM.
       m2cAssert(degree != 0, "");
       // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = stride + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
@@ -5371,24 +9393,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(stride + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = stride + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -5396,7 +9418,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -5414,13 +9436,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -5441,8 +9463,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = stride + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -5454,7 +9476,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to v
       offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         b_degree = offset + iPnt;
         V[b_degree] = 0.0;
         V[b_degree + V.size(1)] = 0.0;
@@ -5484,13 +9506,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[iPnt + V.size(1) * (c - d)] * scalev;
           }
@@ -5498,13 +9520,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -5512,7 +9534,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -5534,13 +9556,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -5561,8 +9583,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= i1; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -5574,7 +9596,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       // compute derivatives with respect to w
       offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -5604,17 +9626,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
             }
@@ -5639,13 +9661,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -5663,15 +9685,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[iPnt + V.size(1) * (c - balance)] * scalew;
               }
@@ -5683,7 +9705,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute du^2
       offset = us.size(0) << 2;
       uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         V[n] = 0.0;
         V[n + V.size(1)] = 0.0;
@@ -5718,24 +9740,24 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       i1 = i - n;
       for (deg = 3; deg <= i1; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -5743,7 +9765,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -5761,13 +9783,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 1;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -5788,8 +9810,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = (nTermsInPrevLayer + counterBottomRow) - 1;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -5804,7 +9826,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dv
         offset += us.size(0);
         uv = hs_inv_idx_0 * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 5; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -5818,13 +9840,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 7;
         for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
           scalev = hs_inv_idx_1;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg - 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
             }
@@ -5832,13 +9854,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             c++;
           }
           scalev = static_cast<double>(deg) * hs_inv_idx_1;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
           }
           c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -5846,7 +9868,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             }
             c++;
           }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
@@ -5864,13 +9886,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  implicitly calculating number of elements in corner Pascal
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[((stride << 1) + iPnt) +
                       V.size(1) * (c - nTermsInLayer)] *
@@ -5891,8 +9913,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
             balance = nTermsInPrevLayer + counterBottomRow;
             n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType j{0}; j <= n; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 b_degree = offset + iPnt;
                 V[b_degree + V.size(1) * c] =
                     V[b_degree + V.size(1) * (c - balance)] *
@@ -5906,7 +9928,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dv^2
       offset += us.size(0);
       vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i1 = 0; i1 < 6; i1++) {
           V[n + V.size(1) * i1] = 0.0;
@@ -5939,13 +9961,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i1 = b_degree - n;
       for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
           }
@@ -5953,13 +9975,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
         }
         c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -5967,7 +9989,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         c++;
@@ -5989,13 +10011,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i1}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - nTermsInLayer)] *
@@ -6016,8 +10038,8 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
           balance = nTermsInPrevLayer + counterBottomRow;
           n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= n; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               b_degree = offset + iPnt;
               V[b_degree + V.size(1) * c] =
                   V[b_degree + V.size(1) * (c - balance)] *
@@ -6033,7 +10055,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute du*dw
         offset = (offset + us.size(0)) - 1;
         uw = hs_inv_idx_0 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = (offset + iPnt) + 1;
           for (i1 = 0; i1 < 7; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -6045,17 +10067,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] =
                     V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
                     scalew;
@@ -6077,13 +10099,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i1}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
               }
               c++;
@@ -6101,15 +10123,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[((iPnt + offset) + V.size(1) * c) + 1] =
                       V[(iPnt + stride) + V.size(1) * (c - balance)] * scalew;
                 }
@@ -6121,7 +10143,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         //      compute dv*dw
         offset = (offset + us.size(0)) + 1;
         vw = hs_inv_idx_1 * hs_inv_idx_2;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           n = offset + iPnt;
           for (i1 = 0; i1 < 8; i1++) {
             V[n + V.size(1) * i1] = 0.0;
@@ -6132,17 +10154,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         c = 10;
         d = 6;
         for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType j{0}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
           }
-          for (int k{0}; k < deg; k++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
             i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
+            for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
               scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] =
                     V[(iPnt + (stride << 1)) +
                       V.size(1) * (((c - d) - deg) - 1)] *
@@ -6165,13 +10187,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           excess = 0;
           // excess based on overlapping of growing Pascal triangles
           i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
+          for (coder::SizeType p{i}; p <= maxLayers; p++) {
             //  Within each level, x^deg is at the peak of Pascal triangle
             cornerTriangle = (cornerTriangle + p) + degree;
             counterBottomRow = 0;
             // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType k{0}; k < deg; k++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(offset + iPnt) + V.size(1) * c] = 0.0;
               }
               c++;
@@ -6189,15 +10211,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
             nTermsInPrevLayer = nTermsInLayer;
             nTermsInLayer = d + 3 * (excess - cornerTriangle);
             balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
+            for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
               n = (b_degree - k) - 1;
               if (n < 0) {
                 n = -n;
               }
               partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
+              for (coder::SizeType j{0}; j <= partition; j++) {
                 scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                   V[(iPnt + offset) + V.size(1) * c] =
                       V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
                       scalew;
@@ -6211,7 +10233,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dw^2
       offset += us.size(0);
       ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         n = offset + iPnt;
         for (i = 0; i < 9; i++) {
           V[n + V.size(1) * i] = 0.0;
@@ -6241,17 +10263,17 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       i = b_degree - n;
       for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
                   scalew;
@@ -6277,13 +10299,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
         excess = 0;
         // excess based on overlapping of growing Pascal triangles
         i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
+        for (coder::SizeType p{i}; p <= maxLayers; p++) {
           //  Within each level, x^deg is at the peak of Pascal triangle
           cornerTriangle = (cornerTriangle + p) + degree;
           counterBottomRow = 0;
           // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType k{0}; k < deg; k++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] = 0.0;
             }
             c++;
@@ -6301,15 +10323,15 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           nTermsInPrevLayer = nTermsInLayer;
           nTermsInLayer = d + 3 * (excess - cornerTriangle);
           balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
+          for (coder::SizeType k{0}; k < x_tmp_tmp; k++) {
             n = (b_degree - k) - 1;
             if (n < 0) {
               n = -n;
             }
             partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
+            for (coder::SizeType j{0}; j <= partition; j++) {
               scalew = static_cast<double>(k + 1) * hs_inv_idx_2;
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
                 V[(iPnt + offset) + V.size(1) * c] =
                     V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
               }
@@ -6321,12 +10343,12 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute du^4
       offset = us.size(0) * 7;
       uu4 = 24.0 * std::pow(hs_inv_idx_0, 4.0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 20] = uu4 * V[iPnt];
       }
       c = 35;
@@ -6338,26 +10360,26 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       }
       for (deg = 5; deg <= i; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
               scaleu * (scaleu - hs_inv_idx_0);
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
                 scaleu * (scaleu - hs_inv_idx_0);
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -6365,7 +10387,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -6376,38 +10398,38 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       u2v2_tmp = 4.0 * (hs_inv_idx_0 * hs_inv_idx_0);
       b_u2v2_tmp = hs_inv_idx_1 * hs_inv_idx_1;
       u2v2 = u2v2_tmp * b_u2v2_tmp;
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 22] = u2v2 * V[iPnt];
       }
       c = 35;
       d = 15;
       for (deg = 5; deg <= i; deg++) {
         scaleu = static_cast<double>(deg) * hs_inv_idx_0;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] =
               V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
               scaleu * (scaleu - hs_inv_idx_0);
         }
         c++;
-        for (int j{0}; j <= deg - 2; j++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
           scaleu -= hs_inv_idx_0;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] =
                 V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
                 scaleu * (scaleu - hs_inv_idx_0);
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * (c + 1)] =
                 V[b_degree + V.size(1) * ((c - d) - deg)] *
@@ -6415,7 +10437,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         c += 2;
@@ -6424,23 +10446,23 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dv^4
       offset = us.size(0) * 9;
       v4 = 24.0 * std::pow(hs_inv_idx_1, 4.0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 24] = v4 * V[iPnt];
       }
       c = 34;
       d = 15;
       for (deg = 5; deg <= degree; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
         }
         scalev = hs_inv_idx_1;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg - 2; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * (c + 2)] =
                 V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
                 scalev * (scalev - hs_inv_idx_1);
@@ -6449,14 +10471,14 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           c++;
         }
         scalev = static_cast<double>(deg) * hs_inv_idx_1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * (c + 2)] =
               V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] *
               scalev * (scalev - hs_inv_idx_1);
         }
         c += 3;
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             b_degree = offset + iPnt;
             V[b_degree + V.size(1) * c] =
                 V[b_degree + V.size(1) * (((c - d) - deg) - 1)] *
@@ -6464,7 +10486,7 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
           }
           c++;
         }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * c] = 0.0;
         }
         d = (d + deg) + 1;
@@ -6473,28 +10495,28 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       offset += us.size(0);
       u2w2_tmp = hs_inv_idx_2 * hs_inv_idx_2;
       u2w2 = u2v2_tmp * u2w2_tmp;
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 29] = u2w2 * V[iPnt];
       }
       c = 35;
       d = 15;
       for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + (stride << 2)) +
                     V.size(1) * (((c - (d << 1)) - deg) - 1)] *
@@ -6508,28 +10530,28 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dv^2*dw^2
       offset += us.size(0);
       v2w2 = 4.0 * b_u2v2_tmp * u2w2_tmp;
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 31] = v2w2 * V[iPnt];
       }
       c = 35;
       d = 15;
       for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + 5 * stride) +
                     V.size(1) * (((c - (d << 1)) - deg) - 1)] *
@@ -6543,28 +10565,28 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
       //  compute dw^4
       offset += us.size(0);
       ww4 = 24.0 * std::pow(hs_inv_idx_2, 4.0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
         }
       }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[(offset + iPnt) + V.size(1) * 34] = ww4 * V[iPnt];
       }
       c = 35;
       d = 15;
       for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType j{0}; j <= deg; j++) {
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
             V[(offset + iPnt) + V.size(1) * c] = 0.0;
           }
           c++;
         }
-        for (int k{0}; k < deg; k++) {
+        for (coder::SizeType k{0}; k < deg; k++) {
           i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
             scalew = (static_cast<double>(k) + 1.0) * hs_inv_idx_2;
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
               V[(offset + iPnt) + V.size(1) * c] =
                   V[(iPnt + 6 * stride) +
                     V.size(1) * (((c - (d << 1)) - deg) - 1)] *
@@ -6584,4005 +10606,13 @@ static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
 }
 
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const ::coder::array<double, 2U> &us, int npoints,
-                          int degree, int order,
-                          const ::coder::array<double, 1U> &weights,
+static void gen_vander_3d(const double us_data[], coder::SizeType degree,
                           ::coder::array<double, 2U> &V)
 {
-  int b_degree;
-  int c;
-  int cornerTriangle;
-  int counterBottomRow;
-  int d;
-  int deg;
-  int excess;
-  int i;
-  int i1;
-  int maxLayers;
-  int n;
-  int nTermsInLayer;
-  int nTermsInPrevLayer;
-  int nrblks;
-  int stride;
-  int u0;
-  int x_tmp_tmp;
-  if (npoints > us.size(0)) {
-    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
-  }
-  if ((order < -4) || (order == -3)) {
-    m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                      "Order %d must be 0, 1, 2, -1, -2, or -4", order);
-  }
-  stride = us.size(0);
-  nrblks = (order + 1) * (order + 2) * (order + 3) / 6;
-  switch (order) {
-  case -1:
-    nrblks = 4;
-    break;
-  case -2:
-    nrblks = 7;
-    break;
-  case -4:
-    if (degree > 0) {
-      nrblks = 13;
-    } else {
-      nrblks = 19;
-    }
-    break;
-  }
-  //  Allocate storage for V
-  if (degree >= 0) {
-    b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
-  } else {
-    b_degree = (1 - degree) * (1 - degree) * (1 - degree);
-  }
-  b_degree = b_degree;
-  n = us.size(0) * nrblks;
-  V.set_size(b_degree, n);
-  //  compute 0th order generalized Vandermonde matrix
-  if (weights.size(0) == 0) {
-    if (degree != 0) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-        V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
-      }
-    } else {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-  } else if (degree != 0) {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = weights[iPnt];
-      V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
-      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
-      V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2] * weights[iPnt];
-    }
-  } else {
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = weights[iPnt];
-    }
-  }
-  c = 4;
-  d = 3;
-  u0 = order;
-  if (order > 0) {
-    u0 = 0;
-  }
-  x_tmp_tmp = -degree;
-  n = -degree;
-  if (-degree > 0) {
-    n = 1;
-  } else if (-degree < 0) {
-    n = -1;
-  }
-  n *= u0;
-  if (degree < 0) {
-    b_degree = -degree;
-  } else {
-    b_degree = degree;
-  }
-  if (n < 0) {
-    n = 0;
-  }
-  i = b_degree - n;
-  for (deg = 2; deg <= i; deg++) {
-    //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (int j{0}; j < deg; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * us[us.size(1) * iPnt];
-      }
-      c++;
-    }
-    for (int iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt + V.size(1) * c] =
-          V[iPnt + V.size(1) * ((c - d) - 1)] * us[us.size(1) * iPnt + 1];
-    }
-    c++;
-    for (int j{0}; j < d; j++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                                  us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    d = (d + deg) + 1;
-  }
-  //  Compute the tri-degree terms if degree<0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3 + u0;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (int p{i}; p <= maxLayers; p++) {
-      int gap;
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (int k{0}; k < deg; k++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
-                                    us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      n = ((degree + degree) + p) - 1;
-      if (n < 0) {
-        n = 0;
-      }
-      excess += n;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      gap = (nTermsInPrevLayer + counterBottomRow) - 1;
-      i1 = nTermsInLayer - counterBottomRow;
-      for (int j{0}; j <= i1; j++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  m2cAssert(order <= 2, "");
-  if (order != 0) {
-    //      compute higher order confluent Vandermonde matrix blocks
-    switch (order) {
-    case 1: {
-      int balance;
-      int offset;
-      //  Compute order-1 CVM row blocks from order-0 GVM.
-      m2cAssert(degree != 0, "");
-      // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 3;
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        double scaleu;
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * (c + 1)] =
-                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt];
-        V[b_degree + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 4;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        double scalev;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 1;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to w
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = V[iPnt];
-      }
-      c = 4;
-      d = 3;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            int partition;
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[iPnt + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-    } break;
-    case 2: {
-      double scaleu;
-      double scalev;
-      int balance;
-      int offset;
-      int partition;
-      //  Compute order-1 CVM row blocks from order-0 GVM.
-      m2cAssert(degree != 0, "");
-      // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 3;
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * (c + 1)] =
-                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt];
-        V[b_degree + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 4;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 1;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to w
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = V[iPnt];
-      }
-      c = 4;
-      d = 3;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[iPnt + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute du^2
-      offset = us.size(0) << 2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = 0.0;
-        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
-        for (i = 0; i < 5; i++) {
-          V[n + V.size(1) * (i + 5)] = 0.0;
-        }
-      }
-      c = 10;
-      d = 6;
-      u0 = order + 2;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      if (degree < 0) {
-        i = -degree;
-      } else {
-        i = degree;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = i - n;
-      for (deg = 3; deg <= i1; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + stride) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * (c + 1)] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // compute tri degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dv
-        offset += us.size(0);
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 5; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 5] = V[iPnt];
-          V[n + V.size(1) * 6] = 0.0;
-          V[n + V.size(1) * 7] = 0.0;
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 7;
-        for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          scalev = 1.0;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
-            }
-            scalev++;
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] *
-                static_cast<double>(deg);
-          }
-          c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          d = (d + deg) + 1;
-        }
-        // compute the tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d - 2;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  implicitly calculating number of elements in corner Pascal
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((stride << 1) + iPnt) +
-                      V.size(1) * (c - nTermsInLayer)] *
-                    static_cast<double>(-degree - kdegree);
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            n = (((p + degree) << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer + 1;
-            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-            balance = nTermsInPrevLayer + counterBottomRow;
-            n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_degree = offset + iPnt;
-                V[b_degree + V.size(1) * c] =
-                    V[b_degree + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute dv^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i1 = 0; i1 < 6; i1++) {
-          V[n + V.size(1) * i1] = 0.0;
-        }
-        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
-        V[n + V.size(1) * 7] = 0.0;
-        V[n + V.size(1) * 8] = 0.0;
-        V[n + V.size(1) * 9] = 0.0;
-      }
-      c = 10;
-      d = 7;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = b_degree - n;
-      for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 2;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dw
-        offset = (offset + us.size(0)) - 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = (offset + iPnt) + 1;
-          for (i1 = 0; i1 < 7; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 7] = V[iPnt];
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] =
-                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((iPnt + offset) + V.size(1) * c) + 1] =
-                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-        //      compute dv*dw
-        offset = (offset + us.size(0)) + 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 8; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 8] = V[iPnt];
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(iPnt + (stride << 1)) +
-                      V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(iPnt + offset) + V.size(1) * c] =
-                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-      }
-      //  compute dw^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i = 0; i < 9; i++) {
-          V[n + V.size(1) * i] = 0.0;
-        }
-        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
-      }
-      c = 10;
-      d = 6;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 2;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-    } break;
-    case -1: {
-      int balance;
-      int offset;
-      //  Compute order-1 CVM row blocks from order-0 GVM.
-      m2cAssert(degree != 0, "");
-      // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 3;
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        double scaleu;
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * (c + 1)] =
-                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt];
-        V[b_degree + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 4;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        double scalev;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 1;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to w
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = V[iPnt];
-      }
-      c = 4;
-      d = 3;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            int partition;
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[iPnt + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-    } break;
-    case -2: {
-      double scaleu;
-      double scalev;
-      int balance;
-      int offset;
-      int partition;
-      //  Compute order-1 CVM row blocks from order-0 GVM.
-      m2cAssert(degree != 0, "");
-      // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 3;
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * (c + 1)] =
-                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt];
-        V[b_degree + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 4;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 1;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to w
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = V[iPnt];
-      }
-      c = 4;
-      d = 3;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[iPnt + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute du^2
-      offset = us.size(0) << 2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = 0.0;
-        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
-        for (i = 0; i < 5; i++) {
-          V[n + V.size(1) * (i + 5)] = 0.0;
-        }
-      }
-      c = 10;
-      d = 6;
-      u0 = order + 2;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      if (degree < 0) {
-        i = -degree;
-      } else {
-        i = degree;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = i - n;
-      for (deg = 3; deg <= i1; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + stride) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * (c + 1)] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // compute tri degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dv
-        offset += us.size(0);
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 5; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 5] = V[iPnt];
-          V[n + V.size(1) * 6] = 0.0;
-          V[n + V.size(1) * 7] = 0.0;
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 7;
-        for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          scalev = 1.0;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
-            }
-            scalev++;
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] *
-                static_cast<double>(deg);
-          }
-          c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          d = (d + deg) + 1;
-        }
-        // compute the tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d - 2;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  implicitly calculating number of elements in corner Pascal
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((stride << 1) + iPnt) +
-                      V.size(1) * (c - nTermsInLayer)] *
-                    static_cast<double>(-degree - kdegree);
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            n = (((p + degree) << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer + 1;
-            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-            balance = nTermsInPrevLayer + counterBottomRow;
-            n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_degree = offset + iPnt;
-                V[b_degree + V.size(1) * c] =
-                    V[b_degree + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute dv^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i1 = 0; i1 < 6; i1++) {
-          V[n + V.size(1) * i1] = 0.0;
-        }
-        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
-        V[n + V.size(1) * 7] = 0.0;
-        V[n + V.size(1) * 8] = 0.0;
-        V[n + V.size(1) * 9] = 0.0;
-      }
-      c = 10;
-      d = 7;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = b_degree - n;
-      for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        n = order + 2;
-        if (n > 0) {
-          n = 0;
-        }
-        maxLayers = -degree * 3 + n;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dw
-        offset = (offset + us.size(0)) - 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = (offset + iPnt) + 1;
-          for (i1 = 0; i1 < 7; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 7] = V[iPnt];
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] =
-                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((iPnt + offset) + V.size(1) * c) + 1] =
-                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-        //      compute dv*dw
-        offset = (offset + us.size(0)) + 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 8; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 8] = V[iPnt];
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(iPnt + (stride << 1)) +
-                      V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(iPnt + offset) + V.size(1) * c] =
-                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-      }
-      //  compute dw^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i = 0; i < 9; i++) {
-          V[n + V.size(1) * i] = 0.0;
-        }
-        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
-      }
-      c = 10;
-      d = 6;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 2;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-    } break;
-    case -4: {
-      double scaleu;
-      double scalev;
-      double uu4_tmp;
-      int balance;
-      int offset;
-      int partition;
-      m2cAssert(degree > 0, "Biharnomic is only supported for "
-                            "Pascal-tetrahedral monomials in 3D.");
-      //  Compute order-1 CVM row blocks from order-0 GVM.
-      m2cAssert(degree != 0, "");
-      // compute derivatives with respect to u
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[stride + iPnt] = 0.0;
-        V[(stride + iPnt) + V.size(1)] = V[iPnt];
-        V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-        V[(stride + iPnt) + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 3;
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(stride + iPnt) + V.size(1) * (c + 1)] =
-                V[(stride + iPnt) + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(stride + iPnt) + V.size(1) * c] =
-                  V[(stride + iPnt) + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to v
-      offset = us.size(0) + us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        b_degree = offset + iPnt;
-        V[b_degree] = 0.0;
-        V[b_degree + V.size(1)] = 0.0;
-        V[b_degree + V.size(1) * 2] = V[iPnt];
-        V[b_degree + V.size(1) * 3] = 0.0;
-      }
-      c = 4;
-      d = 4;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - d)] * static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          i1 = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= i1; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      // compute derivatives with respect to w
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = V[iPnt];
-      }
-      c = 4;
-      d = 3;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      u0 = order + 1;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 2; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 1;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[iPnt + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute du^2
-      offset = us.size(0) << 2;
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        V[n] = 0.0;
-        V[n + V.size(1)] = 0.0;
-        V[n + V.size(1) * 2] = 0.0;
-        V[n + V.size(1) * 3] = 0.0;
-        V[n + V.size(1) * 4] = 2.0 * V[iPnt];
-        for (i = 0; i < 5; i++) {
-          V[n + V.size(1) * (i + 5)] = 0.0;
-        }
-      }
-      c = 10;
-      d = 6;
-      u0 = order + 2;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      if (degree < 0) {
-        i = -degree;
-      } else {
-        i = degree;
-      }
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      n *= u0;
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = i - n;
-      for (deg = 3; deg <= i1; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + stride) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * (c + 1)] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      // compute tri degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 1;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt + 1];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dv
-        offset += us.size(0);
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 5; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 5] = V[iPnt];
-          V[n + V.size(1) * 6] = 0.0;
-          V[n + V.size(1) * 7] = 0.0;
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 7;
-        for (deg = 3; deg <= i; deg++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          scalev = 1.0;
-          for (int j{0}; j <= deg - 2; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + stride) + V.size(1) * (c - d)] * scalev;
-            }
-            scalev++;
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + stride) + V.size(1) * (c - d)] *
-                static_cast<double>(deg);
-          }
-          c++;
-          for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * ((c - d) - deg)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-          d = (d + deg) + 1;
-        }
-        // compute the tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d - 2;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  implicitly calculating number of elements in corner Pascal
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int kdegree{0}; kdegree < deg; kdegree++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((stride << 1) + iPnt) +
-                      V.size(1) * (c - nTermsInLayer)] *
-                    static_cast<double>(-degree - kdegree);
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            n = (((p + degree) << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer + 1;
-            nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-            balance = nTermsInPrevLayer + counterBottomRow;
-            n = nTermsInLayer - counterBottomRow;
-            for (int j{0}; j <= n; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                b_degree = offset + iPnt;
-                V[b_degree + V.size(1) * c] =
-                    V[b_degree + V.size(1) * (c - balance)] *
-                    us[us.size(1) * iPnt + 2];
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute dv^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i1 = 0; i1 < 6; i1++) {
-          V[n + V.size(1) * i1] = 0.0;
-        }
-        V[n + V.size(1) * 6] = 2.0 * V[iPnt];
-        V[n + V.size(1) * 7] = 0.0;
-        V[n + V.size(1) * 8] = 0.0;
-        V[n + V.size(1) * 9] = 0.0;
-      }
-      c = 10;
-      d = 7;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      u0 = order + 2;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i1 = b_degree - n;
-      for (deg = 3; deg <= i1; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[((stride << 1) + iPnt) + V.size(1) * (c - d)] *
-              static_cast<double>(deg);
-        }
-        c++;
-        for (int kdegree{0}; kdegree <= d - 3; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        d = (d + deg) + 1;
-      }
-      // compute the tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 2;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d - 2;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i1 = 1 - degree;
-        for (int p{i1}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int kdegree{0}; kdegree < deg; kdegree++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - nTermsInLayer)] *
-                  us[us.size(1) * iPnt];
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          n = (((p + degree) << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer + 1;
-          nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-          balance = nTermsInPrevLayer + counterBottomRow;
-          n = nTermsInLayer - counterBottomRow;
-          for (int j{0}; j <= n; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              b_degree = offset + iPnt;
-              V[b_degree + V.size(1) * c] =
-                  V[b_degree + V.size(1) * (c - balance)] *
-                  us[us.size(1) * iPnt + 2];
-            }
-            c++;
-          }
-        }
-      }
-      if (order > 0) {
-        //      compute du*dw
-        offset = (offset + us.size(0)) - 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = (offset + iPnt) + 1;
-          for (i1 = 0; i1 < 7; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 7] = V[iPnt];
-          V[n + V.size(1) * 8] = 0.0;
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] =
-                    V[(iPnt + stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i1 = 1 - degree;
-          for (int p{i1}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[((offset + iPnt) + V.size(1) * c) + 1] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[((iPnt + offset) + V.size(1) * c) + 1] =
-                      V[(iPnt + stride) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-        //      compute dv*dw
-        offset = (offset + us.size(0)) + 1;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          n = offset + iPnt;
-          for (i1 = 0; i1 < 8; i1++) {
-            V[n + V.size(1) * i1] = 0.0;
-          }
-          V[n + V.size(1) * 8] = V[iPnt];
-          V[n + V.size(1) * 9] = 0.0;
-        }
-        c = 10;
-        d = 6;
-        for (deg = 3; deg <= i; deg++) {
-          for (int j{0}; j <= deg; j++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          for (int k{0}; k < deg; k++) {
-            i1 = (deg - k) - 1;
-            for (int b_i{0}; b_i <= i1; b_i++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(iPnt + (stride << 1)) +
-                      V.size(1) * (((c - d) - deg) - 1)] *
-                    (static_cast<double>(k) + 1.0);
-              }
-              c++;
-            }
-          }
-          d = (d + deg) + 1;
-        }
-        // compute tri-degree terms if degree < 0
-        if (degree < 0) {
-          deg = -degree;
-          maxLayers = -degree * 3 + 1;
-          // max number of layers needed in the Pascal tetrahedron
-          cornerTriangle = 0;
-          // number of elements subtracted in each corner Pascal triangle
-          nTermsInLayer = d;
-          // initializing number of elements in layer
-          excess = 0;
-          // excess based on overlapping of growing Pascal triangles
-          i = 1 - degree;
-          for (int p{i}; p <= maxLayers; p++) {
-            //  Within each level, x^deg is at the peak of Pascal triangle
-            cornerTriangle = (cornerTriangle + p) + degree;
-            counterBottomRow = 0;
-            // counter for the bottom row to be subtracted later
-            for (int k{0}; k < deg; k++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-              counterBottomRow++;
-            }
-            deg--;
-            b_degree = p + degree;
-            n = ((b_degree << 1) - p) - 1;
-            if (n < 0) {
-              n = 0;
-            }
-            excess += n;
-            d = (d + p) + 1;
-            // number of terms in Pascal tetrahedron
-            nTermsInPrevLayer = nTermsInLayer;
-            nTermsInLayer = d + 3 * (excess - cornerTriangle);
-            balance = nTermsInPrevLayer + counterBottomRow;
-            for (int k{0}; k < x_tmp_tmp; k++) {
-              n = (b_degree - k) - 1;
-              if (n < 0) {
-                n = -n;
-              }
-              partition = -degree - n;
-              for (int j{0}; j <= partition; j++) {
-                for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(iPnt + offset) + V.size(1) * c] =
-                      V[(iPnt + (stride << 1)) + V.size(1) * (c - balance)] *
-                      static_cast<double>(k + 1);
-                }
-                c++;
-              }
-            }
-          }
-        }
-      }
-      //  compute dw^2
-      offset += us.size(0);
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        n = offset + iPnt;
-        for (i = 0; i < 9; i++) {
-          V[n + V.size(1) * i] = 0.0;
-        }
-        V[n + V.size(1) * 9] = 2.0 * V[iPnt];
-      }
-      c = 10;
-      d = 6;
-      n = -degree;
-      if (-degree > 0) {
-        n = 1;
-      } else if (-degree < 0) {
-        n = -1;
-      }
-      u0 = order + 2;
-      if (u0 > 0) {
-        u0 = 0;
-      }
-      n *= u0;
-      if (degree < 0) {
-        b_degree = -degree;
-      } else {
-        b_degree = degree;
-      }
-      if (n < 0) {
-        n = 0;
-      }
-      i = b_degree - n;
-      for (deg = 3; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      // compute tri-degree terms if degree < 0
-      if (degree < 0) {
-        deg = -degree;
-        u0 = order + 2;
-        if (u0 > 0) {
-          u0 = 0;
-        }
-        maxLayers = -degree * 3 + u0;
-        // max number of layers needed in the Pascal tetrahedron
-        cornerTriangle = 0;
-        // number of elements subtracted in each corner Pascal triangle
-        nTermsInLayer = d;
-        // initializing number of elements in layer
-        excess = 0;
-        // excess based on overlapping of growing Pascal triangles
-        i = 1 - degree;
-        for (int p{i}; p <= maxLayers; p++) {
-          //  Within each level, x^deg is at the peak of Pascal triangle
-          cornerTriangle = (cornerTriangle + p) + degree;
-          counterBottomRow = 0;
-          // counter for the bottom row to be subtracted later
-          for (int k{0}; k < deg; k++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-            counterBottomRow++;
-          }
-          deg--;
-          b_degree = p + degree;
-          n = ((b_degree << 1) - p) - 1;
-          if (n < 0) {
-            n = 0;
-          }
-          excess += n;
-          d = (d + p) + 1;
-          // number of terms in Pascal tetrahedron
-          nTermsInPrevLayer = nTermsInLayer;
-          nTermsInLayer = d + 3 * (excess - cornerTriangle);
-          balance = nTermsInPrevLayer + counterBottomRow;
-          for (int k{0}; k < x_tmp_tmp; k++) {
-            n = (b_degree - k) - 1;
-            if (n < 0) {
-              n = -n;
-            }
-            partition = -degree - n;
-            for (int j{0}; j <= partition; j++) {
-              for (int iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(iPnt + offset) + V.size(1) * c] =
-                    V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] *
-                    static_cast<double>(k + 1);
-              }
-              c++;
-            }
-          }
-        }
-      }
-      //  compute du^4
-      offset = us.size(0) * 7;
-      uu4_tmp = 24.0 * std::pow(1.0, 4.0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 20] = uu4_tmp * V[iPnt];
-      }
-      c = 35;
-      d = 15;
-      if (degree < 0) {
-        i = -degree;
-      } else {
-        i = degree;
-      }
-      for (deg = 5; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-                scaleu * (scaleu - 1.0);
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * (c + 1)] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      //  compute du^2dv^2
-      offset = us.size(0) << 3;
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 22] = 4.0 * V[iPnt];
-      }
-      c = 35;
-      d = 15;
-      for (deg = 5; deg <= i; deg++) {
-        scaleu = deg;
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
-        }
-        c++;
-        for (int j{0}; j <= deg - 2; j++) {
-          scaleu--;
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] =
-                V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-                scaleu * (scaleu - 1.0);
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * (c + 1)] =
-                V[b_degree + V.size(1) * ((c - d) - deg)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        c += 2;
-        d = (d + deg) + 1;
-      }
-      //  compute dv^4
-      offset = us.size(0) * 9;
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 24] = uu4_tmp * V[iPnt];
-      }
-      c = 34;
-      d = 15;
-      for (deg = 5; deg <= degree; deg++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-        }
-        scalev = 1.0;
-        for (int j{0}; j <= deg - 2; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * (c + 2)] =
-                V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-                scalev * (scalev - 1.0);
-          }
-          scalev++;
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * (c + 2)] =
-              V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] *
-              static_cast<double>(deg) * (static_cast<double>(deg) - 1.0);
-        }
-        c += 3;
-        for (int kdegree{0}; kdegree <= d - 2; kdegree++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            b_degree = offset + iPnt;
-            V[b_degree + V.size(1) * c] =
-                V[b_degree + V.size(1) * (((c - d) - deg) - 1)] *
-                us[us.size(1) * iPnt + 2];
-          }
-          c++;
-        }
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        d = (d + deg) + 1;
-      }
-      //  compute du^2*dw^2
-      offset += us.size(0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 29] = 4.0 * V[iPnt];
-      }
-      c = 35;
-      d = 15;
-      for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + (stride << 2)) +
-                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0) *
-                  ((static_cast<double>(k) + 1.0) - 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      //  compute dv^2*dw^2
-      offset += us.size(0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 31] = 4.0 * V[iPnt];
-      }
-      c = 35;
-      d = 15;
-      for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + 5 * stride) +
-                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0) *
-                  ((static_cast<double>(k) + 1.0) - 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-      //  compute dw^4
-      offset += us.size(0);
-      for (int b_i{0}; b_i < 35; b_i++) {
-        for (int iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-        }
-      }
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * 34] = uu4_tmp * V[iPnt];
-      }
-      c = 35;
-      d = 15;
-      for (deg = 5; deg <= i; deg++) {
-        for (int j{0}; j <= deg; j++) {
-          for (int iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        for (int k{0}; k < deg; k++) {
-          i1 = (deg - k) - 1;
-          for (int b_i{0}; b_i <= i1; b_i++) {
-            for (int iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(iPnt + 6 * stride) +
-                    V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-                  (static_cast<double>(k) + 1.0) *
-                  ((static_cast<double>(k) + 1.0) - 1.0);
-            }
-            c++;
-          }
-        }
-        d = (d + deg) + 1;
-      }
-    } break;
-    default:
-      m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4.");
-      break;
-    }
-  }
-}
-
-//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const double us_data[], int degree,
-                          ::coder::array<double, 2U> &V)
-{
-  int b_n;
-  int c;
-  int d;
-  int n;
+  coder::SizeType b_n;
+  coder::SizeType c;
+  coder::SizeType d;
+  coder::SizeType n;
   n = (degree + 1) * (degree + 2) * (degree + 3) / 6;
   b_n = 1;
   V.set_size(n, b_n);
@@ -10598,15 +10628,15 @@ static void gen_vander_3d(const double us_data[], int degree,
   } else {
     n = degree;
   }
-  for (int deg{2}; deg <= n; deg++) {
+  for (coder::SizeType deg{2}; deg <= n; deg++) {
     //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (int j{0}; j < deg; j++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
       V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
       c++;
     }
     V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
     c++;
-    for (int j{0}; j <= d - 2; j++) {
+    for (coder::SizeType j{0}; j <= d - 2; j++) {
       V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
       c++;
     }
@@ -10617,14 +10647,14 @@ static void gen_vander_3d(const double us_data[], int degree,
 }
 
 //  gen_vander_3d_dag  Build a DAG for Vandermonde matrix in 3D.
-static void gen_vander_3d_dag(int degree,
+static void gen_vander_3d_dag(coder::SizeType degree,
                               ::coder::array<unsigned char, 2U> &dag)
 {
-  int b_degree;
-  int c;
-  int d;
-  int i;
-  int maxterms;
+  coder::SizeType b_degree;
+  coder::SizeType c;
+  coder::SizeType d;
+  coder::SizeType i;
+  coder::SizeType maxterms;
   if (degree >= 0) {
     b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
   } else {
@@ -10651,10 +10681,10 @@ static void gen_vander_3d_dag(int degree,
   } else {
     i = degree;
   }
-  for (int deg{2}; deg <= i; deg++) {
+  for (coder::SizeType deg{2}; deg <= i; deg++) {
     maxterms = (d + deg) + 1;
-    for (int j{deg}; j >= 1; j--) {
-      for (int b_i{0}; b_i < j; b_i++) {
+    for (coder::SizeType j{deg}; j >= 1; j--) {
+      for (coder::SizeType b_i{0}; b_i < j; b_i++) {
         b_degree = c + b_i;
         dag[3 * b_degree] = static_cast<unsigned char>(d);
         dag[3 * b_degree + 1] = static_cast<unsigned char>(d + 1);
@@ -10667,16 +10697,16 @@ static void gen_vander_3d_dag(int degree,
   }
   if (degree > 0) {
     i = dag.size(0);
-    for (int b_i{c + 1}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{c + 1}; b_i <= i; b_i++) {
       dag[3 * (b_i - 1)] = 0U;
       dag[3 * (b_i - 1) + 1] = 0U;
       dag[3 * (b_i - 1) + 2] = 0U;
     }
   } else if (degree < 0) {
-    int cornerTriangle;
-    int excess;
-    int maxlayers;
-    int num_elem_group;
+    coder::SizeType cornerTriangle;
+    coder::SizeType excess;
+    coder::SizeType maxlayers;
+    coder::SizeType num_elem_group;
     maxlayers = -3 * degree + 1;
     cornerTriangle = 0;
     // number of elements subtracted in each corner Pascal triangle
@@ -10684,10 +10714,10 @@ static void gen_vander_3d_dag(int degree,
     // excess based on overlapping of growing Pascal triangles
     num_elem_group = -1;
     i = -degree;
-    for (int p{i}; p <= maxlayers; p++) {
-      int ntermsinlayer;
-      int x_tmp;
-      int y;
+    for (coder::SizeType p{i}; p <= maxlayers; p++) {
+      coder::SizeType ntermsinlayer;
+      coder::SizeType x_tmp;
+      coder::SizeType y;
       cornerTriangle = (cornerTriangle + p) + degree;
       y = excess << 1;
       x_tmp = p + degree;
@@ -10699,7 +10729,7 @@ static void gen_vander_3d_dag(int degree,
       maxterms =
           ((((d + (-degree << 1)) - 3 * cornerTriangle) - p) + y) + excess;
       ntermsinlayer = d + 3 * (excess - cornerTriangle);
-      for (int group{0}; group <= i; group++) {
+      for (coder::SizeType group{0}; group <= i; group++) {
         y = x_tmp - group;
         if (y < 0) {
           b_degree = -y;
@@ -10711,7 +10741,7 @@ static void gen_vander_3d_dag(int degree,
           ntermsinlayer -= 3;
         } else if (((-degree - p) + group) - 1 < 0) {
           dag[3 * c] = 0U;
-          for (int b_i{0}; b_i < num_elem_group; b_i++) {
+          for (coder::SizeType b_i{0}; b_i < num_elem_group; b_i++) {
             b_degree = c + b_i;
             dag[3 * (b_degree + 1)] =
                 static_cast<unsigned char>(ntermsinlayer - 1);
@@ -10727,7 +10757,7 @@ static void gen_vander_3d_dag(int degree,
           }
           ntermsinlayer -= y;
         } else {
-          for (int b_i{0}; b_i <= num_elem_group; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= num_elem_group; b_i++) {
             b_degree = c + b_i;
             dag[3 * b_degree] = static_cast<unsigned char>(ntermsinlayer - 1);
             dag[3 * b_degree + 1] = static_cast<unsigned char>(ntermsinlayer);
@@ -10737,7 +10767,7 @@ static void gen_vander_3d_dag(int degree,
           ntermsinlayer++;
         }
       }
-      for (int j{0}; j <= num_elem_group; j++) {
+      for (coder::SizeType j{0}; j <= num_elem_group; j++) {
         dag[3 * (((c + j) - num_elem_group) - 1) + 2] = 0U;
       }
       d = (d + p) + 2;
@@ -10751,13 +10781,14 @@ static void gen_vander_3d_dag(int degree,
 
 //  rrqr_factor  Compute rank-revealing QR with column pivoting
 static void rrqr_factor(const ::coder::array<double, 2U> &A, double thres,
-                        int rowoffset, int coloffset, int m, int n,
+                        coder::SizeType rowoffset, coder::SizeType coloffset,
+                        coder::SizeType m, coder::SizeType n,
                         ::coder::array<double, 2U> &QR,
                         ::coder::array<int, 1U> &p, int *rank,
                         ::coder::array<double, 1U> &work)
 {
-  int i;
-  int wsize;
+  coder::SizeType i;
+  coder::SizeType wsize;
   if (m == 0) {
     m = A.size(1) - rowoffset;
   } else {
@@ -10790,13 +10821,14 @@ static void rrqr_factor(const ::coder::array<double, 2U> &A, double thres,
 }
 
 //  rrqr_qmulti  Perform Q*bs, where Q is stored implicitly in QR
-static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-                        int rank, ::coder::array<double, 2U> &bs, int nrhs,
+static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, coder::SizeType m,
+                        coder::SizeType n, coder::SizeType rank,
+                        ::coder::array<double, 2U> &bs, coder::SizeType nrhs,
                         ::coder::array<double, 1U> &work)
 {
-  int stride_bs;
-  int u1;
-  int wsize;
+  coder::SizeType stride_bs;
+  coder::SizeType u1;
+  coder::SizeType wsize;
   stride_bs = bs.size(1);
   //  Obtain input arguments
   if (m == 0) {
@@ -10815,8 +10847,8 @@ static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
   if ((rank > u1) || (rank < 1)) {
     m2cErrMsgIdAndTxt(
         "wlslib:WrongRank",
-        "Rank %d must be a positive value no greater than min(%d, %d).", rank,
-        m, n);
+        "Rank %d must be a positive value no greater than min(%d, %d).",
+        (int)rank, (int)m, (int)n);
   }
   if (nrhs == 0) {
     nrhs = bs.size(0);
@@ -10826,8 +10858,8 @@ static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
   work.set_size(wsize);
   //  zero out extra rows in bs to avoid errors in LAPACK
   u1 = n + 1;
-  for (int i{u1}; i <= m; i++) {
-    for (int j{0}; j < nrhs; j++) {
+  for (coder::SizeType i{u1}; i <= m; i++) {
+    for (coder::SizeType j{0}; j < nrhs; j++) {
       bs[(i + bs.size(1) * j) - 1] = 0.0;
     }
   }
@@ -10837,13 +10869,14 @@ static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
 }
 
 //  rrqr_qmulti  Perform Q*bs, where Q is stored implicitly in QR
-static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
-                        int rank, ::coder::array<double, 2U> &bs,
+static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, coder::SizeType m,
+                        coder::SizeType n, coder::SizeType rank,
+                        ::coder::array<double, 2U> &bs,
                         ::coder::array<double, 1U> &work)
 {
-  int stride_bs;
-  int u1;
-  int wsize;
+  coder::SizeType stride_bs;
+  coder::SizeType u1;
+  coder::SizeType wsize;
   stride_bs = bs.size(1);
   //  Obtain input arguments
   if (m == 0) {
@@ -10862,15 +10895,15 @@ static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
   if ((rank > u1) || (rank < 1)) {
     m2cErrMsgIdAndTxt(
         "wlslib:WrongRank",
-        "Rank %d must be a positive value no greater than min(%d, %d).", rank,
-        m, n);
+        "Rank %d must be a positive value no greater than min(%d, %d).",
+        (int)rank, (int)m, (int)n);
   }
   //  Resize work space if needed
   wsize = wls::query_work_size(m, n);
   work.set_size(wsize);
   //  zero out extra rows in bs to avoid errors in LAPACK
   u1 = n + 1;
-  for (int i{u1}; i <= m; i++) {
+  for (coder::SizeType i{u1}; i <= m; i++) {
     bs[i - 1] = 0.0;
   }
   //  Invoke C++ function
@@ -10879,10 +10912,11 @@ static void rrqr_qmulti(const ::coder::array<double, 2U> &QR, int m, int n,
 }
 
 //  rrqr_rtsolve  Perform forward substitution to compute bs=R'\bs, where R is
-static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
-                         ::coder::array<double, 2U> &bs, int nrhs)
+static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR,
+                         coder::SizeType n, coder::SizeType rank,
+                         ::coder::array<double, 2U> &bs, coder::SizeType nrhs)
 {
-  int i;
+  coder::SizeType i;
   if (n == 0) {
     n = QR.size(0) - 1;
   }
@@ -10897,8 +10931,8 @@ static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
   if ((rank > i) || (rank < 1)) {
     m2cErrMsgIdAndTxt(
         "wlslib:WrongRank",
-        "Rank %d must be a positive value no greater than min(%d, %d).", rank,
-        QR.size(1), n);
+        "Rank %d must be a positive value no greater than min(%d, %d).",
+        (int)rank, (int)QR.size(1), (int)n);
   }
   if (nrhs == 0) {
     nrhs = bs.size(0);
@@ -10909,7 +10943,7 @@ static void rrqr_rtsolve(const ::coder::array<double, 2U> &QR, int n, int rank,
 
 //  wls_buhmann_weights  Weights based on Buhmann's radial basis function
 static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
-                                int npoints, int degree,
+                                coder::SizeType npoints, coder::SizeType degree,
                                 const ::coder::array<double, 1U> &params_sh,
                                 const ::coder::array<double, 2U> &params_pw,
                                 ::coder::array<double, 1U> &ws)
@@ -10922,8 +10956,8 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
   double r2;
   double rho;
   double sigma;
-  int abs_degree;
-  int i;
+  coder::SizeType abs_degree;
+  coder::SizeType i;
   if (degree == 0) {
     degree = 2;
   }
@@ -10951,10 +10985,10 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
   if (degree >= 0) {
     //  Compute 2-norm
     i = us.size(1);
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       d = us[us.size(1) * b_i];
       r2 = d * d;
-      for (int j{2}; j <= i; j++) {
+      for (coder::SizeType j{2}; j <= i; j++) {
         d = us[(j + us.size(1) * b_i) - 1];
         r2 += d * d;
       }
@@ -10963,9 +10997,9 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
   } else {
     //  Compute inf-norm for tensor-product
     i = us.size(1);
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       r = std::abs(us[us.size(1) * b_i]);
-      for (int j{2}; j <= i; j++) {
+      for (coder::SizeType j{2}; j <= i; j++) {
         r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
         if (r1 > r) {
           r = r1;
@@ -10990,13 +11024,13 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
   dist_k = find_kth_shortest_dist(ws, (i * 3 + 1) / 2, 1, npoints);
   rho = sigma * dist_k;
   if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       if (degree > 0) {
         //  Compute 2-norm
         d = us[us.size(1) * b_i];
         r2 = d * d;
         i = us.size(1);
-        for (int j{2}; j <= i; j++) {
+        for (coder::SizeType j{2}; j <= i; j++) {
           d = us[(j + us.size(1) * b_i) - 1];
           r2 += d * d;
         }
@@ -11005,7 +11039,7 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
         //  Compute inf-norm for tensor-product
         r = std::abs(us[us.size(1) * b_i]);
         i = us.size(1);
-        for (int j{2}; j <= i; j++) {
+        for (coder::SizeType j{2}; j <= i; j++) {
           r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
           if (r1 > r) {
             r = r1;
@@ -11029,7 +11063,7 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
   } else {
     m2cAssert(params_pw.size(0) >= npoints,
               "size(params_pw,1) should be >=npoints");
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       double b_gamma;
       b_gamma = params_pw[params_pw.size(1) * b_i];
       if (b_gamma <= 0.0) {
@@ -11040,7 +11074,7 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
           d = us[us.size(1) * b_i];
           r2 = d * d;
           i = us.size(1);
-          for (int j{2}; j <= i; j++) {
+          for (coder::SizeType j{2}; j <= i; j++) {
             d = us[(j + us.size(1) * b_i) - 1];
             r2 += d * d;
           }
@@ -11049,7 +11083,7 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
           //  Compute inf-norm for tensor-product
           r = std::abs(us[us.size(1) * b_i]);
           i = us.size(1);
-          for (int j{2}; j <= i; j++) {
+          for (coder::SizeType j{2}; j <= i; j++) {
             r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
             if (r1 > r) {
               r = r1;
@@ -11076,8 +11110,8 @@ static void wls_buhmann_weights(const ::coder::array<double, 2U> &us,
 }
 
 //  wls_eno_weights  WLS-ENO weights based on function values
-static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
-                            int degree,
+static void wls_eno_weights(const ::coder::array<double, 2U> &us,
+                            coder::SizeType npoints, coder::SizeType degree,
                             const ::coder::array<double, 2U> &us_unscaled,
                             const ::coder::array<double, 1U> &params_sh,
                             const ::coder::array<double, 2U> &params_pw,
@@ -11096,7 +11130,7 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
   double r1;
   double r2;
   double safegauard;
-  int i;
+  coder::SizeType i;
   m2cAssert(params_sh.size(0) >= 2, "first two shared parameters are required");
   m2cAssert(params_pw.size(0) >= npoints,
             "size(params_pw,1) should be >=npoints");
@@ -11111,10 +11145,10 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
   if (degree >= 0) {
     //  Compute 2-norm
     i = us_unscaled.size(1);
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       h2bar_tmp = us_unscaled[us_unscaled.size(1) * b_i];
       r2 = h2bar_tmp * h2bar_tmp;
-      for (int j{2}; j <= i; j++) {
+      for (coder::SizeType j{2}; j <= i; j++) {
         h2bar_tmp = us_unscaled[(j + us_unscaled.size(1) * b_i) - 1];
         r2 += h2bar_tmp * h2bar_tmp;
       }
@@ -11123,9 +11157,9 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
   } else {
     //  Compute inf-norm for tensor-product
     i = us_unscaled.size(1);
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       r = std::abs(us_unscaled[us_unscaled.size(1) * b_i]);
-      for (int j{2}; j <= i; j++) {
+      for (coder::SizeType j{2}; j <= i; j++) {
         r1 = std::abs(us_unscaled[(j + us_unscaled.size(1) * b_i) - 1]);
         if (r1 > r) {
           r = r1;
@@ -11135,7 +11169,7 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
     }
   }
   h2bar = ws[0] * ws[0];
-  for (int b_i{2}; b_i <= npoints; b_i++) {
+  for (coder::SizeType b_i{2}; b_i <= npoints; b_i++) {
     h2bar_tmp = ws[b_i - 1];
     h2bar += h2bar_tmp * h2bar_tmp;
   }
@@ -11155,21 +11189,21 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
   }
   m2cAssert(ws.size(0) >= npoints,
             "length of ws cannot be smaller than npoints");
-  for (int b_i{0}; b_i < npoints; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
     r = std::abs(us[us.size(1) * b_i]);
     if (us.size(1) > 1) {
       if (b_degree > 0.0) {
         //  Compute 2-norm
         r2 = r * r;
         i = us.size(1);
-        for (int c_i{2}; c_i <= i; c_i++) {
+        for (coder::SizeType c_i{2}; c_i <= i; c_i++) {
           h2bar_tmp = us[(c_i + us.size(1) * b_i) - 1];
           r2 += h2bar_tmp * h2bar_tmp;
         }
       } else {
         //  Compute inf-norm for tensor-product
         i = us.size(1);
-        for (int c_i{2}; c_i <= i; c_i++) {
+        for (coder::SizeType c_i{2}; c_i <= i; c_i++) {
           r1 = std::abs(us[(c_i + us.size(1) * b_i) - 1]);
           if (r1 > r) {
             r = r1;
@@ -11201,7 +11235,7 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
   }
   safegauard = epsilon_ENO * (params_sh[1] * params_sh[1]) * h2bar;
   if (params_pw.size(1) > 2) {
-    for (int b_i{0}; b_i < npoints; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
       h2bar_tmp = params_pw[params_pw.size(1) * b_i] - params_sh[0];
       ws[b_i] = ws[b_i] / ((c0 * (h2bar_tmp * h2bar_tmp) +
                             c1dfg * params_pw[params_pw.size(1) * b_i + 1]) +
@@ -11212,14 +11246,14 @@ static void wls_eno_weights(const ::coder::array<double, 2U> &us, int npoints,
 
 //  wls_invdist_weights  Weights based on inverse distance
 static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
-                                int npoints, int degree,
+                                coder::SizeType npoints, coder::SizeType degree,
                                 const ::coder::array<double, 1U> &params_sh,
                                 const ::coder::array<double, 2U> &params_pw,
                                 ::coder::array<double, 1U> &ws)
 {
   double alpha;
   double epsilon;
-  int b_degree;
+  coder::SizeType b_degree;
   epsilon = 0.01;
   if (degree < 0) {
     b_degree = -degree;
@@ -11240,7 +11274,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
               "length of ws cannot be smaller than npoints");
   }
   if ((params_pw.size(0) == 0) || (params_pw.size(1) == 0)) {
-    for (int i{0}; i < npoints; i++) {
+    for (coder::SizeType i{0}; i < npoints; i++) {
       double r;
       double r2;
       r = std::abs(us[us.size(1) * i]);
@@ -11249,7 +11283,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
           //  Compute 2-norm
           r2 = r * r;
           b_degree = us.size(1);
-          for (int b_i{2}; b_i <= b_degree; b_i++) {
+          for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
             double d;
             d = us[(b_i + us.size(1) * i) - 1];
             r2 += d * d;
@@ -11257,7 +11291,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
         } else {
           //  Compute inf-norm for tensor-product
           b_degree = us.size(1);
-          for (int b_i{2}; b_i <= b_degree; b_i++) {
+          for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
             double r1;
             r1 = std::abs(us[(b_i + us.size(1) * i) - 1]);
             if (r1 > r) {
@@ -11275,7 +11309,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
   } else {
     m2cAssert(params_pw.size(0) >= npoints,
               "size(params_pw,1) should be >=npoints");
-    for (int i{0}; i < npoints; i++) {
+    for (coder::SizeType i{0}; i < npoints; i++) {
       double b_gamma;
       b_gamma = params_pw[params_pw.size(1) * i];
       if (b_gamma <= 0.0) {
@@ -11289,7 +11323,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
             //  Compute 2-norm
             r2 = r * r;
             b_degree = us.size(1);
-            for (int b_i{2}; b_i <= b_degree; b_i++) {
+            for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
               double d;
               d = us[(b_i + us.size(1) * i) - 1];
               r2 += d * d;
@@ -11297,7 +11331,7 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
           } else {
             //  Compute inf-norm for tensor-product
             b_degree = us.size(1);
-            for (int b_i{2}; b_i <= b_degree; b_i++) {
+            for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
               double r1;
               r1 = std::abs(us[(b_i + us.size(1) * i) - 1]);
               if (r1 > r) {
@@ -11317,14 +11351,15 @@ static void wls_invdist_weights(const ::coder::array<double, 2U> &us,
 }
 
 //  wls_resize  Reinitialize the buffers of WlsObject
-static void wls_resize(WlsObject *b_wls, int dim, int npoints, int degree,
-                       int order, boolean_T use_dag)
+static void wls_resize(WlsObject *b_wls, coder::SizeType dim,
+                       coder::SizeType npoints, coder::SizeType degree,
+                       coder::SizeType order, boolean_T use_dag)
 {
-  int b_degree;
-  int ncols;
-  int nrows;
-  int stride;
-  int unnamed_idx_0;
+  coder::SizeType b_degree;
+  coder::SizeType ncols;
+  coder::SizeType nrows;
+  coder::SizeType stride;
+  coder::SizeType unnamed_idx_0;
   b_wls->degree = degree;
   b_wls->order = order;
   b_wls->use_dag = use_dag;
@@ -11336,7 +11371,7 @@ static void wls_resize(WlsObject *b_wls, int dim, int npoints, int degree,
   } else if (order == 1) {
     nrows = (dim + 1) * stride;
   } else {
-    int nrblks;
+    coder::SizeType nrblks;
     switch (dim) {
     case 1:
       nrblks = order + 1;
@@ -11414,31 +11449,31 @@ static void wls_resize(WlsObject *b_wls, int dim, int npoints, int degree,
 
 //  wls_func  Compute wls--fitting at one or more points.
 void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
-              const ::coder::array<double, 2U> &fs, int npoints,
+              const ::coder::array<double, 2U> &fs, coder::SizeType npoints,
               ::coder::array<double, 2U> &vdops,
               ::coder::array<double, 2U> &result)
 {
-  int j;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
+  coder::SizeType j;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
   nDims = pnts.size(1) - 1;
   //  scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((npoints + 3) / 4) << 2, pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (pnts[dim + pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
             b_wls->hs_inv.data[dim];
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             pnts[dim + pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
       }
@@ -11459,9 +11494,9 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   b_wls->vdops.set_size(npoints, u1);
   //  Extract vopts from Vandermonde matrix
   u0 = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < u0; iMonomial++) {
+  for (coder::SizeType iMonomial{0}; iMonomial < u0; iMonomial++) {
     j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-    for (int iPoint{0}; iPoint < npoints; iPoint++) {
+    for (coder::SizeType iPoint{0}; iPoint < npoints; iPoint++) {
       b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] =
           b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
     }
@@ -11474,7 +11509,7 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
               b_wls->work);
   vdops.set_size(nrows_vdops, npoints);
   //  Transpose the operator for row-major
-  for (int i{0}; i < u1; i++) {
+  for (coder::SizeType i{0}; i < u1; i++) {
     for (j = 0; j < npoints; j++) {
       vdops[j + vdops.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -11482,8 +11517,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k < npoints; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k < npoints; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -11495,14 +11530,14 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
       double s;
       s = 0.0;
       u1 = b_wls->npoints;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += vdops[j + vdops.size(1) * (i - 1)];
       }
       vdops[j] = 1.0 - s;
     }
   }
   if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 0);
+    result.set_size(coder::SizeType(0), coder::SizeType(0));
   } else {
     result.set_size(npoints, fs.size(1));
     u0 = fs.size(1) * npoints;
@@ -11511,9 +11546,9 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
     }
     //  Compute solution
     u1 = fs.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iPnt{0}; iPnt < npoints; iPnt++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           result[iFunc + result.size(1) * iPnt] =
               result[iFunc + result.size(1) * iPnt] +
               fs[iFunc + fs.size(1) * iRow] *
@@ -11530,29 +11565,29 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
               ::coder::array<double, 2U> &vdops,
               ::coder::array<double, 2U> &result)
 {
-  int j;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
+  coder::SizeType j;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = pnts.size(0) - 1;
   nDims = pnts.size(1) - 1;
   //  scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((pnts.size(0) + 3) / 4) << 2, pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (pnts[dim + pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
             b_wls->hs_inv.data[dim];
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             pnts[dim + pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
       }
@@ -11573,9 +11608,9 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   b_wls->vdops.set_size(pnts.size(0), u1);
   //  Extract vopts from Vandermonde matrix
   u0 = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < u0; iMonomial++) {
+  for (coder::SizeType iMonomial{0}; iMonomial < u0; iMonomial++) {
     j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-    for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
       b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] =
           b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
     }
@@ -11588,7 +11623,7 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
               pnts.size(0), b_wls->work);
   vdops.set_size(nrows_vdops, pnts.size(0));
   //  Transpose the operator for row-major
-  for (int i{0}; i < u1; i++) {
+  for (coder::SizeType i{0}; i < u1; i++) {
     for (j = 0; j <= npoints; j++) {
       vdops[j + vdops.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -11596,8 +11631,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= npoints; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= npoints; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -11609,14 +11644,14 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
       double s;
       s = 0.0;
       u1 = b_wls->npoints;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += vdops[j + vdops.size(1) * (i - 1)];
       }
       vdops[j] = 1.0 - s;
     }
   }
   if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 0);
+    result.set_size(coder::SizeType(0), coder::SizeType(0));
   } else {
     result.set_size(pnts.size(0), fs.size(1));
     u0 = fs.size(1) * pnts.size(0);
@@ -11625,9 +11660,9 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
     }
     //  Compute solution
     u1 = fs.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iPnt{0}; iPnt <= npoints; iPnt++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iPnt{0}; iPnt <= npoints; iPnt++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           result[iFunc + result.size(1) * iPnt] =
               result[iFunc + result.size(1) * iPnt] +
               fs[iFunc + fs.size(1) * iRow] *
@@ -11642,29 +11677,29 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
 void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
               ::coder::array<double, 2U> &vdops)
 {
-  int j;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
+  coder::SizeType j;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = pnts.size(0) - 1;
   nDims = pnts.size(1) - 1;
   //  scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((pnts.size(0) + 3) / 4) << 2, pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (pnts[dim + pnts.size(1) * iPoint] - b_wls->origin.data[dim]) *
             b_wls->hs_inv.data[dim];
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             pnts[dim + pnts.size(1) * iPoint] * b_wls->hs_inv.data[dim];
       }
@@ -11685,9 +11720,9 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   b_wls->vdops.set_size(pnts.size(0), u1);
   //  Extract vopts from Vandermonde matrix
   u0 = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < u0; iMonomial++) {
+  for (coder::SizeType iMonomial{0}; iMonomial < u0; iMonomial++) {
     j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-    for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
       b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iPoint] =
           b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
     }
@@ -11700,7 +11735,7 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
               pnts.size(0), b_wls->work);
   vdops.set_size(nrows_vdops, pnts.size(0));
   //  Transpose the operator for row-major
-  for (int i{0}; i < u1; i++) {
+  for (coder::SizeType i{0}; i < u1; i++) {
     for (j = 0; j <= npoints; j++) {
       vdops[j + vdops.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -11708,8 +11743,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= npoints; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= npoints; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -11721,7 +11756,7 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
       double s;
       s = 0.0;
       u1 = b_wls->npoints;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += vdops[j + vdops.size(1) * (i - 1)];
       }
       vdops[j] = 1.0 - s;
@@ -11731,10 +11766,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<double, 2U> &pnts,
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
-              const WlsWeight *weight, int degree, int order, int interp0,
-              boolean_T use_dag, int npoints)
+              const WlsWeight *weight, coder::SizeType degree,
+              coder::SizeType order, coder::SizeType interp0, boolean_T use_dag,
+              coder::SizeType npoints)
 {
-  int dim;
+  coder::SizeType dim;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
   dim = us.size(1) - 1;
@@ -11754,13 +11790,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -11793,7 +11829,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -11820,7 +11856,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -11832,7 +11868,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -11853,7 +11889,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -11880,7 +11916,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -11891,7 +11927,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -11903,21 +11939,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i < npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i < npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i < npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -11932,14 +11968,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -11947,7 +11983,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -11955,7 +11991,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -12008,11 +12044,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (npoints != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = npoints;
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i < npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -12029,7 +12065,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -12052,20 +12088,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j < npoints; j++) {
+          for (coder::SizeType j{0}; j < npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j < npoints; j++) {
+            for (coder::SizeType j{0}; j < npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -12073,10 +12109,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j < npoints; j++) {
+          for (coder::SizeType j{0}; j < npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -12085,9 +12121,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (npoints != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = npoints;
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i < npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg += npoints;
@@ -12100,11 +12136,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
 {
-  int degree;
-  int dim;
-  int interp0;
-  int npoints;
-  int order;
+  coder::SizeType degree;
+  coder::SizeType dim;
+  coder::SizeType interp0;
+  coder::SizeType npoints;
+  coder::SizeType order;
   boolean_T use_dag;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -12122,12 +12158,12 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -12160,8 +12196,8 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
-          int i1;
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
+          coder::SizeType i1;
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12188,7 +12224,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12200,7 +12236,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12221,8 +12257,8 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
-          int i1;
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
+          coder::SizeType i1;
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12249,7 +12285,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -12260,7 +12296,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -12272,21 +12308,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -12301,14 +12337,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -12316,7 +12352,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -12324,7 +12360,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -12357,11 +12393,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -12387,20 +12423,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -12408,10 +12444,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -12420,9 +12456,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -12436,11 +12472,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us)
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
               const WlsWeight *weight)
 {
-  int degree;
-  int dim;
-  int interp0;
-  int npoints;
-  int order;
+  coder::SizeType degree;
+  coder::SizeType dim;
+  coder::SizeType interp0;
+  coder::SizeType npoints;
+  coder::SizeType order;
   boolean_T use_dag;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -12457,13 +12493,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -12496,7 +12532,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12523,7 +12559,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12535,7 +12571,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12556,7 +12592,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12583,7 +12619,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -12594,7 +12630,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -12606,21 +12642,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -12635,14 +12671,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -12650,7 +12686,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -12658,7 +12694,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -12714,11 +12750,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -12735,7 +12771,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -12758,20 +12794,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -12779,10 +12815,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -12791,9 +12827,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -12805,12 +12841,12 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
-              const WlsWeight *weight, int degree)
+              const WlsWeight *weight, coder::SizeType degree)
 {
-  int dim;
-  int interp0;
-  int npoints;
-  int order;
+  coder::SizeType dim;
+  coder::SizeType interp0;
+  coder::SizeType npoints;
+  coder::SizeType order;
   boolean_T use_dag;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -12826,13 +12862,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -12865,7 +12901,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12892,7 +12928,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12904,7 +12940,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -12925,7 +12961,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -12952,7 +12988,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -12963,7 +12999,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -12975,21 +13011,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -13004,14 +13040,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -13019,7 +13055,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13027,7 +13063,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13083,11 +13119,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -13104,7 +13140,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -13127,20 +13163,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -13148,10 +13184,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -13160,9 +13196,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -13174,11 +13210,12 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
-              const WlsWeight *weight, int degree, int order)
+              const WlsWeight *weight, coder::SizeType degree,
+              coder::SizeType order)
 {
-  int dim;
-  int interp0;
-  int npoints;
+  coder::SizeType dim;
+  coder::SizeType interp0;
+  coder::SizeType npoints;
   boolean_T use_dag;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -13192,13 +13229,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -13231,7 +13268,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -13258,7 +13295,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -13270,7 +13307,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -13291,7 +13328,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -13318,7 +13355,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -13329,7 +13366,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -13341,21 +13378,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -13370,14 +13407,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -13385,7 +13422,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13393,7 +13430,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13449,11 +13486,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -13470,7 +13507,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -13493,20 +13530,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -13514,10 +13551,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -13526,9 +13563,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -13540,10 +13577,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
-              const WlsWeight *weight, int degree, int order, int interp0)
+              const WlsWeight *weight, coder::SizeType degree,
+              coder::SizeType order, coder::SizeType interp0)
 {
-  int dim;
-  int npoints;
+  coder::SizeType dim;
+  coder::SizeType npoints;
   boolean_T use_dag;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -13558,13 +13596,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -13597,7 +13635,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -13624,7 +13662,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -13636,7 +13674,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -13657,7 +13695,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -13684,7 +13722,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -13695,7 +13733,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -13707,21 +13745,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -13736,14 +13774,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -13751,7 +13789,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13759,7 +13797,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -13815,11 +13853,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -13836,7 +13874,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -13859,20 +13897,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -13880,10 +13918,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -13892,9 +13930,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -13906,11 +13944,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
-              const WlsWeight *weight, int degree, int order, int interp0,
-              boolean_T use_dag)
+              const WlsWeight *weight, coder::SizeType degree,
+              coder::SizeType order, coder::SizeType interp0, boolean_T use_dag)
 {
-  int dim;
-  int npoints;
+  coder::SizeType dim;
+  coder::SizeType npoints;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
   dim = us.size(1) - 1;
@@ -13924,13 +13962,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     double maxx;
     double maxx_inv;
     double thres;
-    int b_us;
-    int i;
-    int ncols;
-    int nrblks;
-    int src;
-    int trg;
-    int u1;
+    coder::SizeType b_us;
+    coder::SizeType i;
+    coder::SizeType ncols;
+    coder::SizeType nrblks;
+    coder::SizeType src;
+    coder::SizeType trg;
+    coder::SizeType u1;
     //  Recompute DAG if use_dag and its signature does not match
     if (use_dag) {
       i = b_wls->dag.size(1) * b_wls->dag.size(0) - 1;
@@ -13963,7 +14001,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -13990,7 +14028,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -14002,7 +14040,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = us[0];
         b_wls->origin.data[1] = us[1];
         b_wls->origin.data[2] = us[2];
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i] - us[0];
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
               us[us.size(1) * b_i + 1] - us[1];
@@ -14023,7 +14061,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b1 = us.size(1) <= 0;
         i = us.size(1) * us.size(0);
         b_us = 0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           if (b1 || (b_i >= i)) {
             b_us = 0;
             b = true;
@@ -14050,7 +14088,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.size[0] = 1;
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
         }
@@ -14061,7 +14099,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         b_wls->origin.data[0] = 0.0;
         b_wls->origin.data[1] = 0.0;
         b_wls->origin.data[2] = 0.0;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] = us[us.size(1) * b_i];
           b_wls->us[b_wls->us.size(1) * b_i + 1] = us[us.size(1) * b_i + 1];
           b_wls->us[b_wls->us.size(1) * b_i + 2] = us[us.size(1) * b_i + 2];
@@ -14073,21 +14111,21 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     maxx = 0.0;
     switch (us.size(1)) {
     case 1:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         i = b_wls->us.size(0);
         maxx = std::fmax(
             maxx, std::abs(b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i]));
       }
       break;
     case 2:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx, std::fmax(std::abs(b_wls->us[b_wls->us.size(1) * b_i]),
                             std::abs(b_wls->us[b_wls->us.size(1) * b_i + 1])));
       }
       break;
     default:
-      for (int b_i{0}; b_i <= npoints; b_i++) {
+      for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
         maxx = std::fmax(
             maxx,
             std::fmax(
@@ -14102,14 +14140,14 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     } else {
       maxx_inv = 1.0 / maxx;
     }
-    for (int b_i{0}; b_i <= dim; b_i++) {
+    for (coder::SizeType b_i{0}; b_i <= dim; b_i++) {
       b_wls->hs_inv.data[b_i] = maxx_inv;
     }
     //  scale wls.us
     if (maxx_inv != 1.0) {
       switch (us.size(1)) {
       case 1:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->us.size(0);
           b_us = b_wls->us.size(0);
           b_wls->us[b_i % i * b_wls->us.size(1) + b_i / i] =
@@ -14117,7 +14155,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       case 2:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -14125,7 +14163,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         }
         break;
       default:
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           b_wls->us[b_wls->us.size(1) * b_i] =
               b_wls->us[b_wls->us.size(1) * b_i] * maxx_inv;
           b_wls->us[b_wls->us.size(1) * b_i + 1] =
@@ -14181,11 +14219,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
         (us.size(0) != b_wls->stride)) {
       //  Compact the storage of Vandermonde matrix
       trg = us.size(0);
-      for (int b_b{2}; b_b <= nrblks; b_b++) {
+      for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
         src = (b_b - 1) * b_wls->stride;
-        for (int b_i{0}; b_i <= npoints; b_i++) {
+        for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
           i = b_wls->V.size(0);
-          for (int j{0}; j < i; j++) {
+          for (coder::SizeType j{0}; j < i; j++) {
             b_wls->V[trg + b_wls->V.size(1) * j] =
                 b_wls->V[src + b_wls->V.size(1) * j];
           }
@@ -14202,7 +14240,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
     if (b_us <= u1) {
       u1 = b_us;
     }
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       if (weight->omit_rows[b_i]) {
         b_us = b_wls->V.size(0);
         for (i = 0; i < b_us; i++) {
@@ -14225,20 +14263,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       //  Compute weights for derivatives
       if (order <= 2) {
         double s;
-        int J;
+        coder::SizeType J;
         s = 1.0 / maxx_inv;
-        for (int blk{0}; blk <= dim; blk++) {
+        for (coder::SizeType blk{0}; blk <= dim; blk++) {
           J = (blk + 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] = b_wls->rweights[j] * s;
           }
         }
         if (order == 2) {
           s = 1.0 / (maxx_inv * maxx_inv);
           i = us.size(1) + 2;
-          for (int blk{i}; blk <= nrblks; blk++) {
+          for (coder::SizeType blk{i}; blk <= nrblks; blk++) {
             J = (blk - 1) * b_wls->stride;
-            for (int j{0}; j <= npoints; j++) {
+            for (coder::SizeType j{0}; j <= npoints; j++) {
               b_wls->rweights[J + j] = b_wls->rweights[j] * s;
             }
           }
@@ -14246,10 +14284,10 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       } else {
         //  Compute scaling factors for each block. Use wls.vdops as work space.
         gen_vander(b_wls->hs_inv.data, b_wls->hs_inv.size, order, b_wls->V);
-        for (int blk{2}; blk <= nrblks; blk++) {
-          int J;
+        for (coder::SizeType blk{2}; blk <= nrblks; blk++) {
+          coder::SizeType J;
           J = (blk - 1) * b_wls->stride;
-          for (int j{0}; j <= npoints; j++) {
+          for (coder::SizeType j{0}; j <= npoints; j++) {
             b_wls->rweights[J + j] =
                 b_wls->rweights[j] / b_wls->V[b_wls->V.size(1) * (blk - 1)];
           }
@@ -14258,9 +14296,9 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
       if (us.size(0) != b_wls->stride) {
         //  Compact the storage of Vandermonde matrix
         trg = us.size(0);
-        for (int b_b{2}; b_b <= nrblks; b_b++) {
+        for (coder::SizeType b_b{2}; b_b <= nrblks; b_b++) {
           src = (b_b - 1) * b_wls->stride;
-          for (int b_i{0}; b_i <= npoints; b_i++) {
+          for (coder::SizeType b_i{0}; b_i <= npoints; b_i++) {
             b_wls->rweights[trg + b_i] = b_wls->rweights[src + b_i];
           }
           trg = (trg + npoints) + 1;
@@ -14274,18 +14312,19 @@ void wls_init(WlsObject *b_wls, const ::coder::array<double, 2U> &us,
 void wls_var_bilap(WlsObject *b_wls,
                    const ::coder::array<double, 2U> &quad_pnts,
                    const ::coder::array<double, 2U> &varargin_1,
-                   const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                   const ::coder::array<double, 2U> &varargin_2,
+                   coder::SizeType varargin_3,
                    ::coder::array<double, 2U> &varargout_1,
                    ::coder::array<double, 2U> &varargout_2)
 {
-  int bilap_size_idx_1;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType bilap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char bilap_data[9];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -14327,8 +14366,8 @@ void wls_var_bilap(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -14336,8 +14375,8 @@ void wls_var_bilap(WlsObject *b_wls,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -14363,23 +14402,23 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->vdops[u1] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (bilap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -14397,12 +14436,12 @@ void wls_var_bilap(WlsObject *b_wls,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -14412,7 +14451,7 @@ void wls_var_bilap(WlsObject *b_wls,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -14435,8 +14474,8 @@ void wls_var_bilap(WlsObject *b_wls,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -14453,15 +14492,15 @@ void wls_var_bilap(WlsObject *b_wls,
                    ::coder::array<double, 2U> &varargout_1,
                    ::coder::array<double, 2U> &varargout_2)
 {
-  int bilap_size_idx_1;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType bilap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char bilap_data[9];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -14504,8 +14543,8 @@ void wls_var_bilap(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -14513,8 +14552,8 @@ void wls_var_bilap(WlsObject *b_wls,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -14540,23 +14579,23 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->vdops[u1] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (bilap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -14574,12 +14613,12 @@ void wls_var_bilap(WlsObject *b_wls,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -14589,7 +14628,7 @@ void wls_var_bilap(WlsObject *b_wls,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -14612,8 +14651,8 @@ void wls_var_bilap(WlsObject *b_wls,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -14627,15 +14666,15 @@ void wls_var_bilap(WlsObject *b_wls,
                    const ::coder::array<double, 2U> &quad_pnts,
                    ::coder::array<double, 2U> &varargout_1)
 {
-  int bilap_size_idx_1;
-  int i;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType bilap_size_idx_1;
+  coder::SizeType i;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char bilap_data[9];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -14678,8 +14717,8 @@ void wls_var_bilap(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -14687,8 +14726,8 @@ void wls_var_bilap(WlsObject *b_wls,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -14714,16 +14753,16 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (bilap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+      coder::SizeType j;
       j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] =
             b_wls->vdops[iMonomial] +
             b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -14739,13 +14778,13 @@ void wls_var_bilap(WlsObject *b_wls,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -14755,7 +14794,7 @@ void wls_var_bilap(WlsObject *b_wls,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -14768,15 +14807,15 @@ void wls_var_bilap(WlsObject *b_wls,
                    const ::coder::array<double, 2U> &varargin_1,
                    ::coder::array<double, 2U> &varargout_1)
 {
-  int bilap_size_idx_1;
-  int i;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType bilap_size_idx_1;
+  coder::SizeType i;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char bilap_data[9];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -14819,8 +14858,8 @@ void wls_var_bilap(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -14828,8 +14867,8 @@ void wls_var_bilap(WlsObject *b_wls,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -14855,23 +14894,23 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < bilap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (bilap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -14889,13 +14928,13 @@ void wls_var_bilap(WlsObject *b_wls,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -14905,7 +14944,7 @@ void wls_var_bilap(WlsObject *b_wls,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -14915,29 +14954,29 @@ void wls_var_bilap(WlsObject *b_wls,
 //  wls_var_curl  Variational curl operators as weighted sum at quadrature
 void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &ws,
-                  const ::coder::array<double, 2U> &, int varargin_1,
-                  ::coder::array<double, 2U> &vdops, const double[],
-                  int result_size[2])
+                  const ::coder::array<double, 2U> &,
+                  coder::SizeType varargin_1, ::coder::array<double, 2U> &vdops,
+                  const double[], coder::SizeType result_size[2])
 {
   if (ws.size(1) <= 1) {
-    int b_i;
-    int i;
-    int j;
-    int nDims;
-    int nOps;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     nDims = quad_pnts.size(1) - 1;
     stride = ((varargin_1 + 3) / 4) << 2;
     //  Scale the coordinates; use wls.us as buffer
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -14945,8 +14984,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -14979,25 +15018,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv4[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -15024,8 +15063,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -15077,18 +15116,18 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
-    int b_i;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDims;
-    int nOps;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     nDims = quad_pnts.size(1) - 1;
     if (ws.size(0) == 0) {
       lenWs = 1;
@@ -15100,8 +15139,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -15109,8 +15148,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -15145,25 +15184,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  Summing up rows in the differential operator
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv5[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if (ws.size(0) == 0) {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -15195,8 +15234,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -15270,23 +15309,23 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &ws,
                   const ::coder::array<double, 2U> &fs,
                   ::coder::array<double, 2U> &vdops, double result_data[],
-                  int result_size[2])
+                  coder::SizeType result_size[2])
 {
   double c_vdops;
   double e_vdops;
   double f_vdops;
-  int b_i;
-  int i;
+  coder::SizeType b_i;
+  coder::SizeType i;
   if (ws.size(1) <= 1) {
-    int j;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType j;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     npoints = quad_pnts.size(0) - 1;
     nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
@@ -15294,8 +15333,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -15303,8 +15342,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -15337,25 +15376,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv4[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -15382,8 +15421,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -15434,17 +15473,17 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     npoints = quad_pnts.size(0) - 1;
     nDims = quad_pnts.size(1) - 1;
     if (ws.size(0) == 0) {
@@ -15457,8 +15496,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -15466,8 +15505,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -15502,25 +15541,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  Summing up rows in the differential operator
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv5[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if (ws.size(0) == 0) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -15552,8 +15591,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -15646,17 +15685,17 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &vdops)
 {
-  int b_i;
-  int i;
-  int j;
-  int nDims;
-  int nOps;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType b_i;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDims;
+  coder::SizeType nOps;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = quad_pnts.size(0) - 1;
   nDims = quad_pnts.size(1) - 1;
   stride = ((quad_pnts.size(0) + 3) / 4) << 2;
@@ -15664,8 +15703,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -15673,8 +15712,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -15707,18 +15746,18 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_i--;
   }
   //  Summing up rows in the differential operator
-  for (int iOp{0}; iOp < nOps; iOp++) {
+  for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
     signed char i1;
     //  Skip padded zeros in the differential operator
     i1 = iv4[iOp];
     if (i1 > 0) {
-      int offset;
+      coder::SizeType offset;
       offset = (i1 - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -15743,8 +15782,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k < nOps; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k < nOps; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -15795,17 +15834,17 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &vdops)
 {
   if (ws.size(1) <= 1) {
-    int b_i;
-    int i;
-    int j;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     npoints = quad_pnts.size(0) - 1;
     nDims = quad_pnts.size(1) - 1;
     stride = ((quad_pnts.size(0) + 3) / 4) << 2;
@@ -15813,8 +15852,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -15822,8 +15861,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -15856,25 +15895,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv4[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -15901,8 +15940,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -15954,19 +15993,19 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
-    int b_i;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     npoints = quad_pnts.size(0) - 1;
     nDims = quad_pnts.size(1) - 1;
     if (ws.size(0) == 0) {
@@ -15979,8 +16018,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -15988,8 +16027,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
         }
       }
     } else {
-      for (int dim{0}; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -16024,25 +16063,25 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  Summing up rows in the differential operator
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = iv5[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if (ws.size(0) == 0) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -16074,8 +16113,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -16146,26 +16185,27 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<double, 2U> &quad_pnts,
                        const ::coder::array<double, 2U> &ws,
-                       const ::coder::array<double, 2U> &, int varargin_1,
+                       const ::coder::array<double, 2U> &,
+                       coder::SizeType varargin_1,
                        ::coder::array<double, 2U> &vdops, const double[],
-                       int result_size[2])
+                       coder::SizeType result_size[2])
 {
-  int dim;
+  coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int b_i;
-    int hess_size;
-    int i;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType hess_size;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -16194,8 +16234,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -16203,8 +16243,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -16237,25 +16277,25 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -16282,8 +16322,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -16355,21 +16395,21 @@ void wls_var_curl_curl(WlsObject *b_wls,
       }
     }
   } else {
-    int b_i;
-    int grad_div_size_idx_0;
-    int grad_div_size_idx_1;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType grad_div_size_idx_0;
+    coder::SizeType grad_div_size_idx_1;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[18];
     //  Each component has its own weight, so we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -16406,8 +16446,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -16415,8 +16455,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -16449,28 +16489,28 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
+    for (coder::SizeType jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
       iWeight = 1;
       //  Loop through the operators
-      for (int iOp{0}; iOp < nOps; iOp++) {
+      for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
         signed char i1;
         //  Skip padded zeros in the differential operator
         i1 = grad_div_data[jDiff + grad_div_size_idx_1 * iOp];
         if (i1 > 0) {
-          int offset;
+          coder::SizeType offset;
           offset = (i1 - 1) * stride;
           //  Sum up monomials weighted by weights for each component
           i = b_wls->ncols - b_wls->interp0;
-          for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+          for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
             j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
             if (ws.size(0) == 0) {
-              for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             } else {
-              for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -16503,8 +16543,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -16540,7 +16580,7 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[u0] != 1) {
           totalw = 0.0;
         } else {
-          int hess_size;
+          coder::SizeType hess_size;
           hess_size = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = varargin_1;
@@ -16591,28 +16631,28 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<double, 2U> &ws,
                        const ::coder::array<double, 2U> &fs,
                        ::coder::array<double, 2U> &vdops, double result_data[],
-                       int result_size[2])
+                       coder::SizeType result_size[2])
 {
   double b_vdops;
   double d;
   double d1;
-  int b_i;
-  int dim;
-  int i;
+  coder::SizeType b_i;
+  coder::SizeType dim;
+  coder::SizeType i;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int hess_size;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType hess_size;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -16642,8 +16682,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -16651,8 +16691,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -16685,25 +16725,25 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -16730,8 +16770,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -16799,20 +16839,20 @@ void wls_var_curl_curl(WlsObject *b_wls,
       }
     }
   } else {
-    int grad_div_size_idx_0;
-    int grad_div_size_idx_1;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType grad_div_size_idx_0;
+    coder::SizeType grad_div_size_idx_1;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[18];
     //  Each component has its own weight, so we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -16850,8 +16890,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -16859,8 +16899,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -16893,28 +16933,28 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
+    for (coder::SizeType jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
       iWeight = 1;
       //  Loop through the operators
-      for (int iOp{0}; iOp < nOps; iOp++) {
+      for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
         signed char i1;
         //  Skip padded zeros in the differential operator
         i1 = grad_div_data[jDiff + grad_div_size_idx_1 * iOp];
         if (i1 > 0) {
-          int offset;
+          coder::SizeType offset;
           offset = (i1 - 1) * stride;
           //  Sum up monomials weighted by weights for each component
           i = b_wls->ncols - b_wls->interp0;
-          for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+          for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
             j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
             if (ws.size(0) == 0) {
-              for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             } else {
-              for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -16947,8 +16987,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -16984,7 +17024,7 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[u0] != 1) {
           totalw = 0.0;
         } else {
-          int hess_size;
+          coder::SizeType hess_size;
           hess_size = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = npoints + 1;
@@ -17080,20 +17120,20 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<double, 2U> &quad_pnts,
                        ::coder::array<double, 2U> &vdops)
 {
-  int b_i;
-  int dim;
-  int hess_size;
-  int i;
-  int j;
-  int nDiff;
-  int nDims;
-  int nOps;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType b_i;
+  coder::SizeType dim;
+  coder::SizeType hess_size;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType nOps;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[9];
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
@@ -17124,8 +17164,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[b_dim]) *
@@ -17133,8 +17173,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
       }
     }
   } else {
-    for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[b_dim];
@@ -17167,18 +17207,18 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_i--;
   }
   //  Summing up rows in the differential operator
-  for (int iOp{0}; iOp < nOps; iOp++) {
+  for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
     signed char i1;
     //  Skip padded zeros in the differential operator
     i1 = hess_data[iOp];
     if (i1 > 0) {
-      int offset;
+      coder::SizeType offset;
       offset = (i1 - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -17203,8 +17243,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k < nOps; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k < nOps; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -17275,23 +17315,23 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<double, 2U> &ws,
                        ::coder::array<double, 2U> &vdops)
 {
-  int dim;
+  coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int b_i;
-    int hess_size;
-    int i;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType hess_size;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -17321,8 +17361,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -17330,8 +17370,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -17364,25 +17404,25 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -17409,8 +17449,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -17482,22 +17522,22 @@ void wls_var_curl_curl(WlsObject *b_wls,
       }
     }
   } else {
-    int b_i;
-    int grad_div_size_idx_0;
-    int grad_div_size_idx_1;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType grad_div_size_idx_0;
+    coder::SizeType grad_div_size_idx_1;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[18];
     //  Each component has its own weight, so we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -17535,8 +17575,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -17544,8 +17584,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -17578,28 +17618,28 @@ void wls_var_curl_curl(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
+    for (coder::SizeType jDiff{0}; jDiff < grad_div_size_idx_1; jDiff++) {
       iWeight = 1;
       //  Loop through the operators
-      for (int iOp{0}; iOp < nOps; iOp++) {
+      for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
         signed char i1;
         //  Skip padded zeros in the differential operator
         i1 = grad_div_data[jDiff + grad_div_size_idx_1 * iOp];
         if (i1 > 0) {
-          int offset;
+          coder::SizeType offset;
           offset = (i1 - 1) * stride;
           //  Sum up monomials weighted by weights for each component
           i = b_wls->ncols - b_wls->interp0;
-          for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+          for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
             j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
             if (ws.size(0) == 0) {
-              for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
               }
             } else {
-              for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+              for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                     b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                     ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -17632,8 +17672,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -17669,7 +17709,7 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[u0] != 1) {
           totalw = 0.0;
         } else {
-          int hess_size;
+          coder::SizeType hess_size;
           hess_size = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = npoints + 1;
@@ -17715,23 +17755,24 @@ void wls_var_curl_curl(WlsObject *b_wls,
 //  wls_var_div  Compute variational divergence operators as weighted sum at
 void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  const ::coder::array<double, 2U> &varargin_1,
-                 const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                 const ::coder::array<double, 2U> &varargin_2,
+                 coder::SizeType varargin_3,
                  ::coder::array<double, 2U> &varargout_1,
                  ::coder::array<double, 2U> &varargout_2)
 {
-  int grad_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -17762,8 +17803,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -17771,8 +17812,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -17801,21 +17842,21 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -17838,7 +17879,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = grad_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -17846,8 +17887,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -17860,7 +17901,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -17875,7 +17916,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       varargout_2[u1] = 0.0;
     }
   } else {
-    int iFunc;
+    coder::SizeType iFunc;
     u1 = 1;
     u0 = grad_size;
     u0 /= quad_pnts.size(1);
@@ -17887,8 +17928,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  Compute solution
     iFunc = 1;
     iOp = 0;
-    for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iOp % varargout_2.size(0) * varargout_2.size(1) +
                     iOp / varargout_2.size(0)] =
             varargout_2[iOp % varargout_2.size(0) * varargout_2.size(1) +
@@ -17917,20 +17958,20 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  ::coder::array<double, 2U> &varargout_1,
                  ::coder::array<double, 2U> &varargout_2)
 {
-  int grad_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -17962,8 +18003,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -17971,8 +18012,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18001,21 +18042,21 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -18038,7 +18079,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = grad_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -18046,8 +18087,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -18060,7 +18101,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -18075,7 +18116,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       varargout_2[u1] = 0.0;
     }
   } else {
-    int iFunc;
+    coder::SizeType iFunc;
     u1 = 1;
     u0 = grad_size;
     u0 /= quad_pnts.size(1);
@@ -18087,8 +18128,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  Compute solution
     iFunc = 1;
     iOp = 0;
-    for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iOp % varargout_2.size(0) * varargout_2.size(1) +
                     iOp / varargout_2.size(0)] =
             varargout_2[iOp % varargout_2.size(0) * varargout_2.size(1) +
@@ -18114,17 +18155,17 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  ::coder::array<double, 2U> &varargout_1)
 {
-  int grad_size;
-  int i;
-  int j;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -18151,8 +18192,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18160,8 +18201,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18187,15 +18228,15 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
             b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -18211,7 +18252,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = grad_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -18219,8 +18260,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -18233,7 +18274,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -18246,19 +18287,19 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  const ::coder::array<double, 2U> &varargin_1,
                  ::coder::array<double, 2U> &varargout_1)
 {
-  int grad_size;
-  int i;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType i;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -18290,8 +18331,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18299,8 +18340,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18328,22 +18369,22 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   //  Omit zeros in the diff operators
   iWeight = 1;
   //  Loop through the operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -18366,7 +18407,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = grad_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -18374,8 +18415,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -18388,7 +18429,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -18399,23 +18440,24 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 //  wls_var_func  Compute variational WLS-fitting as weighted sum at
 void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
-                  const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                  const ::coder::array<double, 2U> &varargin_2,
+                  coder::SizeType varargin_3,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
-  int varargin_3_idx_0_tmp_tmp;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
+  coder::SizeType varargin_3_idx_0_tmp_tmp;
   nDims = quad_pnts.size(1) - 1;
   //  Scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((varargin_3 + 3) / 4) << 2, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18423,8 +18465,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18451,16 +18493,16 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   //  Omit zeros in the diff operators
   u1 = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-    int j;
+  for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+    coder::SizeType j;
     j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
     if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->vdops[iMonomial] =
             b_wls->vdops[iMonomial] + b_wls->V[iPoint + b_wls->V.size(1) * j];
       }
     } else {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] +
                                   varargin_1[varargin_1.size(1) * iPoint] *
                                       b_wls->V[iPoint + b_wls->V.size(1) * j];
@@ -18476,12 +18518,12 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < varargin_3_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < varargin_3_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -18495,14 +18537,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     } else {
       totalw = 0.0;
       u1 = varargin_1.size(0);
-      for (int i{0}; i < u1; i++) {
+      for (coder::SizeType i{0}; i < u1; i++) {
         totalw += varargin_1[varargin_1.size(1) * i];
       }
     }
     //  Loop through the operators
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = totalw - s;
@@ -18525,8 +18567,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -18542,21 +18584,21 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int quad_pnts_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType quad_pnts_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = quad_pnts.size(0) - 1;
   nDims = quad_pnts.size(1) - 1;
   //  Scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18564,8 +18606,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18592,16 +18634,16 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   //  Omit zeros in the diff operators
   u1 = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-    int j;
+  for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+    coder::SizeType j;
     j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
     if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] =
             b_wls->vdops[iMonomial] + b_wls->V[iPoint + b_wls->V.size(1) * j];
       }
     } else {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] +
                                   varargin_1[varargin_1.size(1) * iPoint] *
                                       b_wls->V[iPoint + b_wls->V.size(1) * j];
@@ -18617,12 +18659,12 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < quad_pnts_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < quad_pnts_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -18636,14 +18678,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     } else {
       totalw = 0.0;
       u1 = varargin_1.size(0);
-      for (int i{0}; i < u1; i++) {
+      for (coder::SizeType i{0}; i < u1; i++) {
         totalw += varargin_1[varargin_1.size(1) * i];
       }
     }
     //  Loop through the operators
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = totalw - s;
@@ -18666,8 +18708,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -18680,21 +18722,21 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int i;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
+  coder::SizeType i;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = quad_pnts.size(0) - 1;
   nDims = quad_pnts.size(1) - 1;
   //  Scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18702,8 +18744,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18730,10 +18772,10 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   //  Omit zeros in the diff operators
   i = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-    int j;
+  for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+    coder::SizeType j;
     j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-    for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
       b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] +
                                 b_wls->V[iPoint + b_wls->V.size(1) * (j - 1)];
     }
@@ -18747,13 +18789,13 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -18763,7 +18805,7 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = static_cast<double>(quad_pnts.size(0)) - s;
@@ -18775,21 +18817,21 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int i;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int u0;
-  int u1;
+  coder::SizeType i;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType u0;
+  coder::SizeType u1;
   npoints = quad_pnts.size(0) - 1;
   nDims = quad_pnts.size(1) - 1;
   //  Scale the coordinates; use wls.us as buffer
   b_wls->us.set_size(((quad_pnts.size(0) + 3) / 4) << 2, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18797,8 +18839,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18825,16 +18867,16 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   //  Omit zeros in the diff operators
   i = b_wls->ncols - b_wls->interp0;
-  for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-    int j;
+  for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+    coder::SizeType j;
     j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
     if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] =
             b_wls->vdops[iMonomial] + b_wls->V[iPoint + b_wls->V.size(1) * j];
       }
     } else {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] = b_wls->vdops[iMonomial] +
                                   varargin_1[varargin_1.size(1) * iPoint] *
                                       b_wls->V[iPoint + b_wls->V.size(1) * j];
@@ -18850,13 +18892,13 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -18870,14 +18912,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     } else {
       totalw = 0.0;
       i = varargin_1.size(0);
-      for (int b_i{0}; b_i < i; b_i++) {
+      for (coder::SizeType b_i{0}; b_i < i; b_i++) {
         totalw += varargin_1[varargin_1.size(1) * b_i];
       }
     }
     //  Loop through the operators
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = totalw - s;
@@ -18887,23 +18929,24 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 //  wls_var_grad  Compute variational gradient operators as weighted sum at
 void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
-                  const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                  const ::coder::array<double, 2U> &varargin_2,
+                  coder::SizeType varargin_3,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int grad_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -18934,8 +18977,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -18943,8 +18986,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -18973,21 +19016,21 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -19010,7 +19053,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = grad_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -19018,8 +19061,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -19032,7 +19075,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -19056,10 +19099,10 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
       iOp = 0;
-      for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+      for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           varargout_2[iFunc + varargout_2.size(1) * iOp] =
               varargout_2[iFunc + varargout_2.size(1) * iOp] +
               varargin_2[iFunc + varargin_2.size(1) * iRow] *
@@ -19082,20 +19125,20 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int grad_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -19127,8 +19170,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -19136,8 +19179,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -19166,21 +19209,21 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -19203,7 +19246,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = grad_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -19211,8 +19254,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -19225,7 +19268,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -19249,10 +19292,10 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
       iOp = 0;
-      for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+      for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           varargout_2[iFunc + varargout_2.size(1) * iOp] =
               varargout_2[iFunc + varargout_2.size(1) * iOp] +
               varargin_2[iFunc + varargin_2.size(1) * iRow] *
@@ -19272,17 +19315,17 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int grad_size;
-  int i;
-  int j;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -19309,8 +19352,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -19318,8 +19361,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -19345,15 +19388,15 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
             b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -19369,7 +19412,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = grad_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -19377,8 +19420,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -19391,7 +19434,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -19404,19 +19447,19 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int grad_size;
-  int i;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType grad_size;
+  coder::SizeType i;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char grad_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -19448,8 +19491,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -19457,8 +19500,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -19486,22 +19529,22 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   //  Omit zeros in the diff operators
   iWeight = 1;
   //  Loop through the operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (grad_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -19524,7 +19567,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = grad_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -19532,8 +19575,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -19546,7 +19589,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -19558,26 +19601,27 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<double, 2U> &quad_pnts,
                       const ::coder::array<double, 2U> &ws,
-                      const ::coder::array<double, 2U> &, int varargin_1,
+                      const ::coder::array<double, 2U> &,
+                      coder::SizeType varargin_1,
                       ::coder::array<double, 2U> &vdops, const double[],
-                      int result_size[2])
+                      coder::SizeType result_size[2])
 {
-  int dim;
+  coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int b_i;
-    int grad_div_size;
-    int i;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType grad_div_size;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -19606,8 +19650,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -19615,8 +19659,8 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -19649,25 +19693,25 @@ void wls_var_grad_div(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -19694,8 +19738,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -19763,18 +19807,18 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     }
   } else {
-    int grad_div_size;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType grad_div_size;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[9];
     //  Each component has its own weight, we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -19809,7 +19853,7 @@ void wls_var_grad_div(WlsObject *b_wls,
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
       for (dim = 0; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -19818,7 +19862,7 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     } else {
       for (dim = 0; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -19846,22 +19890,22 @@ void wls_var_grad_div(WlsObject *b_wls,
     //  Omit zeros in the diff operators
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp <= nDiff; iOp++) {
-      int offset;
+    for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+      coder::SizeType offset;
       //  Skip padded zeros in the differential operator
       offset = (grad_div_data[iOp] - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
         if (ws.size(0) == 0) {
-          for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         } else {
-          for (int iPoint{0}; iPoint < varargin_1; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint < varargin_1; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -19884,7 +19928,7 @@ void wls_var_grad_div(WlsObject *b_wls,
     u0 = grad_div_size;
     vdops.set_size(nrows_vdops, u0);
     //  Transpose the operator for row-major
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       for (j = 0; j <= nDiff; j++) {
         vdops[j + vdops.size(1) * (b_i + b_wls->interp0)] =
             b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -19892,8 +19936,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k <= nDiff; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k <= nDiff; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -19906,7 +19950,7 @@ void wls_var_grad_div(WlsObject *b_wls,
         double s;
         //  Loop through the operators
         s = 0.0;
-        for (int b_i{2}; b_i <= i; b_i++) {
+        for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
           s += vdops[j + vdops.size(1) * (b_i - 1)];
         }
         vdops[j] = 0.0 - s;
@@ -19924,28 +19968,28 @@ void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<double, 2U> &ws,
                       const ::coder::array<double, 2U> &fs,
                       ::coder::array<double, 2U> &vdops, double result_data[],
-                      int result_size[2])
+                      coder::SizeType result_size[2])
 {
   double b_vdops;
   double c_vdops;
   double d;
-  int b_i;
-  int dim;
-  int i;
+  coder::SizeType b_i;
+  coder::SizeType dim;
+  coder::SizeType i;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int grad_div_size;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType grad_div_size;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -19975,8 +20019,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -19984,8 +20028,8 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -20018,25 +20062,25 @@ void wls_var_grad_div(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -20063,8 +20107,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -20127,18 +20171,18 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     }
   } else {
-    int grad_div_size;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType grad_div_size;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[9];
     //  Each component has its own weight, we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -20173,8 +20217,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -20182,8 +20226,8 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -20211,22 +20255,22 @@ void wls_var_grad_div(WlsObject *b_wls,
     //  Omit zeros in the diff operators
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp <= nDiff; iOp++) {
-      int offset;
+    for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+      coder::SizeType offset;
       //  Skip padded zeros in the differential operator
       offset = (grad_div_data[iOp] - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
         if (ws.size(0) == 0) {
-          for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         } else {
-          for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -20257,8 +20301,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k <= nDiff; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k <= nDiff; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -20334,20 +20378,20 @@ void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<double, 2U> &quad_pnts,
                       ::coder::array<double, 2U> &vdops)
 {
-  int b_i;
-  int dim;
-  int hess_size;
-  int i;
-  int j;
-  int nDiff;
-  int nDims;
-  int nOps;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType b_i;
+  coder::SizeType dim;
+  coder::SizeType hess_size;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType nOps;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[9];
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
@@ -20378,8 +20422,8 @@ void wls_var_grad_div(WlsObject *b_wls,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[b_dim]) *
@@ -20387,8 +20431,8 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     }
   } else {
-    for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[b_dim];
@@ -20421,18 +20465,18 @@ void wls_var_grad_div(WlsObject *b_wls,
     b_i--;
   }
   //  Summing up rows in the differential operator
-  for (int iOp{0}; iOp < nOps; iOp++) {
+  for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
     signed char i1;
     //  Skip padded zeros in the differential operator
     i1 = hess_data[iOp];
     if (i1 > 0) {
-      int offset;
+      coder::SizeType offset;
       offset = (i1 - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -20457,8 +20501,8 @@ void wls_var_grad_div(WlsObject *b_wls,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k < nOps; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k < nOps; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         vdops[k + vdops.size(1) * iRow] =
             vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -20525,23 +20569,23 @@ void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<double, 2U> &ws,
                       ::coder::array<double, 2U> &vdops)
 {
-  int dim;
+  coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
-    int b_i;
-    int grad_div_size;
-    int i;
-    int j;
-    int nDiff;
-    int nDims;
-    int nOps;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType b_i;
+    coder::SizeType grad_div_size;
+    coder::SizeType i;
+    coder::SizeType j;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType nOps;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char hess_data[9];
     //  All components share the same weight, we need to compute Hessian
     switch (b_wls->us.size(1)) {
@@ -20571,8 +20615,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     b_wls->us.set_size(stride, quad_pnts.size(1));
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[b_dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[b_dim]) *
@@ -20580,8 +20624,8 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     } else {
-      for (int b_dim{0}; b_dim <= nDims; b_dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType b_dim{0}; b_dim <= nDims; b_dim++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[b_dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[b_dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[b_dim];
@@ -20614,25 +20658,25 @@ void wls_var_grad_div(WlsObject *b_wls,
       b_i--;
     }
     //  Summing up rows in the differential operator
-    for (int iOp{0}; iOp < nOps; iOp++) {
+    for (coder::SizeType iOp{0}; iOp < nOps; iOp++) {
       signed char i1;
       //  Skip padded zeros in the differential operator
       i1 = hess_data[iOp];
       if (i1 > 0) {
-        int offset;
+        coder::SizeType offset;
         offset = (i1 - 1) * stride;
         //  Sum up monomials weighted by weights for each component
         i = b_wls->ncols - b_wls->interp0;
-        for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+        for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
           j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
           if ((ws.size(0) == 0) || (ws.size(1) == 0)) {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
             }
           } else {
-            for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+            for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                   b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                   ws[ws.size(1) * iPoint] *
@@ -20659,8 +20703,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k < nOps; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k < nOps; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -20728,19 +20772,19 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     }
   } else {
-    int grad_div_size;
-    int i;
-    int iWeight;
-    int j;
-    int lenWs;
-    int nDiff;
-    int nDims;
-    int npoints;
-    int nrows;
-    int nrows_vdops;
-    int stride;
-    int u0;
-    int u1;
+    coder::SizeType grad_div_size;
+    coder::SizeType i;
+    coder::SizeType iWeight;
+    coder::SizeType j;
+    coder::SizeType lenWs;
+    coder::SizeType nDiff;
+    coder::SizeType nDims;
+    coder::SizeType npoints;
+    coder::SizeType nrows;
+    coder::SizeType nrows_vdops;
+    coder::SizeType stride;
+    coder::SizeType u0;
+    coder::SizeType u1;
     signed char grad_div_data[9];
     //  Each component has its own weight, we need to compute all components
     switch (b_wls->us.size(1)) {
@@ -20776,7 +20820,7 @@ void wls_var_grad_div(WlsObject *b_wls,
     if (b_wls->interp0 != 0) {
       //  Coordinate system is centered at first node in interp0 mode
       for (dim = 0; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
                b_wls->origin.data[dim]) *
@@ -20785,7 +20829,7 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     } else {
       for (dim = 0; dim <= nDims; dim++) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->us[dim + b_wls->us.size(1) * iPoint] =
               quad_pnts[dim + quad_pnts.size(1) * iPoint] *
               b_wls->hs_inv.data[dim];
@@ -20813,22 +20857,22 @@ void wls_var_grad_div(WlsObject *b_wls,
     //  Omit zeros in the diff operators
     iWeight = 1;
     //  Loop through the operators
-    for (int iOp{0}; iOp <= nDiff; iOp++) {
-      int offset;
+    for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+      coder::SizeType offset;
       //  Skip padded zeros in the differential operator
       offset = (grad_div_data[iOp] - 1) * stride;
       //  Sum up monomials weighted by weights for each component
       i = b_wls->ncols - b_wls->interp0;
-      for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+      for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
         j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
         if (ws.size(0) == 0) {
-          for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
           }
         } else {
-          for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+          for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
                 b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
                 ws[(iWeight + ws.size(1) * iPoint) - 1] *
@@ -20851,7 +20895,7 @@ void wls_var_grad_div(WlsObject *b_wls,
     u0 = grad_div_size;
     vdops.set_size(nrows_vdops, u0);
     //  Transpose the operator for row-major
-    for (int b_i{0}; b_i < u1; b_i++) {
+    for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
       for (j = 0; j <= nDiff; j++) {
         vdops[j + vdops.size(1) * (b_i + b_wls->interp0)] =
             b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -20859,8 +20903,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     nrows = b_wls->nrows;
     if (b_wls->rweights.size(0) != 0) {
-      for (int k{0}; k <= nDiff; k++) {
-        for (int iRow{0}; iRow < nrows; iRow++) {
+      for (coder::SizeType k{0}; k <= nDiff; k++) {
+        for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
           vdops[k + vdops.size(1) * iRow] =
               vdops[k + vdops.size(1) * iRow] * b_wls->rweights[iRow];
         }
@@ -20873,7 +20917,7 @@ void wls_var_grad_div(WlsObject *b_wls,
         double s;
         //  Loop through the operators
         s = 0.0;
-        for (int b_i{2}; b_i <= i; b_i++) {
+        for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
           s += vdops[j + vdops.size(1) * (b_i - 1)];
         }
         vdops[j] = 0.0 - s;
@@ -20886,23 +20930,24 @@ void wls_var_grad_div(WlsObject *b_wls,
 //  wls_var_hess  Compute variational Hessian operators as weighted sum at
 void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
-                  const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                  const ::coder::array<double, 2U> &varargin_2,
+                  coder::SizeType varargin_3,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int hess_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType hess_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[6];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -20934,8 +20979,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -20943,8 +20988,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -20973,21 +21018,21 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (hess_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -21010,7 +21055,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = hess_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -21018,8 +21063,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -21032,7 +21077,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -21056,10 +21101,10 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
       iOp = 0;
-      for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+      for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           varargout_2[iFunc + varargout_2.size(1) * iOp] =
               varargout_2[iFunc + varargout_2.size(1) * iOp] +
               varargin_2[iFunc + varargin_2.size(1) * iRow] *
@@ -21082,20 +21127,20 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1,
                   ::coder::array<double, 2U> &varargout_2)
 {
-  int hess_size;
-  int iOp;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType hess_size;
+  coder::SizeType iOp;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[6];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21128,8 +21173,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21137,8 +21182,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21167,21 +21212,21 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   iWeight = 1;
   //  Loop through the operators
   for (iOp = 0; iOp <= nDiff; iOp++) {
-    int offset;
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (hess_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -21204,7 +21249,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = hess_size;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (i + b_wls->interp0)] =
           b_wls->vdops[i + b_wls->vdops.size(1) * j];
@@ -21212,8 +21257,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -21226,7 +21271,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int i{2}; i <= u1; i++) {
+      for (coder::SizeType i{2}; i <= u1; i++) {
         s += varargout_1[j + varargout_1.size(1) * (i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -21250,10 +21295,10 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
       iOp = 0;
-      for (int iDiff{0}; iDiff <= nDiff; iDiff++) {
-        for (int iRow{0}; iRow <= nrows; iRow++) {
+      for (coder::SizeType iDiff{0}; iDiff <= nDiff; iDiff++) {
+        for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
           varargout_2[iFunc + varargout_2.size(1) * iOp] =
               varargout_2[iFunc + varargout_2.size(1) * iOp] +
               varargin_2[iFunc + varargin_2.size(1) * iRow] *
@@ -21273,17 +21318,17 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int hess_size;
-  int i;
-  int j;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType hess_size;
+  coder::SizeType i;
+  coder::SizeType j;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[6];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21311,8 +21356,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21320,8 +21365,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21347,15 +21392,15 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (hess_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
             b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
             b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -21371,7 +21416,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = hess_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -21379,8 +21424,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -21393,7 +21438,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -21406,19 +21451,19 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                   const ::coder::array<double, 2U> &varargin_1,
                   ::coder::array<double, 2U> &varargout_1)
 {
-  int hess_size;
-  int i;
-  int iWeight;
-  int j;
-  int lenWs;
-  int nDiff;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType hess_size;
+  coder::SizeType i;
+  coder::SizeType iWeight;
+  coder::SizeType j;
+  coder::SizeType lenWs;
+  coder::SizeType nDiff;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char hess_data[6];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21451,8 +21496,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21460,8 +21505,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21489,22 +21534,22 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   //  Omit zeros in the diff operators
   iWeight = 1;
   //  Loop through the operators
-  for (int iOp{0}; iOp <= nDiff; iOp++) {
-    int offset;
+  for (coder::SizeType iOp{0}; iOp <= nDiff; iOp++) {
+    coder::SizeType offset;
     //  Skip padded zeros in the differential operator
     offset = (hess_data[iOp] - 1) * stride;
     //  Sum up monomials weighted by weights for each component
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] =
               b_wls->vdops[iMonomial + b_wls->vdops.size(1) * iOp] +
               varargin_1[(iWeight + varargin_1.size(1) * iPoint) - 1] *
@@ -21527,7 +21572,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = hess_size;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     for (j = 0; j <= nDiff; j++) {
       varargout_1[j + varargout_1.size(1) * (b_i + b_wls->interp0)] =
           b_wls->vdops[b_i + b_wls->vdops.size(1) * j];
@@ -21535,8 +21580,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int k{0}; k <= nDiff; k++) {
-      for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType k{0}; k <= nDiff; k++) {
+      for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
         varargout_1[k + varargout_1.size(1) * iRow] =
             varargout_1[k + varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
       }
@@ -21549,7 +21594,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       double s;
       //  Loop through the operators
       s = 0.0;
-      for (int b_i{2}; b_i <= i; b_i++) {
+      for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
         s += varargout_1[j + varargout_1.size(1) * (b_i - 1)];
       }
       varargout_1[j] = 0.0 - s;
@@ -21560,18 +21605,19 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 //  wls_var_lap  Compute variational Laplacian as weighted sum at quadrature
 void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  const ::coder::array<double, 2U> &varargin_1,
-                 const ::coder::array<double, 2U> &varargin_2, int varargin_3,
+                 const ::coder::array<double, 2U> &varargin_2,
+                 coder::SizeType varargin_3,
                  ::coder::array<double, 2U> &varargout_1,
                  ::coder::array<double, 2U> &varargout_2)
 {
-  int lap_size_idx_1;
-  int nDims;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType lap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char lap_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21596,8 +21642,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21605,8 +21651,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21632,23 +21678,23 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[u1] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (lap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint < varargin_3; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint < varargin_3; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -21666,12 +21712,12 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -21681,7 +21727,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -21704,8 +21750,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -21721,15 +21767,15 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  ::coder::array<double, 2U> &varargout_1,
                  ::coder::array<double, 2U> &varargout_2)
 {
-  int lap_size_idx_1;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int stride_idx_0_tmp_tmp;
-  int u0;
-  int u1;
+  coder::SizeType lap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType stride_idx_0_tmp_tmp;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char lap_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21755,8 +21801,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21764,8 +21810,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21791,23 +21837,23 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[u1] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (lap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     u1 = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < u1; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < u1; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -21825,12 +21871,12 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u1 = 1;
   varargout_1.set_size(nrows_vdops, u1);
   //  Transpose the operator for row-major
-  for (int i{0}; i < stride_idx_0_tmp_tmp; i++) {
+  for (coder::SizeType i{0}; i < stride_idx_0_tmp_tmp; i++) {
     varargout_1[varargout_1.size(1) * (i + b_wls->interp0)] = b_wls->vdops[i];
   }
   nrows = b_wls->nrows - 1;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -21840,7 +21886,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     u1 = b_wls->npoints;
-    for (int i{2}; i <= u1; i++) {
+    for (coder::SizeType i{2}; i <= u1; i++) {
       s += varargout_1[varargout_1.size(1) * (i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -21863,8 +21909,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     }
     //  Compute solution
     u1 = varargin_2.size(1);
-    for (int iFunc{0}; iFunc < u1; iFunc++) {
-      for (int iRow{0}; iRow <= nrows; iRow++) {
+    for (coder::SizeType iFunc{0}; iFunc < u1; iFunc++) {
+      for (coder::SizeType iRow{0}; iRow <= nrows; iRow++) {
         varargout_2[iFunc] =
             varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                      varargout_1[varargout_1.size(1) * iRow];
@@ -21877,15 +21923,15 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
 void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  ::coder::array<double, 2U> &varargout_1)
 {
-  int i;
-  int lap_size_idx_1;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType i;
+  coder::SizeType lap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char lap_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -21911,8 +21957,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -21920,8 +21966,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -21947,16 +21993,16 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (lap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+      coder::SizeType j;
       j = b_wls->jpvt[iMonomial] + b_wls->interp0;
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->vdops[iMonomial] =
             b_wls->vdops[iMonomial] +
             b_wls->V[(offset + iPoint) + b_wls->V.size(1) * (j - 1)];
@@ -21972,13 +22018,13 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -21988,7 +22034,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = 0.0 - s;
@@ -22000,15 +22046,15 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
                  const ::coder::array<double, 2U> &varargin_1,
                  ::coder::array<double, 2U> &varargout_1)
 {
-  int i;
-  int lap_size_idx_1;
-  int nDims;
-  int npoints;
-  int nrows;
-  int nrows_vdops;
-  int stride;
-  int u0;
-  int u1;
+  coder::SizeType i;
+  coder::SizeType lap_size_idx_1;
+  coder::SizeType nDims;
+  coder::SizeType npoints;
+  coder::SizeType nrows;
+  coder::SizeType nrows_vdops;
+  coder::SizeType stride;
+  coder::SizeType u0;
+  coder::SizeType u1;
   signed char lap_data[3];
   switch (b_wls->us.size(1)) {
   case 1:
@@ -22034,8 +22080,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   b_wls->us.set_size(stride, quad_pnts.size(1));
   if (b_wls->interp0 != 0) {
     //  Coordinate system is centered at first node in interp0 mode
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             (quad_pnts[dim + quad_pnts.size(1) * iPoint] -
              b_wls->origin.data[dim]) *
@@ -22043,8 +22089,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
       }
     }
   } else {
-    for (int dim{0}; dim <= nDims; dim++) {
-      for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+    for (coder::SizeType dim{0}; dim <= nDims; dim++) {
+      for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
         b_wls->us[dim + b_wls->us.size(1) * iPoint] =
             quad_pnts[dim + quad_pnts.size(1) * iPoint] *
             b_wls->hs_inv.data[dim];
@@ -22070,23 +22116,23 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     b_wls->vdops[i] = 0.0;
   }
   //  Omit zeros in the diff operators
-  for (int jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
-    int offset;
+  for (coder::SizeType jDiff{0}; jDiff < lap_size_idx_1; jDiff++) {
+    coder::SizeType offset;
     //  Loop through the operators
     offset = (lap_data[jDiff] - 1) * stride;
     //  Skip padded zeros in the differential operator
     i = b_wls->ncols - b_wls->interp0;
-    for (int iMonomial{0}; iMonomial < i; iMonomial++) {
-      int j;
+    for (coder::SizeType iMonomial{0}; iMonomial < i; iMonomial++) {
+      coder::SizeType j;
       j = (b_wls->jpvt[iMonomial] + b_wls->interp0) - 1;
       if ((varargin_1.size(0) == 0) || (varargin_1.size(1) == 0)) {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               b_wls->V[(offset + iPoint) + b_wls->V.size(1) * j];
         }
       } else {
-        for (int iPoint{0}; iPoint <= npoints; iPoint++) {
+        for (coder::SizeType iPoint{0}; iPoint <= npoints; iPoint++) {
           b_wls->vdops[iMonomial] =
               b_wls->vdops[iMonomial] +
               varargin_1[varargin_1.size(1) * iPoint] *
@@ -22104,13 +22150,13 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
   u0 = 1;
   varargout_1.set_size(nrows_vdops, u0);
   //  Transpose the operator for row-major
-  for (int b_i{0}; b_i < u1; b_i++) {
+  for (coder::SizeType b_i{0}; b_i < u1; b_i++) {
     varargout_1[varargout_1.size(1) * (b_i + b_wls->interp0)] =
         b_wls->vdops[b_i];
   }
   nrows = b_wls->nrows;
   if (b_wls->rweights.size(0) != 0) {
-    for (int iRow{0}; iRow < nrows; iRow++) {
+    for (coder::SizeType iRow{0}; iRow < nrows; iRow++) {
       varargout_1[varargout_1.size(1) * iRow] =
           varargout_1[varargout_1.size(1) * iRow] * b_wls->rweights[iRow];
     }
@@ -22120,7 +22166,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<double, 2U> &quad_pnts,
     //  In interp0 mode, we set the first entry based on partition of unity
     s = 0.0;
     i = b_wls->npoints;
-    for (int b_i{2}; b_i <= i; b_i++) {
+    for (coder::SizeType b_i{2}; b_i <= i; b_i++) {
       s += varargout_1[varargout_1.size(1) * (b_i - 1)];
     }
     varargout_1[0] = 0.0 - s;
