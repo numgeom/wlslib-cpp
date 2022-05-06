@@ -12,6 +12,8 @@
 
 #else
 
+#include <stdexcept>
+
 #ifndef M2C_SKIP_THREAD_ID
 #define M2C_PRINT_THREAD_ID 1
 #else

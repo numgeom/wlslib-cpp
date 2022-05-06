@@ -16,7 +16,7 @@ namespace coder {
 #ifdef M2C_SIZETYPE64
 typedef int64_T SizeType;
 #else
-typedef int SizeType;
+typedef int32_T SizeType;
 #endif // M2C_SIZETYPE64
 } // namespace coder
 #endif // CODER_ARRAY_SIZE_TYPE_DEFINED
@@ -27,34 +27,34 @@ typedef int SizeType;
 // Type Definitions
 namespace wls {
 struct WlsObject {
-  int npoints;
-  int degree;
-  int order;
-  int interp0;
+  int32_T npoints;
+  int32_T degree;
+  int32_T order;
+  int32_T interp0;
   boolean_T use_dag;
-  int stride;
-  ::coder::array<double, 2U> us;
-  ::coder::bounded_array<double, 3U, 2U> origin;
-  ::coder::array<double, 1U> rweights;
-  ::coder::bounded_array<double, 3U, 2U> hs_inv;
-  ::coder::array<unsigned char, 2U> dag;
-  ::coder::array<double, 2U> V;
-  ::coder::array<double, 2U> QR;
-  ::coder::array<double, 2U> vdops;
-  int nrows;
-  int ncols;
-  int rank;
+  int32_T stride;
+  ::coder::array<real_T, 2U> us;
+  ::coder::bounded_array<real_T, 3U, 2U> origin;
+  ::coder::array<real_T, 1U> rweights;
+  ::coder::bounded_array<real_T, 3U, 2U> hs_inv;
+  ::coder::array<uint8_T, 2U> dag;
+  ::coder::array<real_T, 2U> V;
+  ::coder::array<real_T, 2U> QR;
+  ::coder::array<real_T, 2U> vdops;
+  int32_T nrows;
+  int32_T ncols;
+  int32_T rank;
   boolean_T fullrank;
-  ::coder::array<int, 1U> jpvt;
-  ::coder::array<double, 1U> work;
+  ::coder::array<int32_T, 1U> jpvt;
+  ::coder::array<real_T, 1U> work;
   boolean_T rowmajor;
-  ::coder::array<double, 2U> QRt;
+  ::coder::array<real_T, 2U> QRt;
 };
 
 struct WlsWeight {
-  ::coder::array<char, 2U> name;
-  ::coder::array<double, 1U> params_shared;
-  ::coder::array<double, 2U> params_pointwise;
+  ::coder::array<char_T, 2U> name;
+  ::coder::array<real_T, 1U> params_shared;
+  ::coder::array<real_T, 2U> params_pointwise;
   ::coder::array<boolean_T, 1U> omit_rows;
 };
 
