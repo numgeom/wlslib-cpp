@@ -2,7 +2,7 @@
 //
 // wls_internal_types.h
 //
-// Code generation for function 'wls_init'
+// Code generation for function 'wls_func'
 //
 
 #ifndef WLS_INTERNAL_TYPES_H
@@ -27,7 +27,7 @@ typedef int32_T SizeType;
 // Type Definitions
 namespace wls {
 struct WlsObject {
-  int32_T npoints;
+  int32_T nstpnts;
   int32_T degree;
   int32_T order;
   int32_T interp0;
@@ -40,7 +40,8 @@ struct WlsObject {
   ::coder::array<uint8_T, 2U> dag;
   ::coder::array<real_T, 2U> V;
   ::coder::array<real_T, 2U> QR;
-  ::coder::array<real_T, 2U> vdops;
+  ::coder::array<real_T, 2U> rhs;
+  int32_T nevpnts;
   int32_T nrows;
   int32_T ncols;
   int32_T rank;
