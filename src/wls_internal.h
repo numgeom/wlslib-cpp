@@ -177,6 +177,38 @@ static inline void wls_var_bilap(WlsObject *b_wls,
                                  const ::coder::array<real_T, 2U> &varargin_1,
                                  ::coder::array<real_T, 2U> &varargout_1);
 
+static inline void wls_var_convdiff(WlsObject *b_wls,
+                                    const ::coder::array<real_T, 2U> &eval_pnts,
+                                    const ::coder::array<real_T, 2U> &ws_lap,
+                                    const ::coder::array<real_T, 2U> &ws_grad,
+                                    const ::coder::array<real_T, 2U> &fs,
+                                    coder::SizeType nevpnts,
+                                    ::coder::array<real_T, 2U> &vdops,
+                                    ::coder::array<real_T, 2U> &result);
+
+static inline void wls_var_convdiff(WlsObject *b_wls,
+                                    const ::coder::array<real_T, 2U> &eval_pnts,
+                                    const ::coder::array<real_T, 2U> &ws_lap,
+                                    const ::coder::array<real_T, 2U> &ws_grad,
+                                    const ::coder::array<real_T, 2U> &fs,
+                                    ::coder::array<real_T, 2U> &vdops,
+                                    ::coder::array<real_T, 2U> &result);
+
+static inline void wls_var_convdiff(WlsObject *b_wls,
+                                    const ::coder::array<real_T, 2U> &eval_pnts,
+                                    const ::coder::array<real_T, 2U> &ws_lap,
+                                    const ::coder::array<real_T, 2U> &ws_grad,
+                                    ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_convdiff(WlsObject *b_wls,
+                                    const ::coder::array<real_T, 2U> &eval_pnts,
+                                    ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_convdiff(WlsObject *b_wls,
+                                    const ::coder::array<real_T, 2U> &eval_pnts,
+                                    const ::coder::array<real_T, 2U> &ws_lap,
+                                    ::coder::array<real_T, 2U> &vdops);
+
 static inline void
 wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
              const ::coder::array<real_T, 2U> &ws,
