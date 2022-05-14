@@ -29,12 +29,7 @@ namespace wls {
 static inline void wls_eval_ops(const WlsObject *b_wls,
                                 const ::coder::array<int8_T, 2U> &vdops,
                                 const ::coder::array<real_T, 2U> &fs,
-                                ::coder::array<real_T, 2U> &result);
-
-static inline void wls_eval_ops(const WlsObject *b_wls,
-                                const ::coder::array<int8_T, 2U> &vdops,
-                                const ::coder::array<real_T, 2U> &fs,
-                                boolean_T isdiv,
+                                boolean_T isdiv, coder::SizeType nOps,
                                 ::coder::array<real_T, 2U> &result);
 
 static inline void
@@ -256,20 +251,20 @@ wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   const ::coder::array<real_T, 2U> &ws,
                   ::coder::array<real_T, 2U> &vdops);
 
-static inline void wls_var_div(WlsObject *b_wls,
-                               const ::coder::array<real_T, 2U> &eval_pnts,
-                               const ::coder::array<real_T, 2U> &varargin_1,
-                               const ::coder::array<real_T, 2U> &varargin_2,
-                               coder::SizeType varargin_3,
-                               ::coder::array<real_T, 2U> &varargout_1,
-                               ::coder::array<real_T, 2U> &varargout_2);
+static inline void
+wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
+            const ::coder::array<real_T, 2U> &varargin_1,
+            const ::coder::array<real_T, 2U> &varargin_2,
+            coder::SizeType varargin_3, ::coder::array<real_T, 2U> &varargout_1,
+            real_T varargout_2_data[], coder::SizeType varargout_2_size[1]);
 
 static inline void wls_var_div(WlsObject *b_wls,
                                const ::coder::array<real_T, 2U> &eval_pnts,
                                const ::coder::array<real_T, 2U> &varargin_1,
                                const ::coder::array<real_T, 2U> &varargin_2,
                                ::coder::array<real_T, 2U> &varargout_1,
-                               ::coder::array<real_T, 2U> &varargout_2);
+                               real_T varargout_2_data[],
+                               coder::SizeType varargout_2_size[1]);
 
 static inline void wls_var_div(WlsObject *b_wls,
                                const ::coder::array<real_T, 2U> &eval_pnts,

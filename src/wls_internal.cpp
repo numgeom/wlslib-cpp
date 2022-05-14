@@ -3630,45 +3630,22 @@ static real_T find_kth_shortest_dist(::coder::array<real_T, 1U> &arr,
 }
 
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const real_T us_data[], const coder::SizeType us_size[2],
-                       coder::SizeType degree, ::coder::array<real_T, 2U> &V)
-{
-  switch (us_size[1]) {
-  case 1: {
-    coder::SizeType i;
-    m2cAssert(us_size[1] == 1, "");
-    //  Handle input arguments
-    //  Number of row blocks
-    V.set_size(degree + 1, 1);
-    //  Compute rows corresponding to function values
-    V[0] = 1.0;
-    V[V.size(1)] = us_data[0];
-    i = degree + 1;
-    for (coder::SizeType ii{2}; ii <= i; ii++) {
-      V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
-    }
-    //  Add row blocks corresponding to kth derivatives
-  } break;
-  case 2:
-    gen_vander_2d(us_data, degree, V);
-    break;
-  default:
-    gen_vander_3d(us_data, degree, V);
-    break;
-  }
-}
-
-//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
 static void gen_vander(const ::coder::array<real_T, 2U> &us,
                        coder::SizeType npoints, coder::SizeType degree,
+                       const real_T hs_inv_data[],
+                       const coder::SizeType hs_inv_size[2],
                        ::coder::array<real_T, 2U> &V)
 {
   switch (us.size(1)) {
   case 1: {
+    real_T h_inv_;
+    real_T s;
+    coder::SizeType V_tmp;
     coder::SizeType b_npoints;
     coder::SizeType i;
     coder::SizeType i1;
-    coder::SizeType i2;
+    coder::SizeType r;
+    coder::SizeType stride;
     boolean_T b;
     boolean_T b1;
     b_npoints = npoints - 1;
@@ -3680,10 +3657,48 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
       m2cAssert(npoints <= us.size(0), "Input us is too small.");
     }
     m2cAssert(degree >= 0, "Degree must be nonnegative");
+    if (hs_inv_size[1] == 0) {
+      h_inv_ = 1.0;
+    } else {
+      h_inv_ = hs_inv_data[0];
+    }
+    stride = us.size(0);
     //  Number of row blocks
-    V.set_size(degree + 1, us.size(0));
+    V.set_size(degree + 1, us.size(0) << 2);
     //  Compute rows corresponding to function values
     if (degree != 0) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      V_tmp = us.size(1) * us.size(0);
+      i = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= V_tmp)) {
+          i = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          i1 = us.size(1) * us.size(0) - 1;
+          if (i > MAX_int32_T - us.size(1)) {
+            i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            i += us.size(1);
+            if (i > i1) {
+              i -= i1;
+            }
+          }
+        }
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[i];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
+    V_tmp = degree + 1;
+    for (coder::SizeType ii{2}; ii <= V_tmp; ii++) {
       b = true;
       b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
       i = us.size(1) * us.size(0);
@@ -3696,6 +3711,7 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
           b = false;
           i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
         } else {
+          coder::SizeType i2;
           i2 = us.size(1) * us.size(0) - 1;
           if (i1 > MAX_int32_T - us.size(1)) {
             i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
@@ -3706,50 +3722,49 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
             }
           }
         }
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[i1];
-      }
-    } else {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-    i = degree + 1;
-    for (coder::SizeType ii{2}; ii <= i; ii++) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      i1 = us.size(1) * us.size(0);
-      i2 = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= i1)) {
-          i2 = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          i2 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          coder::SizeType i3;
-          i3 = us.size(1) * us.size(0) - 1;
-          if (i2 > MAX_int32_T - us.size(1)) {
-            i2 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            i2 += us.size(1);
-            if (i2 > i3) {
-              i2 -= i3;
-            }
-          }
-        }
         V[iPnt + V.size(1) * (ii - 1)] =
-            V[iPnt + V.size(1) * (ii - 2)] * us[i2];
+            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
       }
     }
     //  Add row blocks corresponding to kth derivatives
+    r = us.size(0);
+    //      computing negative orders
+    for (coder::SizeType k{0}; k < 2; k++) {
+      for (coder::SizeType j{0}; j <= k; j++) {
+        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          V[(r + iPnt) + V.size(1) * j] = 0.0;
+        }
+      }
+      for (coder::SizeType j{k + 1}; j <= degree; j++) {
+        s = h_inv_ * static_cast<real_T>(j);
+        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          V_tmp = r + iPnt;
+          V[V_tmp + V.size(1) * j] =
+              V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
+        }
+      }
+      r += stride;
+    }
+    //      Calculate Biharmonic if order = -4
+    for (coder::SizeType j{0}; j < 4; j++) {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[(r + iPnt) + V.size(1) * j] = 0.0;
+      }
+    }
+    for (coder::SizeType j{2}; j <= degree; j++) {
+      s = h_inv_ * static_cast<real_T>(j);
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V_tmp = r + iPnt;
+        V[V_tmp + V.size(1) * j] =
+            V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
+      }
+    }
   } break;
   case 2:
-    gen_vander_2d(us, npoints, degree, V);
+    gen_vander_2d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
     break;
   default:
-    gen_vander_3d(us, npoints, degree, V);
+    gen_vander_3d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
     break;
   }
 }
@@ -3941,20 +3956,14 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
 static void gen_vander(const ::coder::array<real_T, 2U> &us,
                        coder::SizeType npoints, coder::SizeType degree,
-                       const real_T hs_inv_data[],
-                       const coder::SizeType hs_inv_size[2],
                        ::coder::array<real_T, 2U> &V)
 {
   switch (us.size(1)) {
   case 1: {
-    real_T h_inv_;
-    real_T s;
-    coder::SizeType V_tmp;
     coder::SizeType b_npoints;
     coder::SizeType i;
     coder::SizeType i1;
-    coder::SizeType r;
-    coder::SizeType stride;
+    coder::SizeType i2;
     boolean_T b;
     boolean_T b1;
     b_npoints = npoints - 1;
@@ -3966,48 +3975,10 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
       m2cAssert(npoints <= us.size(0), "Input us is too small.");
     }
     m2cAssert(degree >= 0, "Degree must be nonnegative");
-    if (hs_inv_size[1] == 0) {
-      h_inv_ = 1.0;
-    } else {
-      h_inv_ = hs_inv_data[0];
-    }
-    stride = us.size(0);
     //  Number of row blocks
-    V.set_size(degree + 1, us.size(0) << 2);
+    V.set_size(degree + 1, us.size(0));
     //  Compute rows corresponding to function values
     if (degree != 0) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      V_tmp = us.size(1) * us.size(0);
-      i = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= V_tmp)) {
-          i = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          i1 = us.size(1) * us.size(0) - 1;
-          if (i > MAX_int32_T - us.size(1)) {
-            i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            i += us.size(1);
-            if (i > i1) {
-              i -= i1;
-            }
-          }
-        }
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[i];
-      }
-    } else {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-    V_tmp = degree + 1;
-    for (coder::SizeType ii{2}; ii <= V_tmp; ii++) {
       b = true;
       b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
       i = us.size(1) * us.size(0);
@@ -4020,7 +3991,6 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
           b = false;
           i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
         } else {
-          coder::SizeType i2;
           i2 = us.size(1) * us.size(0) - 1;
           if (i1 > MAX_int32_T - us.size(1)) {
             i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
@@ -4031,49 +4001,50 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
             }
           }
         }
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[i1];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
+    i = degree + 1;
+    for (coder::SizeType ii{2}; ii <= i; ii++) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      i1 = us.size(1) * us.size(0);
+      i2 = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= i1)) {
+          i2 = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          i2 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          coder::SizeType i3;
+          i3 = us.size(1) * us.size(0) - 1;
+          if (i2 > MAX_int32_T - us.size(1)) {
+            i2 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            i2 += us.size(1);
+            if (i2 > i3) {
+              i2 -= i3;
+            }
+          }
+        }
         V[iPnt + V.size(1) * (ii - 1)] =
-            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
+            V[iPnt + V.size(1) * (ii - 2)] * us[i2];
       }
     }
     //  Add row blocks corresponding to kth derivatives
-    r = us.size(0);
-    //      computing negative orders
-    for (coder::SizeType k{0}; k < 2; k++) {
-      for (coder::SizeType j{0}; j <= k; j++) {
-        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-          V[(r + iPnt) + V.size(1) * j] = 0.0;
-        }
-      }
-      for (coder::SizeType j{k + 1}; j <= degree; j++) {
-        s = h_inv_ * static_cast<real_T>(j);
-        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-          V_tmp = r + iPnt;
-          V[V_tmp + V.size(1) * j] =
-              V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
-        }
-      }
-      r += stride;
-    }
-    //      Calculate Biharmonic if order = -4
-    for (coder::SizeType j{0}; j < 4; j++) {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[(r + iPnt) + V.size(1) * j] = 0.0;
-      }
-    }
-    for (coder::SizeType j{2}; j <= degree; j++) {
-      s = h_inv_ * static_cast<real_T>(j);
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V_tmp = r + iPnt;
-        V[V_tmp + V.size(1) * j] =
-            V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
-      }
-    }
   } break;
   case 2:
-    gen_vander_2d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
+    gen_vander_2d(us, npoints, degree, V);
     break;
   default:
-    gen_vander_3d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
+    gen_vander_3d(us, npoints, degree, V);
     break;
   }
 }
@@ -4276,6 +4247,35 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
     break;
   default:
     gen_vander_3d(us, npoints, degree, order, weights, V);
+    break;
+  }
+}
+
+//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
+static void gen_vander(const real_T us_data[], const coder::SizeType us_size[2],
+                       coder::SizeType degree, ::coder::array<real_T, 2U> &V)
+{
+  switch (us_size[1]) {
+  case 1: {
+    coder::SizeType i;
+    m2cAssert(us_size[1] == 1, "");
+    //  Handle input arguments
+    //  Number of row blocks
+    V.set_size(degree + 1, 1);
+    //  Compute rows corresponding to function values
+    V[0] = 1.0;
+    V[V.size(1)] = us_data[0];
+    i = degree + 1;
+    for (coder::SizeType ii{2}; ii <= i; ii++) {
+      V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+    }
+    //  Add row blocks corresponding to kth derivatives
+  } break;
+  case 2:
+    gen_vander_2d(us_data, degree, V);
+    break;
+  default:
+    gen_vander_3d(us_data, degree, V);
     break;
   }
 }
@@ -6734,44 +6734,6 @@ static void gen_vander_2d_dag(coder::SizeType degree,
   b_degree = 2 * dag.size(0) - 1;
   dag[b_degree % dag.size(0) * 2 + b_degree / dag.size(0)] =
       static_cast<uint8_T>(degree + 127);
-}
-
-//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
-                          ::coder::array<real_T, 2U> &V)
-{
-  coder::SizeType c;
-  coder::SizeType d;
-  coder::SizeType i;
-  V.set_size((degree + 1) * (degree + 2) * (degree + 3) / 6, 1);
-  //  compute 0th order generalized Vandermonde matrix
-  V[V.size(1) * 3] = us_data[2];
-  V[V.size(1) * 2] = us_data[1];
-  V[V.size(1)] = us_data[0];
-  V[0] = 1.0;
-  c = 4;
-  d = 4;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (coder::SizeType deg{2}; deg <= i; deg++) {
-    //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (coder::SizeType j{0}; j < deg; j++) {
-      V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
-      c++;
-    }
-    V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
-    c++;
-    for (coder::SizeType j{0}; j <= d - 2; j++) {
-      V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
-      c++;
-    }
-    d = (d + deg) + 1;
-  }
-  //  Compute the tri-degree terms if degree<0
-  m2cAssert(true, "");
 }
 
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
@@ -10507,1002 +10469,6 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
 static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
                           coder::SizeType npoints, coder::SizeType degree,
-                          const real_T hs_inv_data[],
-                          const coder::SizeType hs_inv_size[2],
-                          ::coder::array<real_T, 2U> &V)
-{
-  real_T b_u2v2_tmp;
-  real_T hs_inv_idx_0;
-  real_T hs_inv_idx_1;
-  real_T hs_inv_idx_2;
-  real_T scaleu;
-  real_T scalev;
-  real_T scalew;
-  real_T u2v2;
-  real_T u2v2_tmp;
-  real_T u2w2;
-  real_T u2w2_tmp;
-  real_T uu2;
-  real_T uu4;
-  real_T v2w2;
-  real_T v4;
-  real_T vv2;
-  real_T ww2;
-  real_T ww4;
-  coder::SizeType b_degree;
-  coder::SizeType balance;
-  coder::SizeType c;
-  coder::SizeType c_degree;
-  coder::SizeType cornerTriangle;
-  coder::SizeType counterBottomRow;
-  coder::SizeType d;
-  coder::SizeType deg;
-  coder::SizeType degg;
-  coder::SizeType excess;
-  coder::SizeType i;
-  coder::SizeType i1;
-  coder::SizeType maxLayers;
-  coder::SizeType nTermsInLayer;
-  coder::SizeType nTermsInPrevLayer;
-  coder::SizeType offset;
-  coder::SizeType partition;
-  coder::SizeType stride;
-  if (npoints == 0) {
-    npoints = us.size(0);
-  } else if (npoints > us.size(0)) {
-    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
-  }
-  if (hs_inv_size[1] == 0) {
-    hs_inv_idx_0 = 1.0;
-    hs_inv_idx_1 = 1.0;
-    hs_inv_idx_2 = 1.0;
-  } else {
-    hs_inv_idx_0 = hs_inv_data[0];
-    hs_inv_idx_1 = hs_inv_data[1];
-    hs_inv_idx_2 = hs_inv_data[2];
-  }
-  stride = us.size(0);
-  //  Allocate storage for V
-  if (degree >= 0) {
-    b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
-  } else {
-    b_degree = (1 - degree) * (1 - degree) * (1 - degree);
-  }
-  if (degree > 0) {
-    c_degree = 13;
-  } else {
-    c_degree = 19;
-  }
-  V.set_size(b_degree, us.size(0) * c_degree);
-  //  compute 0th order generalized Vandermonde matrix
-  if (degree != 0) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = 1.0;
-      V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-      V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
-    }
-  } else {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = 1.0;
-    }
-  }
-  c = 4;
-  d = 3;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 2; deg <= i; deg++) {
-    //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (coder::SizeType j{0}; j < deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * us[us.size(1) * iPnt];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt + V.size(1) * c] =
-          V[iPnt + V.size(1) * ((c - d) - 1)] * us[us.size(1) * iPnt + 1];
-    }
-    c++;
-    for (coder::SizeType j{0}; j < d; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
-                                  us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    d = (d + deg) + 1;
-  }
-  //  Compute the tri-degree terms if degree<0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      coder::SizeType gap;
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType k{0}; k < deg; k++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
-                                    us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = ((degree + degree) + p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      gap = (nTermsInPrevLayer + counterBottomRow) - 1;
-      i1 = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= i1; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[iPnt + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  m2cAssert(true, "");
-  //      compute higher order confluent Vandermonde matrix blocks
-  m2cAssert(
-      degree > 0,
-      "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
-  //  Compute order-1 CVM row blocks from order-0 GVM.
-  m2cAssert(degree != 0, "");
-  // compute derivatives with respect to u
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    c_degree = stride + iPnt;
-    V[c_degree] = 0.0;
-    V[c_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-    V[c_degree + V.size(1) * 2] = 0.0;
-    V[c_degree + V.size(1) * 3] = 0.0;
-  }
-  c = 4;
-  d = 3;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 2; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * c] =
-          V[iPnt + V.size(1) * (c - d)] * scaleu;
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(stride + iPnt) + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * scaleu;
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = stride + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  // tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = stride + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = stride + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  // compute derivatives with respect to v
-  offset = us.size(0) + us.size(0);
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    c_degree = offset + iPnt;
-    V[c_degree] = 0.0;
-    V[c_degree + V.size(1)] = 0.0;
-    V[c_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-    V[c_degree + V.size(1) * 3] = 0.0;
-  }
-  c = 4;
-  d = 4;
-  for (deg = 2; deg <= i; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * scalev;
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[iPnt + V.size(1) * (c - d)] * scalev;
-    }
-    c++;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    d = (d + deg) + 1;
-  }
-  // compute the tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d - 2;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer + 1;
-      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-      balance = nTermsInPrevLayer + counterBottomRow;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  // compute derivatives with respect to w
-  offset += us.size(0);
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    V[b_degree] = 0.0;
-    V[b_degree + V.size(1)] = 0.0;
-    V[b_degree + V.size(1) * 2] = 0.0;
-    V[b_degree + V.size(1) * 3] = V[iPnt] * hs_inv_idx_2;
-  }
-  c = 4;
-  d = 3;
-  for (deg = 2; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  // compute tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType k{0}; k < deg; k++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      c_degree = p + degree;
-      b_degree = ((c_degree << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = nTermsInPrevLayer + counterBottomRow;
-      degg = -degree;
-      for (coder::SizeType k{0}; k < degg; k++) {
-        b_degree = (c_degree - k) - 1;
-        if (b_degree < 0) {
-          b_degree = -b_degree;
-        }
-        partition = -degree - b_degree;
-        for (coder::SizeType j{0}; j <= partition; j++) {
-          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
-          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(iPnt + offset) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - balance)] * scalew;
-          }
-          c++;
-        }
-      }
-    }
-  }
-  //  compute du^2
-  offset = us.size(0) << 2;
-  uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    V[b_degree] = 0.0;
-    V[b_degree + V.size(1)] = 0.0;
-    V[b_degree + V.size(1) * 2] = 0.0;
-    V[b_degree + V.size(1) * 3] = 0.0;
-    V[b_degree + V.size(1) * 4] = uu2 * V[iPnt];
-    for (i = 0; i < 5; i++) {
-      V[b_degree + V.size(1) * (i + 5)] = 0.0;
-    }
-  }
-  c = 10;
-  d = 6;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 3; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  // compute tri degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  //  compute dv^2
-  offset += us.size(0);
-  vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    for (i1 = 0; i1 < 6; i1++) {
-      V[b_degree + V.size(1) * i1] = 0.0;
-    }
-    V[b_degree + V.size(1) * 6] = vv2 * V[iPnt];
-    V[b_degree + V.size(1) * 7] = 0.0;
-    V[b_degree + V.size(1) * 8] = 0.0;
-    V[b_degree + V.size(1) * 9] = 0.0;
-  }
-  c = 10;
-  d = 7;
-  for (deg = 3; deg <= i; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
-    }
-    c++;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    d = (d + deg) + 1;
-  }
-  // compute the tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d - 2;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer + 1;
-      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-      balance = nTermsInPrevLayer + counterBottomRow;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  //  compute dw^2
-  offset += us.size(0);
-  ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    for (i1 = 0; i1 < 9; i1++) {
-      V[b_degree + V.size(1) * i1] = 0.0;
-    }
-    V[b_degree + V.size(1) * 9] = ww2 * V[iPnt];
-  }
-  c = 10;
-  d = 6;
-  for (deg = 3; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
-              scalew;
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  // compute tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType k{0}; k < deg; k++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      c_degree = p + degree;
-      b_degree = ((c_degree << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = nTermsInPrevLayer + counterBottomRow;
-      degg = -degree;
-      for (coder::SizeType k{0}; k < degg; k++) {
-        b_degree = (c_degree - k) - 1;
-        if (b_degree < 0) {
-          b_degree = -b_degree;
-        }
-        partition = -degree - b_degree;
-        for (coder::SizeType j{0}; j <= partition; j++) {
-          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
-          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(iPnt + offset) + V.size(1) * c] =
-                V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
-          }
-          c++;
-        }
-      }
-    }
-  }
-  //  compute du^4
-  offset = us.size(0) * 7;
-  uu4 = 24.0 * std::pow(hs_inv_idx_0, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 20] = uu4 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 5; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-          scaleu * (scaleu - hs_inv_idx_0);
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scaleu * (scaleu - hs_inv_idx_0);
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  //  compute du^2dv^2
-  offset = us.size(0) << 3;
-  u2v2_tmp = 4.0 * (hs_inv_idx_0 * hs_inv_idx_0);
-  b_u2v2_tmp = hs_inv_idx_1 * hs_inv_idx_1;
-  u2v2 = u2v2_tmp * b_u2v2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 22] = u2v2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] * scaleu *
-          (scaleu - hs_inv_idx_0);
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scaleu * (scaleu - hs_inv_idx_0);
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  //  compute dv^4
-  offset = us.size(0) * 9;
-  v4 = 24.0 * std::pow(hs_inv_idx_1, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 24] = v4 * V[iPnt];
-  }
-  c = 34;
-  d = 15;
-  for (deg = 5; deg <= degree; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * (c + 2)] =
-            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scalev * (scalev - hs_inv_idx_1);
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 2)] =
-          V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] * scalev *
-          (scalev - hs_inv_idx_1);
-    }
-    c += 3;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * (((c - d) - deg) - 1)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute du^2*dw^2
-  offset += us.size(0);
-  u2w2_tmp = hs_inv_idx_2 * hs_inv_idx_2;
-  u2w2 = u2v2_tmp * u2w2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 29] = u2w2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + (stride << 2)) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute dv^2*dw^2
-  offset += us.size(0);
-  v2w2 = 4.0 * b_u2v2_tmp * u2w2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 31] = v2w2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 5 * stride) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute dw^4
-  offset += us.size(0);
-  ww4 = 24.0 * std::pow(hs_inv_idx_2, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 34] = ww4 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 6 * stride) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-}
-
-//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
-                          coder::SizeType npoints, coder::SizeType degree,
                           coder::SizeType order,
                           const ::coder::array<real_T, 1U> &weights,
                           ::coder::array<real_T, 2U> &V)
@@ -15021,6 +13987,1040 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
   }
 }
 
+//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
+static void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
+                          ::coder::array<real_T, 2U> &V)
+{
+  coder::SizeType c;
+  coder::SizeType d;
+  coder::SizeType i;
+  V.set_size((degree + 1) * (degree + 2) * (degree + 3) / 6, 1);
+  //  compute 0th order generalized Vandermonde matrix
+  V[V.size(1) * 3] = us_data[2];
+  V[V.size(1) * 2] = us_data[1];
+  V[V.size(1)] = us_data[0];
+  V[0] = 1.0;
+  c = 4;
+  d = 4;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (coder::SizeType deg{2}; deg <= i; deg++) {
+    //  Within each level, use convention of Pascal triangle with x^deg at peak
+    for (coder::SizeType j{0}; j < deg; j++) {
+      V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
+      c++;
+    }
+    V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
+    c++;
+    for (coder::SizeType j{0}; j <= d - 2; j++) {
+      V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
+      c++;
+    }
+    d = (d + deg) + 1;
+  }
+  //  Compute the tri-degree terms if degree<0
+  m2cAssert(true, "");
+}
+
+//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
+static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          const real_T hs_inv_data[],
+                          const coder::SizeType hs_inv_size[2],
+                          ::coder::array<real_T, 2U> &V)
+{
+  real_T b_u2v2_tmp;
+  real_T hs_inv_idx_0;
+  real_T hs_inv_idx_1;
+  real_T hs_inv_idx_2;
+  real_T scaleu;
+  real_T scalev;
+  real_T scalew;
+  real_T u2v2;
+  real_T u2v2_tmp;
+  real_T u2w2;
+  real_T u2w2_tmp;
+  real_T uu2;
+  real_T uu4;
+  real_T v2w2;
+  real_T v4;
+  real_T vv2;
+  real_T ww2;
+  real_T ww4;
+  coder::SizeType b_degree;
+  coder::SizeType balance;
+  coder::SizeType c;
+  coder::SizeType c_degree;
+  coder::SizeType cornerTriangle;
+  coder::SizeType counterBottomRow;
+  coder::SizeType d;
+  coder::SizeType deg;
+  coder::SizeType degg;
+  coder::SizeType excess;
+  coder::SizeType i;
+  coder::SizeType i1;
+  coder::SizeType maxLayers;
+  coder::SizeType nTermsInLayer;
+  coder::SizeType nTermsInPrevLayer;
+  coder::SizeType offset;
+  coder::SizeType partition;
+  coder::SizeType stride;
+  if (npoints == 0) {
+    npoints = us.size(0);
+  } else if (npoints > us.size(0)) {
+    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
+  }
+  if (hs_inv_size[1] == 0) {
+    hs_inv_idx_0 = 1.0;
+    hs_inv_idx_1 = 1.0;
+    hs_inv_idx_2 = 1.0;
+  } else {
+    hs_inv_idx_0 = hs_inv_data[0];
+    hs_inv_idx_1 = hs_inv_data[1];
+    hs_inv_idx_2 = hs_inv_data[2];
+  }
+  stride = us.size(0);
+  //  Allocate storage for V
+  if (degree >= 0) {
+    b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
+  } else {
+    b_degree = (1 - degree) * (1 - degree) * (1 - degree);
+  }
+  if (degree > 0) {
+    c_degree = 13;
+  } else {
+    c_degree = 19;
+  }
+  V.set_size(b_degree, us.size(0) * c_degree);
+  //  compute 0th order generalized Vandermonde matrix
+  if (degree != 0) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = 1.0;
+      V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
+      V[iPnt + V.size(1) * 3] = us[us.size(1) * iPnt + 2];
+    }
+  } else {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = 1.0;
+    }
+  }
+  c = 4;
+  d = 3;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 2; deg <= i; deg++) {
+    //  Within each level, use convention of Pascal triangle with x^deg at peak
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * us[us.size(1) * iPnt];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt + V.size(1) * c] =
+          V[iPnt + V.size(1) * ((c - d) - 1)] * us[us.size(1) * iPnt + 1];
+    }
+    c++;
+    for (coder::SizeType j{0}; j < d; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (((c - d) - deg) - 1)] *
+                                  us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    d = (d + deg) + 1;
+  }
+  //  Compute the tri-degree terms if degree<0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      coder::SizeType gap;
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] = V[iPnt + V.size(1) * (c - nTermsInLayer)] *
+                                    us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = ((degree + degree) + p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      gap = (nTermsInPrevLayer + counterBottomRow) - 1;
+      i1 = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= i1; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[iPnt + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  m2cAssert(true, "");
+  //      compute higher order confluent Vandermonde matrix blocks
+  m2cAssert(
+      degree > 0,
+      "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
+  //  Compute order-1 CVM row blocks from order-0 GVM.
+  m2cAssert(degree != 0, "");
+  // compute derivatives with respect to u
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    c_degree = stride + iPnt;
+    V[c_degree] = 0.0;
+    V[c_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+    V[c_degree + V.size(1) * 2] = 0.0;
+    V[c_degree + V.size(1) * 3] = 0.0;
+  }
+  c = 4;
+  d = 3;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 2; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * c] =
+          V[iPnt + V.size(1) * (c - d)] * scaleu;
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(stride + iPnt) + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * scaleu;
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = stride + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  // tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = stride + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = stride + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  // compute derivatives with respect to v
+  offset = us.size(0) + us.size(0);
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    c_degree = offset + iPnt;
+    V[c_degree] = 0.0;
+    V[c_degree + V.size(1)] = 0.0;
+    V[c_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+    V[c_degree + V.size(1) * 3] = 0.0;
+  }
+  c = 4;
+  d = 4;
+  for (deg = 2; deg <= i; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * scalev;
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[iPnt + V.size(1) * (c - d)] * scalev;
+    }
+    c++;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    d = (d + deg) + 1;
+  }
+  // compute the tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d - 2;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer + 1;
+      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+      balance = nTermsInPrevLayer + counterBottomRow;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  // compute derivatives with respect to w
+  offset += us.size(0);
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    V[b_degree] = 0.0;
+    V[b_degree + V.size(1)] = 0.0;
+    V[b_degree + V.size(1) * 2] = 0.0;
+    V[b_degree + V.size(1) * 3] = V[iPnt] * hs_inv_idx_2;
+  }
+  c = 4;
+  d = 3;
+  for (deg = 2; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  // compute tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      c_degree = p + degree;
+      b_degree = ((c_degree << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = nTermsInPrevLayer + counterBottomRow;
+      degg = -degree;
+      for (coder::SizeType k{0}; k < degg; k++) {
+        b_degree = (c_degree - k) - 1;
+        if (b_degree < 0) {
+          b_degree = -b_degree;
+        }
+        partition = -degree - b_degree;
+        for (coder::SizeType j{0}; j <= partition; j++) {
+          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(iPnt + offset) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - balance)] * scalew;
+          }
+          c++;
+        }
+      }
+    }
+  }
+  //  compute du^2
+  offset = us.size(0) << 2;
+  uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    V[b_degree] = 0.0;
+    V[b_degree + V.size(1)] = 0.0;
+    V[b_degree + V.size(1) * 2] = 0.0;
+    V[b_degree + V.size(1) * 3] = 0.0;
+    V[b_degree + V.size(1) * 4] = uu2 * V[iPnt];
+    for (i = 0; i < 5; i++) {
+      V[b_degree + V.size(1) * (i + 5)] = 0.0;
+    }
+  }
+  c = 10;
+  d = 6;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 3; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  // compute tri degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  //  compute dv^2
+  offset += us.size(0);
+  vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    for (i1 = 0; i1 < 6; i1++) {
+      V[b_degree + V.size(1) * i1] = 0.0;
+    }
+    V[b_degree + V.size(1) * 6] = vv2 * V[iPnt];
+    V[b_degree + V.size(1) * 7] = 0.0;
+    V[b_degree + V.size(1) * 8] = 0.0;
+    V[b_degree + V.size(1) * 9] = 0.0;
+  }
+  c = 10;
+  d = 7;
+  for (deg = 3; deg <= i; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
+    }
+    c++;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    d = (d + deg) + 1;
+  }
+  // compute the tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d - 2;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer + 1;
+      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+      balance = nTermsInPrevLayer + counterBottomRow;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  //  compute dw^2
+  offset += us.size(0);
+  ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    for (i1 = 0; i1 < 9; i1++) {
+      V[b_degree + V.size(1) * i1] = 0.0;
+    }
+    V[b_degree + V.size(1) * 9] = ww2 * V[iPnt];
+  }
+  c = 10;
+  d = 6;
+  for (deg = 3; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
+              scalew;
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  // compute tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      c_degree = p + degree;
+      b_degree = ((c_degree << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = nTermsInPrevLayer + counterBottomRow;
+      degg = -degree;
+      for (coder::SizeType k{0}; k < degg; k++) {
+        b_degree = (c_degree - k) - 1;
+        if (b_degree < 0) {
+          b_degree = -b_degree;
+        }
+        partition = -degree - b_degree;
+        for (coder::SizeType j{0}; j <= partition; j++) {
+          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(iPnt + offset) + V.size(1) * c] =
+                V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
+          }
+          c++;
+        }
+      }
+    }
+  }
+  //  compute du^4
+  offset = us.size(0) * 7;
+  uu4 = 24.0 * std::pow(hs_inv_idx_0, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 20] = uu4 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 5; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+          scaleu * (scaleu - hs_inv_idx_0);
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scaleu * (scaleu - hs_inv_idx_0);
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  //  compute du^2dv^2
+  offset = us.size(0) << 3;
+  u2v2_tmp = 4.0 * (hs_inv_idx_0 * hs_inv_idx_0);
+  b_u2v2_tmp = hs_inv_idx_1 * hs_inv_idx_1;
+  u2v2 = u2v2_tmp * b_u2v2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 22] = u2v2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] * scaleu *
+          (scaleu - hs_inv_idx_0);
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scaleu * (scaleu - hs_inv_idx_0);
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  //  compute dv^4
+  offset = us.size(0) * 9;
+  v4 = 24.0 * std::pow(hs_inv_idx_1, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 24] = v4 * V[iPnt];
+  }
+  c = 34;
+  d = 15;
+  for (deg = 5; deg <= degree; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * (c + 2)] =
+            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scalev * (scalev - hs_inv_idx_1);
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 2)] =
+          V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] * scalev *
+          (scalev - hs_inv_idx_1);
+    }
+    c += 3;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * (((c - d) - deg) - 1)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute du^2*dw^2
+  offset += us.size(0);
+  u2w2_tmp = hs_inv_idx_2 * hs_inv_idx_2;
+  u2w2 = u2v2_tmp * u2w2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 29] = u2w2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + (stride << 2)) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute dv^2*dw^2
+  offset += us.size(0);
+  v2w2 = 4.0 * b_u2v2_tmp * u2w2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 31] = v2w2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 5 * stride) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute dw^4
+  offset += us.size(0);
+  ww4 = 24.0 * std::pow(hs_inv_idx_2, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 34] = ww4 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 6 * stride) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+}
+
 //  gen_vander_3d_dag  Build a DAG for Vandermonde matrix in 3D.
 static void gen_vander_3d_dag(coder::SizeType degree,
                               ::coder::array<uint8_T, 2U> &dag)
@@ -15276,6 +15276,120 @@ static void rrqr_rtsolve(const ::coder::array<real_T, 2U> &QR,
 //  wls_buhmann_weights  Weights based on Buhmann's radial basis function
 static void wls_buhmann_weights(const ::coder::array<real_T, 2U> &us,
                                 coder::SizeType npoints, coder::SizeType degree,
+                                ::coder::array<real_T, 1U> &ws)
+{
+  real_T d;
+  real_T dist_k;
+  real_T r;
+  real_T r1;
+  real_T r2;
+  real_T rho;
+  real_T sigma;
+  coder::SizeType abs_degree;
+  coder::SizeType i;
+  if (degree == 0) {
+    degree = 2;
+  }
+  if (degree < 0) {
+    abs_degree = 1 - degree;
+  } else {
+    abs_degree = degree + 1;
+  }
+  //  Assign default rho
+  if (abs_degree - 1 >= 9) {
+    sigma = 1.2;
+  } else {
+    sigma = dv1[abs_degree - 2];
+  }
+  if (ws.size(0) == 0) {
+    ws.set_size(npoints);
+  } else {
+    m2cAssert(ws.size(0) >= npoints,
+              "length of ws cannot be smaller than npoints");
+  }
+  //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
+  if (degree >= 0) {
+    //  Compute 2-norm
+    i = us.size(1);
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
+      d = us[us.size(1) * b_i];
+      r2 = d * d;
+      for (coder::SizeType j{2}; j <= i; j++) {
+        d = us[(j + us.size(1) * b_i) - 1];
+        r2 += d * d;
+      }
+      ws[b_i] = std::sqrt(r2);
+    }
+  } else {
+    //  Compute inf-norm for tensor-product
+    i = us.size(1);
+    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
+      r = std::abs(us[us.size(1) * b_i]);
+      for (coder::SizeType j{2}; j <= i; j++) {
+        r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+        if (r1 > r) {
+          r = r1;
+        }
+      }
+      ws[b_i] = r;
+    }
+  }
+  if (us.size(1) == 1) {
+    i = abs_degree;
+  } else if (us.size(1) == 2) {
+    if (degree < 0) {
+      i = abs_degree * abs_degree;
+    } else {
+      i = (abs_degree + 1) * abs_degree / 2;
+    }
+  } else if (degree < 0) {
+    i = abs_degree * abs_degree * abs_degree;
+  } else {
+    i = (abs_degree + 2) * (abs_degree + 1) * abs_degree / 6;
+  }
+  dist_k = find_kth_shortest_dist(ws, (i * 3 + 1) / 2, 1, npoints);
+  rho = sigma * dist_k;
+  for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
+    if (degree > 0) {
+      //  Compute 2-norm
+      d = us[us.size(1) * b_i];
+      r2 = d * d;
+      i = us.size(1);
+      for (coder::SizeType j{2}; j <= i; j++) {
+        d = us[(j + us.size(1) * b_i) - 1];
+        r2 += d * d;
+      }
+      r = std::sqrt(r2);
+    } else {
+      //  Compute inf-norm for tensor-product
+      r = std::abs(us[us.size(1) * b_i]);
+      i = us.size(1);
+      for (coder::SizeType j{2}; j <= i; j++) {
+        r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
+        if (r1 > r) {
+          r = r1;
+        }
+      }
+    }
+    if (r > rho) {
+      ws[b_i] = 0.0;
+    } else {
+      real_T r_sqrt;
+      r /= rho;
+      r_sqrt = std::sqrt(r);
+      ws[b_i] = r * r *
+                    (r * r_sqrt *
+                         (r_sqrt * (r_sqrt * 112.0 / 45.0 + -7.0) +
+                          5.333333333333333) +
+                     -0.93333333333333335) +
+                0.1111111111111111;
+    }
+  }
+}
+
+//  wls_buhmann_weights  Weights based on Buhmann's radial basis function
+static void wls_buhmann_weights(const ::coder::array<real_T, 2U> &us,
+                                coder::SizeType npoints, coder::SizeType degree,
                                 const ::coder::array<real_T, 1U> &params_sh,
                                 const ::coder::array<real_T, 2U> &params_pw,
                                 ::coder::array<real_T, 1U> &ws)
@@ -15436,120 +15550,6 @@ static void wls_buhmann_weights(const ::coder::array<real_T, 2U> &us,
                          0.1111111111111111);
         }
       }
-    }
-  }
-}
-
-//  wls_buhmann_weights  Weights based on Buhmann's radial basis function
-static void wls_buhmann_weights(const ::coder::array<real_T, 2U> &us,
-                                coder::SizeType npoints, coder::SizeType degree,
-                                ::coder::array<real_T, 1U> &ws)
-{
-  real_T d;
-  real_T dist_k;
-  real_T r;
-  real_T r1;
-  real_T r2;
-  real_T rho;
-  real_T sigma;
-  coder::SizeType abs_degree;
-  coder::SizeType i;
-  if (degree == 0) {
-    degree = 2;
-  }
-  if (degree < 0) {
-    abs_degree = 1 - degree;
-  } else {
-    abs_degree = degree + 1;
-  }
-  //  Assign default rho
-  if (abs_degree - 1 >= 9) {
-    sigma = 1.2;
-  } else {
-    sigma = dv1[abs_degree - 2];
-  }
-  if (ws.size(0) == 0) {
-    ws.set_size(npoints);
-  } else {
-    m2cAssert(ws.size(0) >= npoints,
-              "length of ws cannot be smaller than npoints");
-  }
-  //  Compute rho to be sigma times the kth distance for k=ceil(1.5*ncoff)
-  if (degree >= 0) {
-    //  Compute 2-norm
-    i = us.size(1);
-    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
-      d = us[us.size(1) * b_i];
-      r2 = d * d;
-      for (coder::SizeType j{2}; j <= i; j++) {
-        d = us[(j + us.size(1) * b_i) - 1];
-        r2 += d * d;
-      }
-      ws[b_i] = std::sqrt(r2);
-    }
-  } else {
-    //  Compute inf-norm for tensor-product
-    i = us.size(1);
-    for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
-      r = std::abs(us[us.size(1) * b_i]);
-      for (coder::SizeType j{2}; j <= i; j++) {
-        r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-        if (r1 > r) {
-          r = r1;
-        }
-      }
-      ws[b_i] = r;
-    }
-  }
-  if (us.size(1) == 1) {
-    i = abs_degree;
-  } else if (us.size(1) == 2) {
-    if (degree < 0) {
-      i = abs_degree * abs_degree;
-    } else {
-      i = (abs_degree + 1) * abs_degree / 2;
-    }
-  } else if (degree < 0) {
-    i = abs_degree * abs_degree * abs_degree;
-  } else {
-    i = (abs_degree + 2) * (abs_degree + 1) * abs_degree / 6;
-  }
-  dist_k = find_kth_shortest_dist(ws, (i * 3 + 1) / 2, 1, npoints);
-  rho = sigma * dist_k;
-  for (coder::SizeType b_i{0}; b_i < npoints; b_i++) {
-    if (degree > 0) {
-      //  Compute 2-norm
-      d = us[us.size(1) * b_i];
-      r2 = d * d;
-      i = us.size(1);
-      for (coder::SizeType j{2}; j <= i; j++) {
-        d = us[(j + us.size(1) * b_i) - 1];
-        r2 += d * d;
-      }
-      r = std::sqrt(r2);
-    } else {
-      //  Compute inf-norm for tensor-product
-      r = std::abs(us[us.size(1) * b_i]);
-      i = us.size(1);
-      for (coder::SizeType j{2}; j <= i; j++) {
-        r1 = std::abs(us[(j + us.size(1) * b_i) - 1]);
-        if (r1 > r) {
-          r = r1;
-        }
-      }
-    }
-    if (r > rho) {
-      ws[b_i] = 0.0;
-    } else {
-      real_T r_sqrt;
-      r /= rho;
-      r_sqrt = std::sqrt(r);
-      ws[b_i] = r * r *
-                    (r * r_sqrt *
-                         (r_sqrt * (r_sqrt * 112.0 / 45.0 + -7.0) +
-                          5.333333333333333) +
-                     -0.93333333333333335) +
-                0.1111111111111111;
     }
   }
 }
@@ -15948,18 +15948,22 @@ static void wls_resize(WlsObject *b_wls, coder::SizeType dim,
 // wls_eval_ops - Evaluate the operator with given function values
 void wls_eval_ops(const WlsObject *b_wls,
                   const ::coder::array<int8_T, 2U> &vdops,
-                  const ::coder::array<real_T, 2U> &fs,
-                  ::coder::array<real_T, 2U> &result)
+                  const ::coder::array<real_T, 2U> &fs, boolean_T isdiv,
+                  coder::SizeType nOps, ::coder::array<real_T, 2U> &result)
 {
-  coder::SizeType nOps;
-  nOps = vdops.size(1);
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
+  coder::SizeType nrows;
+  m2cAssert(nOps == vdops.size(1), "Logic error.");
+  if (isdiv) {
+    nrows = nOps / b_wls->us.size(1);
   } else {
+    nrows = nOps;
+  }
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  if (!isdiv) {
     coder::SizeType i;
     coder::SizeType loop_ub;
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
+    result.set_size(nrows, fs.size(1));
+    loop_ub = fs.size(1) * nrows;
     for (i = 0; i < loop_ub; i++) {
       result[i] = 0.0;
     }
@@ -15984,33 +15988,18 @@ void wls_eval_ops(const WlsObject *b_wls,
         }
       }
     }
-  }
-}
-
-// wls_eval_ops - Evaluate the operator with given function values
-void wls_eval_ops(const WlsObject *b_wls,
-                  const ::coder::array<int8_T, 2U> &vdops,
-                  const ::coder::array<real_T, 2U> &fs, boolean_T isdiv,
-                  ::coder::array<real_T, 2U> &result)
-{
-  coder::SizeType nOps;
-  nOps = vdops.size(1) - 1;
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else if (isdiv) {
+  } else {
     coder::SizeType i;
     coder::SizeType iFunc;
     coder::SizeType iOp;
-    coder::SizeType loop_ub;
-    loop_ub = vdops.size(1) / b_wls->us.size(1);
-    result.set_size(loop_ub, 1);
-    for (i = 0; i < loop_ub; i++) {
+    result.set_size(nrows, 1);
+    for (i = 0; i < nrows; i++) {
       result[i] = 0.0;
     }
     //  Compute solution
     iFunc = 1;
     iOp = 0;
-    for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
+    for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
       i = b_wls->nrows;
       for (coder::SizeType iRow{0}; iRow < i; iRow++) {
         result[iOp % result.size(0) + iOp / result.size(0)] =
@@ -16031,35 +16020,6 @@ void wls_eval_ops(const WlsObject *b_wls,
         iFunc++;
       }
     }
-  } else {
-    coder::SizeType i;
-    coder::SizeType loop_ub;
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      coder::SizeType iOp;
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
-        loop_ub = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < loop_ub; iRow++) {
-          result[iFunc + result.size(1) * iOp] = static_cast<int8_T>(
-              (result[iFunc + result.size(1) * iOp]) +
-              static_cast<int8_T>(std::round(
-                  fs[iFunc + fs.size(1) * iRow] *
-                  static_cast<real_T>(vdops[iDiff + vdops.size(1) * iRow]))));
-        }
-        if (iOp + 1 == result.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
-      }
-    }
   }
 }
 
@@ -16075,7 +16035,6 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType j;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nrows;
   coder::SizeType u0;
@@ -16181,33 +16140,30 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = vdops.size(1);
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else {
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      coder::SizeType iOp;
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        i1 = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-          result[iFunc + result.size(1) * iOp] =
-              result[iFunc + result.size(1) * iOp] +
-              fs[iFunc + fs.size(1) * iRow] *
-                  vdops[iDiff + vdops.size(1) * iRow];
-        }
-        if (iOp + 1 == result.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  u0 = eval_pnts.size(0);
+  m2cAssert(vdops.size(1) == eval_pnts.size(0), "Logic error.");
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  result.set_size(eval_pnts.size(0), fs.size(1));
+  loop_ub = fs.size(1) * eval_pnts.size(0);
+  for (i = 0; i < loop_ub; i++) {
+    result[i] = 0.0;
+  }
+  //  Compute solution
+  i = fs.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    coder::SizeType iOp;
+    iOp = 0;
+    for (coder::SizeType iDiff{0}; iDiff < u0; iDiff++) {
+      i1 = b_wls->nrows;
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        result[iFunc + result.size(1) * iOp] =
+            result[iFunc + result.size(1) * iOp] +
+            fs[iFunc + fs.size(1) * iRow] * vdops[iDiff + vdops.size(1) * iRow];
+      }
+      if (iOp + 1 == result.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -16224,7 +16180,6 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType j;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -16329,33 +16284,30 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = vdops.size(1);
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else {
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      coder::SizeType iOp;
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        i1 = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-          result[iFunc + result.size(1) * iOp] =
-              result[iFunc + result.size(1) * iOp] +
-              fs[iFunc + fs.size(1) * iRow] *
-                  vdops[iDiff + vdops.size(1) * iRow];
-        }
-        if (iOp + 1 == result.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  u0 = eval_pnts.size(0);
+  m2cAssert(vdops.size(1) == eval_pnts.size(0), "Logic error.");
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  result.set_size(eval_pnts.size(0), fs.size(1));
+  loop_ub = fs.size(1) * eval_pnts.size(0);
+  for (i = 0; i < loop_ub; i++) {
+    result[i] = 0.0;
+  }
+  //  Compute solution
+  i = fs.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    coder::SizeType iOp;
+    iOp = 0;
+    for (coder::SizeType iDiff{0}; iDiff < u0; iDiff++) {
+      i1 = b_wls->nrows;
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        result[iFunc + result.size(1) * iOp] =
+            result[iFunc + result.size(1) * iOp] +
+            fs[iFunc + fs.size(1) * iRow] * vdops[iDiff + vdops.size(1) * iRow];
+      }
+      if (iOp + 1 == result.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -21865,23 +21817,21 @@ void wls_var_bilap(WlsObject *b_wls,
     varargout_1[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
@@ -22062,23 +22012,21 @@ void wls_var_bilap(WlsObject *b_wls,
     varargout_1[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
@@ -22617,22 +22565,19 @@ void wls_var_convdiff(WlsObject *b_wls,
     vdops[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else {
-    result.set_size(1, fs.size(1));
-    u0 = fs.size(1);
-    for (i = 0; i < u0; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  result.set_size(1, fs.size(1));
+  u0 = fs.size(1);
+  for (i = 0; i < u0; i++) {
+    result[i] = 0.0;
+  }
+  //  Compute solution
+  i = fs.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     lap_size_idx_1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
-        result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
-                                            vdops[vdops.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
+      result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
+                                          vdops[vdops.size(1) * iRow];
     }
   }
 }
@@ -22844,22 +22789,19 @@ void wls_var_convdiff(WlsObject *b_wls,
     vdops[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else {
-    result.set_size(1, fs.size(1));
-    u0 = fs.size(1);
-    for (i = 0; i < u0; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  result.set_size(1, fs.size(1));
+  u0 = fs.size(1);
+  for (i = 0; i < u0; i++) {
+    result[i] = 0.0;
+  }
+  //  Compute solution
+  i = fs.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     lap_size_idx_1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
-        result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
-                                            vdops[vdops.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
+      result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
+                                          vdops[vdops.size(1) * iRow];
     }
   }
 }
@@ -26473,17 +26415,17 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  const ::coder::array<real_T, 2U> &varargin_2,
                  coder::SizeType varargin_3,
                  ::coder::array<real_T, 2U> &varargout_1,
-                 ::coder::array<real_T, 2U> &varargout_2)
+                 real_T varargout_2_data[], coder::SizeType varargout_2_size[1])
 {
   coder::SizeType grad_size;
   coder::SizeType i;
+  coder::SizeType iFunc;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -26600,9 +26542,9 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (grad_size = 0; grad_size < u0; grad_size++) {
-        b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * grad_size];
+      for (coder::SizeType i1{0}; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -26642,37 +26584,33 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    coder::SizeType iFunc;
-    u0 = varargout_1.size(1) / b_wls->us.size(1);
-    varargout_2.set_size(u0, 1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
+  m2cAssert(grad_size == varargout_1.size(1), "Logic error.");
+  nrows = grad_size / b_wls->us.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2_size[0] = nrows;
+  if (nrows - 1 >= 0) {
+    std::memset(&varargout_2_data[0], 0, nrows * sizeof(real_T));
+  }
+  //  Compute solution
+  iFunc = 1;
+  iOp = 0;
+  i = b_wls->nrows;
+  for (coder::SizeType iDiff{0}; iDiff < grad_size; iDiff++) {
+    for (coder::SizeType iRow{0}; iRow < i; iRow++) {
+      varargout_2_data[iOp] +=
+          varargin_2[(iFunc + varargin_2.size(1) * iRow) - 1] *
+          varargout_1[iDiff + varargout_1.size(1) * iRow];
     }
-    //  Compute solution
-    iFunc = 1;
-    iOp = 0;
-    for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-      i = b_wls->nrows;
-      for (coder::SizeType iRow{0}; iRow < i; iRow++) {
-        varargout_2[iOp % varargout_2.size(0) + iOp / varargout_2.size(0)] =
-            varargout_2[iOp % varargout_2.size(0) + iOp / varargout_2.size(0)] +
-            varargin_2[(iFunc + varargin_2.size(1) * iRow) - 1] *
-                varargout_1[iDiff + varargout_1.size(1) * iRow];
-      }
-      if (iOp + 1 == varargout_2.size(0)) {
-        iOp = 0;
-      } else {
-        iOp++;
-      }
-      if (iFunc == varargin_2.size(1)) {
-        iFunc = 1;
-      } else {
-        iFunc++;
-      }
+    if (iOp + 1 == varargout_2_size[0]) {
+      iOp = 0;
+    } else {
+      iOp++;
+    }
+    if (iFunc == varargin_2.size(1)) {
+      iFunc = 1;
+    } else {
+      iFunc++;
     }
   }
 }
@@ -26682,17 +26620,17 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  const ::coder::array<real_T, 2U> &varargin_1,
                  const ::coder::array<real_T, 2U> &varargin_2,
                  ::coder::array<real_T, 2U> &varargout_1,
-                 ::coder::array<real_T, 2U> &varargout_2)
+                 real_T varargout_2_data[], coder::SizeType varargout_2_size[1])
 {
   coder::SizeType grad_size;
   coder::SizeType i;
+  coder::SizeType iFunc;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -26807,9 +26745,9 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (grad_size = 0; grad_size < u0; grad_size++) {
-        b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * grad_size];
+      for (coder::SizeType i1{0}; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -26849,37 +26787,33 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    coder::SizeType iFunc;
-    u0 = varargout_1.size(1) / b_wls->us.size(1);
-    varargout_2.set_size(u0, 1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
+  m2cAssert(grad_size == varargout_1.size(1), "Logic error.");
+  nrows = grad_size / b_wls->us.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2_size[0] = nrows;
+  if (nrows - 1 >= 0) {
+    std::memset(&varargout_2_data[0], 0, nrows * sizeof(real_T));
+  }
+  //  Compute solution
+  iFunc = 1;
+  iOp = 0;
+  i = b_wls->nrows;
+  for (coder::SizeType iDiff{0}; iDiff < grad_size; iDiff++) {
+    for (coder::SizeType iRow{0}; iRow < i; iRow++) {
+      varargout_2_data[iOp] +=
+          varargin_2[(iFunc + varargin_2.size(1) * iRow) - 1] *
+          varargout_1[iDiff + varargout_1.size(1) * iRow];
     }
-    //  Compute solution
-    iFunc = 1;
-    iOp = 0;
-    for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-      i = b_wls->nrows;
-      for (coder::SizeType iRow{0}; iRow < i; iRow++) {
-        varargout_2[iOp % varargout_2.size(0) + iOp / varargout_2.size(0)] =
-            varargout_2[iOp % varargout_2.size(0) + iOp / varargout_2.size(0)] +
-            varargin_2[(iFunc + varargin_2.size(1) * iRow) - 1] *
-                varargout_1[iDiff + varargout_1.size(1) * iRow];
-      }
-      if (iOp + 1 == varargout_2.size(0)) {
-        iOp = 0;
-      } else {
-        iOp++;
-      }
-      if (iFunc == varargin_2.size(1)) {
-        iFunc = 1;
-      } else {
-        iFunc++;
-      }
+    if (iOp + 1 == varargout_2_size[0]) {
+      iOp = 0;
+    } else {
+      iOp++;
+    }
+    if (iFunc == varargin_2.size(1)) {
+      iFunc = 1;
+    } else {
+      iFunc++;
     }
   }
 }
@@ -27329,23 +27263,21 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     varargout_1[0] = totalw - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
@@ -27479,23 +27411,21 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     varargout_1[0] = totalw - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
@@ -27744,13 +27674,13 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 {
   coder::SizeType grad_size;
   coder::SizeType i;
+  coder::SizeType i1;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -27867,9 +27797,9 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (grad_size = 0; grad_size < u0; grad_size++) {
-        b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * grad_size];
+      for (i1 = 0; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -27909,32 +27839,30 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(varargout_1.size(1), varargin_2.size(1));
-    loop_ub = varargin_2.size(1) * varargout_1.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        grad_size = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < grad_size; iRow++) {
-          varargout_2[iFunc + varargout_2.size(1) * iOp] =
-              varargout_2[iFunc + varargout_2.size(1) * iOp] +
-              varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                  varargout_1[iDiff + varargout_1.size(1) * iRow];
-        }
-        if (iOp + 1 == varargout_2.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  m2cAssert(grad_size == varargout_1.size(1), "Logic error.");
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(grad_size, varargin_2.size(1));
+  loop_ub = varargin_2.size(1) * grad_size;
+  for (i = 0; i < loop_ub; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    iOp = 0;
+    i1 = b_wls->nrows;
+    for (coder::SizeType iDiff{0}; iDiff < grad_size; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        varargout_2[iFunc + varargout_2.size(1) * iOp] =
+            varargout_2[iFunc + varargout_2.size(1) * iOp] +
+            varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                varargout_1[iDiff + varargout_1.size(1) * iRow];
+      }
+      if (iOp + 1 == varargout_2.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -27949,13 +27877,13 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 {
   coder::SizeType grad_size;
   coder::SizeType i;
+  coder::SizeType i1;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -28070,9 +27998,9 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (grad_size = 0; grad_size < u0; grad_size++) {
-        b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * grad_size];
+      for (i1 = 0; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -28112,32 +28040,30 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(varargout_1.size(1), varargin_2.size(1));
-    loop_ub = varargin_2.size(1) * varargout_1.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        grad_size = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < grad_size; iRow++) {
-          varargout_2[iFunc + varargout_2.size(1) * iOp] =
-              varargout_2[iFunc + varargout_2.size(1) * iOp] +
-              varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                  varargout_1[iDiff + varargout_1.size(1) * iRow];
-        }
-        if (iOp + 1 == varargout_2.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  m2cAssert(grad_size == varargout_1.size(1), "Logic error.");
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(grad_size, varargin_2.size(1));
+  loop_ub = varargin_2.size(1) * grad_size;
+  for (i = 0; i < loop_ub; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    iOp = 0;
+    i1 = b_wls->nrows;
+    for (coder::SizeType iDiff{0}; iDiff < grad_size; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        varargout_2[iFunc + varargout_2.size(1) * iOp] =
+            varargout_2[iFunc + varargout_2.size(1) * iOp] +
+            varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                varargout_1[iDiff + varargout_1.size(1) * iRow];
+      }
+      if (iOp + 1 == varargout_2.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -29924,13 +29850,13 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 {
   coder::SizeType hess_size;
   coder::SizeType i;
+  coder::SizeType i1;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -30048,9 +29974,9 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (hess_size = 0; hess_size < u0; hess_size++) {
-        b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * hess_size];
+      for (i1 = 0; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -30090,32 +30016,30 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(varargout_1.size(1), varargin_2.size(1));
-    loop_ub = varargin_2.size(1) * varargout_1.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        hess_size = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < hess_size; iRow++) {
-          varargout_2[iFunc + varargout_2.size(1) * iOp] =
-              varargout_2[iFunc + varargout_2.size(1) * iOp] +
-              varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                  varargout_1[iDiff + varargout_1.size(1) * iRow];
-        }
-        if (iOp + 1 == varargout_2.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  m2cAssert(hess_size == varargout_1.size(1), "Logic error.");
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(hess_size, varargin_2.size(1));
+  loop_ub = varargin_2.size(1) * hess_size;
+  for (i = 0; i < loop_ub; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    iOp = 0;
+    i1 = b_wls->nrows;
+    for (coder::SizeType iDiff{0}; iDiff < hess_size; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        varargout_2[iFunc + varargout_2.size(1) * iOp] =
+            varargout_2[iFunc + varargout_2.size(1) * iOp] +
+            varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                varargout_1[iDiff + varargout_1.size(1) * iRow];
+      }
+      if (iOp + 1 == varargout_2.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -30130,13 +30054,13 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 {
   coder::SizeType hess_size;
   coder::SizeType i;
+  coder::SizeType i1;
   coder::SizeType iOp;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
   coder::SizeType loop_ub;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
@@ -30252,9 +30176,9 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     loop_ub = b_wls->QR.size(1);
     for (i = 0; i < loop_ub; i++) {
       u0 = b_wls->QR.size(0);
-      for (hess_size = 0; hess_size < u0; hess_size++) {
-        b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * hess_size];
+      for (i1 = 0; i1 < u0; i1++) {
+        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -30294,32 +30218,30 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = varargout_1.size(1);
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(varargout_1.size(1), varargin_2.size(1));
-    loop_ub = varargin_2.size(1) * varargout_1.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff < nOps; iDiff++) {
-        hess_size = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < hess_size; iRow++) {
-          varargout_2[iFunc + varargout_2.size(1) * iOp] =
-              varargout_2[iFunc + varargout_2.size(1) * iOp] +
-              varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                  varargout_1[iDiff + varargout_1.size(1) * iRow];
-        }
-        if (iOp + 1 == varargout_2.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
+  m2cAssert(hess_size == varargout_1.size(1), "Logic error.");
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(hess_size, varargin_2.size(1));
+  loop_ub = varargin_2.size(1) * hess_size;
+  for (i = 0; i < loop_ub; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+    iOp = 0;
+    i1 = b_wls->nrows;
+    for (coder::SizeType iDiff{0}; iDiff < hess_size; iDiff++) {
+      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+        varargout_2[iFunc + varargout_2.size(1) * iOp] =
+            varargout_2[iFunc + varargout_2.size(1) * iOp] +
+            varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                varargout_1[iDiff + varargout_1.size(1) * iRow];
+      }
+      if (iOp + 1 == varargout_2.size(0)) {
+        iOp = 0;
+      } else {
+        iOp++;
       }
     }
   }
@@ -30661,11 +30583,11 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nrows;
   coder::SizeType u0;
   coder::SizeType u1;
+  boolean_T isdiv;
   b_nevpnts = nevpnts;
   if (nevpnts == 0) {
     b_nevpnts = eval_pnts.size(0);
@@ -30856,20 +30778,50 @@ void wls_var_kernel(WlsObject *b_wls,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = vdops.size(1) - 1;
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else if (order == -1) {
+  isdiv = order == -1;
+  u0 = diff_idx.size(0) - 1;
+  m2cAssert(vdops.size(1) == diff_idx.size(0), "Logic error.");
+  if (isdiv) {
+    nrows = diff_idx.size(0) / b_wls->us.size(1);
+  } else {
+    nrows = diff_idx.size(0);
+  }
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  if (!isdiv) {
+    result.set_size(nrows, fs.size(1));
+    loop_ub = fs.size(1) * nrows;
+    for (i = 0; i < loop_ub; i++) {
+      result[i] = 0.0;
+    }
+    //  Compute solution
+    i = fs.size(1);
+    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+      iOp = 0;
+      for (coder::SizeType iDiff{0}; iDiff <= u0; iDiff++) {
+        i2 = b_wls->nrows;
+        for (coder::SizeType iRow{0}; iRow < i2; iRow++) {
+          result[iFunc + result.size(1) * iOp] =
+              result[iFunc + result.size(1) * iOp] +
+              fs[iFunc + fs.size(1) * iRow] *
+                  vdops[iDiff + vdops.size(1) * iRow];
+        }
+        if (iOp + 1 == result.size(0)) {
+          iOp = 0;
+        } else {
+          iOp++;
+        }
+      }
+    }
+  } else {
     coder::SizeType iFunc;
-    u0 = vdops.size(1) / b_wls->us.size(1);
-    result.set_size(u0, 1);
-    for (i = 0; i < u0; i++) {
+    result.set_size(nrows, 1);
+    for (i = 0; i < nrows; i++) {
       result[i] = 0.0;
     }
     //  Compute solution
     iFunc = 1;
     iOp = 0;
-    for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
+    for (coder::SizeType iDiff{0}; iDiff <= u0; iDiff++) {
       i = b_wls->nrows;
       for (coder::SizeType iRow{0}; iRow < i; iRow++) {
         result[iOp % result.size(0) + iOp / result.size(0)] =
@@ -30886,31 +30838,6 @@ void wls_var_kernel(WlsObject *b_wls,
         iFunc = 1;
       } else {
         iFunc++;
-      }
-    }
-  } else {
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
-        i2 = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < i2; iRow++) {
-          result[iFunc + result.size(1) * iOp] =
-              result[iFunc + result.size(1) * iOp] +
-              fs[iFunc + fs.size(1) * iRow] *
-                  vdops[iDiff + vdops.size(1) * iRow];
-        }
-        if (iOp + 1 == result.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
       }
     }
   }
@@ -30933,12 +30860,12 @@ void wls_var_kernel(
   coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
-  coder::SizeType nOps;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
   coder::SizeType nrows;
   coder::SizeType u0;
   coder::SizeType u1;
+  boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -31127,20 +31054,50 @@ void wls_var_kernel(
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  nOps = vdops.size(1) - 1;
-  if ((fs.size(0) == 0) || (fs.size(1) == 0)) {
-    result.set_size(0, 1);
-  } else if (order == -1) {
+  isdiv = order == -1;
+  u0 = diff_idx.size(0) - 1;
+  m2cAssert(vdops.size(1) == diff_idx.size(0), "Logic error.");
+  if (isdiv) {
+    nrows = diff_idx.size(0) / b_wls->us.size(1);
+  } else {
+    nrows = diff_idx.size(0);
+  }
+  m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
+  if (!isdiv) {
+    result.set_size(nrows, fs.size(1));
+    loop_ub = fs.size(1) * nrows;
+    for (i = 0; i < loop_ub; i++) {
+      result[i] = 0.0;
+    }
+    //  Compute solution
+    i = fs.size(1);
+    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
+      iOp = 0;
+      for (coder::SizeType iDiff{0}; iDiff <= u0; iDiff++) {
+        i2 = b_wls->nrows;
+        for (coder::SizeType iRow{0}; iRow < i2; iRow++) {
+          result[iFunc + result.size(1) * iOp] =
+              result[iFunc + result.size(1) * iOp] +
+              fs[iFunc + fs.size(1) * iRow] *
+                  vdops[iDiff + vdops.size(1) * iRow];
+        }
+        if (iOp + 1 == result.size(0)) {
+          iOp = 0;
+        } else {
+          iOp++;
+        }
+      }
+    }
+  } else {
     coder::SizeType iFunc;
-    u0 = vdops.size(1) / b_wls->us.size(1);
-    result.set_size(u0, 1);
-    for (i = 0; i < u0; i++) {
+    result.set_size(nrows, 1);
+    for (i = 0; i < nrows; i++) {
       result[i] = 0.0;
     }
     //  Compute solution
     iFunc = 1;
     iOp = 0;
-    for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
+    for (coder::SizeType iDiff{0}; iDiff <= u0; iDiff++) {
       i = b_wls->nrows;
       for (coder::SizeType iRow{0}; iRow < i; iRow++) {
         result[iOp % result.size(0) + iOp / result.size(0)] =
@@ -31157,31 +31114,6 @@ void wls_var_kernel(
         iFunc = 1;
       } else {
         iFunc++;
-      }
-    }
-  } else {
-    result.set_size(vdops.size(1), fs.size(1));
-    loop_ub = fs.size(1) * vdops.size(1);
-    for (i = 0; i < loop_ub; i++) {
-      result[i] = 0.0;
-    }
-    //  Compute solution
-    i = fs.size(1);
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      iOp = 0;
-      for (coder::SizeType iDiff{0}; iDiff <= nOps; iDiff++) {
-        i2 = b_wls->nrows;
-        for (coder::SizeType iRow{0}; iRow < i2; iRow++) {
-          result[iFunc + result.size(1) * iOp] =
-              result[iFunc + result.size(1) * iOp] +
-              fs[iFunc + fs.size(1) * iRow] *
-                  vdops[iDiff + vdops.size(1) * iRow];
-        }
-        if (iOp + 1 == result.size(0)) {
-          iOp = 0;
-        } else {
-          iOp++;
-        }
       }
     }
   }
@@ -31207,6 +31139,7 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType nrows;
   coder::SizeType u0;
   coder::SizeType u1;
+  boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -31364,7 +31297,24 @@ void wls_var_kernel(WlsObject *b_wls,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  result.set_size(0, 1);
+  isdiv = order == -1;
+  m2cAssert(vdops.size(1) == diff_idx.size(0), "Logic error.");
+  if (isdiv) {
+    nrows = diff_idx.size(0) / b_wls->us.size(1);
+  } else {
+    nrows = diff_idx.size(0);
+  }
+  m2cAssert(false, "Cannot be empty");
+  if (!isdiv) {
+    result.set_size(nrows, 0);
+    //  Compute solution
+  } else {
+    result.set_size(nrows, 1);
+    for (i = 0; i < nrows; i++) {
+      result[i] = 0.0;
+    }
+    //  Compute solution
+  }
 }
 
 //  wls_var_kernel  Kernel function for compute variational differential
@@ -31390,6 +31340,7 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType nrows;
   coder::SizeType u0;
   coder::SizeType u1;
+  boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -31578,7 +31529,24 @@ void wls_var_kernel(WlsObject *b_wls,
     }
   }
   //  Step 4: Optionally, evaluate the operator
-  result.set_size(0, 1);
+  isdiv = order == -1;
+  m2cAssert(vdops.size(1) == diff_idx.size(0), "Logic error.");
+  if (isdiv) {
+    nrows = diff_idx.size(0) / b_wls->us.size(1);
+  } else {
+    nrows = diff_idx.size(0);
+  }
+  m2cAssert(false, "Cannot be empty");
+  if (!isdiv) {
+    result.set_size(nrows, 0);
+    //  Compute solution
+  } else {
+    result.set_size(nrows, 1);
+    for (i = 0; i < nrows; i++) {
+      result[i] = 0.0;
+    }
+    //  Compute solution
+  }
 }
 
 //  wls_var_lap  Compute variational Laplacian as weighted sum at evaluation
@@ -31742,23 +31710,21 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     varargout_1[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
@@ -31921,23 +31887,21 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     varargout_1[0] = 0.0 - s;
   }
   //  Step 4: Optionally, evaluate the operator
-  if ((varargin_2.size(0) == 0) || (varargin_2.size(1) == 0)) {
-    varargout_2.set_size(0, 1);
-  } else {
-    varargout_2.set_size(1, varargin_2.size(1));
-    u0 = varargin_2.size(1);
-    for (i = 0; i < u0; i++) {
-      varargout_2[i] = 0.0;
-    }
-    //  Compute solution
-    i = varargin_2.size(1);
+  m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
+            "Cannot be empty");
+  varargout_2.set_size(1, varargin_2.size(1));
+  u0 = varargin_2.size(1);
+  for (i = 0; i < u0; i++) {
+    varargout_2[i] = 0.0;
+  }
+  //  Compute solution
+  i = varargin_2.size(1);
+  for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
     i1 = b_wls->nrows;
-    for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-      for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
-        varargout_2[iFunc] =
-            varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
-                                     varargout_1[varargout_1.size(1) * iRow];
-      }
+    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+      varargout_2[iFunc] =
+          varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
+                                   varargout_1[varargout_1.size(1) * iRow];
     }
   }
 }
