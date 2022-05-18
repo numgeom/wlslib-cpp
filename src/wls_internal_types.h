@@ -50,6 +50,7 @@ struct WlsObject {
   ::coder::array<real_T, 1U> work;
   boolean_T rowmajor;
   ::coder::array<real_T, 2U> QRt;
+  ::coder::bounded_array<real_T, 4U, 1U> runtimes;
 };
 
 struct WlsWeight {

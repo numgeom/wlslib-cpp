@@ -14,6 +14,7 @@
 #include "m2c_lib.h"
 #include "wls_internal_types.h"
 #include "wls_lapack.hpp"
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -123,8 +124,12 @@ static inline real_T find_kth_shortest_dist(::coder::array<real_T, 1U> &arr,
 
 static inline void gen_vander(const ::coder::array<real_T, 2U> &us,
                               coder::SizeType npoints, coder::SizeType degree,
-                              coder::SizeType order,
-                              const ::coder::array<real_T, 1U> &weights,
+                              ::coder::array<real_T, 2U> &V);
+
+static inline void gen_vander(const ::coder::array<real_T, 2U> &us,
+                              coder::SizeType npoints, coder::SizeType degree,
+                              const real_T hs_inv_data[],
+                              const coder::SizeType hs_inv_size[2],
                               ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander(const real_T us_data[],
@@ -134,12 +139,8 @@ static inline void gen_vander(const real_T us_data[],
 
 static inline void gen_vander(const ::coder::array<real_T, 2U> &us,
                               coder::SizeType npoints, coder::SizeType degree,
-                              const real_T hs_inv_data[],
-                              const coder::SizeType hs_inv_size[2],
-                              ::coder::array<real_T, 2U> &V);
-
-static inline void gen_vander(const ::coder::array<real_T, 2U> &us,
-                              coder::SizeType npoints, coder::SizeType degree,
+                              coder::SizeType order,
+                              const ::coder::array<real_T, 1U> &weights,
                               ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander(const ::coder::array<real_T, 2U> &us,
@@ -153,15 +154,16 @@ static inline void gen_vander_1d_dag(coder::SizeType degree,
 
 static inline void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree,
+                                 coder::SizeType degree, coder::SizeType order,
                                  const real_T hs_inv_data[],
                                  const coder::SizeType hs_inv_size[2],
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree, coder::SizeType order,
-                                 const ::coder::array<real_T, 1U> &weights,
+                                 coder::SizeType degree,
+                                 const real_T hs_inv_data[],
+                                 const coder::SizeType hs_inv_size[2],
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_2d(const real_T us_data[], coder::SizeType degree,
@@ -169,14 +171,13 @@ static inline void gen_vander_2d(const real_T us_data[], coder::SizeType degree,
 
 static inline void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree,
+                                 coder::SizeType degree, coder::SizeType order,
+                                 const ::coder::array<real_T, 1U> &weights,
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree, coder::SizeType order,
-                                 const real_T hs_inv_data[],
-                                 const coder::SizeType hs_inv_size[2],
+                                 coder::SizeType degree,
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_2d_dag(coder::SizeType degree,
@@ -184,8 +185,9 @@ static inline void gen_vander_2d_dag(coder::SizeType degree,
 
 static inline void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree, coder::SizeType order,
-                                 const ::coder::array<real_T, 1U> &weights,
+                                 coder::SizeType degree,
+                                 const real_T hs_inv_data[],
+                                 const coder::SizeType hs_inv_size[2],
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
@@ -193,9 +195,8 @@ static inline void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
 
 static inline void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
                                  coder::SizeType npoints,
-                                 coder::SizeType degree,
-                                 const real_T hs_inv_data[],
-                                 const coder::SizeType hs_inv_size[2],
+                                 coder::SizeType degree, coder::SizeType order,
+                                 const ::coder::array<real_T, 1U> &weights,
                                  ::coder::array<real_T, 2U> &V);
 
 static inline void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
@@ -253,17 +254,17 @@ wls_eno_weights(const ::coder::array<real_T, 2U> &us, coder::SizeType npoints,
                 const ::coder::array<real_T, 2U> &params_pw,
                 ::coder::array<real_T, 1U> &ws);
 
+static inline void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
+                                       coder::SizeType npoints,
+                                       coder::SizeType degree,
+                                       ::coder::array<real_T, 1U> &ws);
+
 static inline void
 wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
                     coder::SizeType npoints, coder::SizeType degree,
                     const ::coder::array<real_T, 1U> &params_sh,
                     const ::coder::array<real_T, 2U> &params_pw,
                     ::coder::array<real_T, 1U> &ws);
-
-static inline void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
-                                       coder::SizeType npoints,
-                                       coder::SizeType degree,
-                                       ::coder::array<real_T, 1U> &ws);
 
 static inline void wls_resize(WlsObject *b_wls, coder::SizeType dim,
                               coder::SizeType nstpnts, coder::SizeType degree,
@@ -3632,330 +3633,6 @@ static real_T find_kth_shortest_dist(::coder::array<real_T, 1U> &arr,
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
 static void gen_vander(const ::coder::array<real_T, 2U> &us,
                        coder::SizeType npoints, coder::SizeType degree,
-                       const real_T hs_inv_data[],
-                       const coder::SizeType hs_inv_size[2],
-                       ::coder::array<real_T, 2U> &V)
-{
-  switch (us.size(1)) {
-  case 1: {
-    real_T h_inv_;
-    real_T s;
-    coder::SizeType V_tmp;
-    coder::SizeType b_npoints;
-    coder::SizeType i;
-    coder::SizeType i1;
-    coder::SizeType r;
-    coder::SizeType stride;
-    boolean_T b;
-    boolean_T b1;
-    b_npoints = npoints - 1;
-    m2cAssert(us.size(1) == 1, "");
-    //  Handle input arguments
-    if (npoints == 0) {
-      b_npoints = us.size(0) - 1;
-    } else {
-      m2cAssert(npoints <= us.size(0), "Input us is too small.");
-    }
-    m2cAssert(degree >= 0, "Degree must be nonnegative");
-    if (hs_inv_size[1] == 0) {
-      h_inv_ = 1.0;
-    } else {
-      h_inv_ = hs_inv_data[0];
-    }
-    stride = us.size(0);
-    //  Number of row blocks
-    V.set_size(degree + 1, us.size(0) << 2);
-    //  Compute rows corresponding to function values
-    if (degree != 0) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      V_tmp = us.size(1) * us.size(0);
-      i = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= V_tmp)) {
-          i = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          i1 = us.size(1) * us.size(0) - 1;
-          if (i > MAX_int32_T - us.size(1)) {
-            i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            i += us.size(1);
-            if (i > i1) {
-              i -= i1;
-            }
-          }
-        }
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[i];
-      }
-    } else {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-    V_tmp = degree + 1;
-    for (coder::SizeType ii{2}; ii <= V_tmp; ii++) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      i = us.size(1) * us.size(0);
-      i1 = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= i)) {
-          i1 = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          coder::SizeType i2;
-          i2 = us.size(1) * us.size(0) - 1;
-          if (i1 > MAX_int32_T - us.size(1)) {
-            i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            i1 += us.size(1);
-            if (i1 > i2) {
-              i1 -= i2;
-            }
-          }
-        }
-        V[iPnt + V.size(1) * (ii - 1)] =
-            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
-      }
-    }
-    //  Add row blocks corresponding to kth derivatives
-    r = us.size(0);
-    //      computing negative orders
-    for (coder::SizeType k{0}; k < 2; k++) {
-      for (coder::SizeType j{0}; j <= k; j++) {
-        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-          V[(r + iPnt) + V.size(1) * j] = 0.0;
-        }
-      }
-      for (coder::SizeType j{k + 1}; j <= degree; j++) {
-        s = h_inv_ * static_cast<real_T>(j);
-        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-          V_tmp = r + iPnt;
-          V[V_tmp + V.size(1) * j] =
-              V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
-        }
-      }
-      r += stride;
-    }
-    //      Calculate Biharmonic if order = -4
-    for (coder::SizeType j{0}; j < 4; j++) {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[(r + iPnt) + V.size(1) * j] = 0.0;
-      }
-    }
-    for (coder::SizeType j{2}; j <= degree; j++) {
-      s = h_inv_ * static_cast<real_T>(j);
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V_tmp = r + iPnt;
-        V[V_tmp + V.size(1) * j] =
-            V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
-      }
-    }
-  } break;
-  case 2:
-    gen_vander_2d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
-    break;
-  default:
-    gen_vander_3d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
-    break;
-  }
-}
-
-//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const ::coder::array<real_T, 2U> &us,
-                       coder::SizeType npoints, coder::SizeType degree,
-                       coder::SizeType order, const real_T hs_inv_data[],
-                       const coder::SizeType hs_inv_size[2],
-                       ::coder::array<real_T, 2U> &V)
-{
-  switch (us.size(1)) {
-  case 1: {
-    real_T h_inv_;
-    coder::SizeType V_tmp;
-    coder::SizeType b_npoints;
-    coder::SizeType i;
-    coder::SizeType i1;
-    coder::SizeType nrblks;
-    coder::SizeType r;
-    coder::SizeType stride;
-    boolean_T b;
-    boolean_T b1;
-    b_npoints = npoints - 1;
-    m2cAssert(us.size(1) == 1, "");
-    //  Handle input arguments
-    if (npoints == 0) {
-      b_npoints = us.size(0) - 1;
-    } else {
-      m2cAssert(npoints <= us.size(0), "Input us is too small.");
-    }
-    m2cAssert(degree >= 0, "Degree must be nonnegative");
-    if ((order < -4) || (order == -3)) {
-      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                        "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
-    }
-    if (hs_inv_size[1] == 0) {
-      h_inv_ = 1.0;
-    } else {
-      h_inv_ = hs_inv_data[0];
-    }
-    stride = us.size(0);
-    nrblks = order + 1;
-    //  Number of row blocks
-    switch (order) {
-    case -1:
-      nrblks = 2;
-      break;
-    case -2:
-      nrblks = 3;
-      break;
-    case -4:
-      nrblks = 4;
-      break;
-    }
-    V.set_size(degree + 1, us.size(0) * nrblks);
-    //  Compute rows corresponding to function values
-    if (degree != 0) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      i = us.size(1) * us.size(0);
-      V_tmp = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= i)) {
-          V_tmp = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          V_tmp = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          i1 = us.size(1) * us.size(0) - 1;
-          if (V_tmp > MAX_int32_T - us.size(1)) {
-            V_tmp = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            V_tmp += us.size(1);
-            if (V_tmp > i1) {
-              V_tmp -= i1;
-            }
-          }
-        }
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[V_tmp];
-      }
-    } else {
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-    i = degree + 1;
-    for (coder::SizeType ii{2}; ii <= i; ii++) {
-      b = true;
-      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
-      V_tmp = us.size(1) * us.size(0);
-      i1 = 0;
-      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-        if (b1 || (iPnt >= V_tmp)) {
-          i1 = 0;
-          b = true;
-        } else if (b) {
-          b = false;
-          i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-        } else {
-          coder::SizeType i2;
-          i2 = us.size(1) * us.size(0) - 1;
-          if (i1 > MAX_int32_T - us.size(1)) {
-            i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
-          } else {
-            i1 += us.size(1);
-            if (i1 > i2) {
-              i1 -= i2;
-            }
-          }
-        }
-        V[iPnt + V.size(1) * (ii - 1)] =
-            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
-      }
-    }
-    //  Add row blocks corresponding to kth derivatives
-    r = us.size(0);
-    if (order >= 0) {
-      for (coder::SizeType k{0}; k < order; k++) {
-        for (coder::SizeType j{0}; j <= k; j++) {
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (coder::SizeType j{k + 1}; j <= degree; j++) {
-          real_T s;
-          s = h_inv_ * static_cast<real_T>(j);
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V_tmp = r + iPnt;
-            V[V_tmp + V.size(1) * j] =
-                V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
-          }
-        }
-        r += stride;
-      }
-    } else {
-      real_T s;
-      //      computing negative orders
-      if (-order > 2) {
-        i = 2;
-      } else {
-        i = -order;
-      }
-      for (coder::SizeType k{0}; k < i; k++) {
-        for (coder::SizeType j{0}; j <= k; j++) {
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (coder::SizeType j{k + 1}; j <= degree; j++) {
-          s = h_inv_ * static_cast<real_T>(j);
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V_tmp = r + iPnt;
-            V[V_tmp + V.size(1) * j] =
-                V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
-          }
-        }
-        r += stride;
-      }
-      //      Calculate Biharmonic if order = -4
-      if (order == -4) {
-        for (coder::SizeType j{0}; j < 4; j++) {
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V[(r + iPnt) + V.size(1) * j] = 0.0;
-          }
-        }
-        for (coder::SizeType j{2}; j <= degree; j++) {
-          s = h_inv_ * static_cast<real_T>(j);
-          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
-            V_tmp = r + iPnt;
-            V[V_tmp + V.size(1) * j] =
-                V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
-          }
-        }
-      }
-    }
-  } break;
-  case 2:
-    gen_vander_2d(us, npoints, degree, order, hs_inv_data, hs_inv_size, V);
-    break;
-  default:
-    gen_vander_3d(us, npoints, degree, order, hs_inv_data, hs_inv_size, V);
-    break;
-  }
-}
-
-//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const ::coder::array<real_T, 2U> &us,
-                       coder::SizeType npoints, coder::SizeType degree,
                        ::coder::array<real_T, 2U> &V)
 {
   switch (us.size(1)) {
@@ -4045,6 +3722,35 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
     break;
   default:
     gen_vander_3d(us, npoints, degree, V);
+    break;
+  }
+}
+
+//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
+static void gen_vander(const real_T us_data[], const coder::SizeType us_size[2],
+                       coder::SizeType degree, ::coder::array<real_T, 2U> &V)
+{
+  switch (us_size[1]) {
+  case 1: {
+    coder::SizeType i;
+    m2cAssert(us_size[1] == 1, "");
+    //  Handle input arguments
+    //  Number of row blocks
+    V.set_size(degree + 1, 1);
+    //  Compute rows corresponding to function values
+    V[0] = 1.0;
+    V[V.size(1)] = us_data[0];
+    i = degree + 1;
+    for (coder::SizeType ii{2}; ii <= i; ii++) {
+      V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+    }
+    //  Add row blocks corresponding to kth derivatives
+  } break;
+  case 2:
+    gen_vander_2d(us_data, degree, V);
+    break;
+  default:
+    gen_vander_3d(us_data, degree, V);
     break;
   }
 }
@@ -4252,30 +3958,325 @@ static void gen_vander(const ::coder::array<real_T, 2U> &us,
 }
 
 //  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
-static void gen_vander(const real_T us_data[], const coder::SizeType us_size[2],
-                       coder::SizeType degree, ::coder::array<real_T, 2U> &V)
+static void gen_vander(const ::coder::array<real_T, 2U> &us,
+                       coder::SizeType npoints, coder::SizeType degree,
+                       coder::SizeType order, const real_T hs_inv_data[],
+                       const coder::SizeType hs_inv_size[2],
+                       ::coder::array<real_T, 2U> &V)
 {
-  switch (us_size[1]) {
+  switch (us.size(1)) {
   case 1: {
+    real_T h_inv_;
+    coder::SizeType V_tmp;
+    coder::SizeType b_npoints;
     coder::SizeType i;
-    m2cAssert(us_size[1] == 1, "");
+    coder::SizeType i1;
+    coder::SizeType nrblks;
+    coder::SizeType r;
+    coder::SizeType stride;
+    boolean_T b;
+    boolean_T b1;
+    b_npoints = npoints - 1;
+    m2cAssert(us.size(1) == 1, "");
     //  Handle input arguments
+    if (npoints == 0) {
+      b_npoints = us.size(0) - 1;
+    } else {
+      m2cAssert(npoints <= us.size(0), "Input us is too small.");
+    }
+    m2cAssert(degree >= 0, "Degree must be nonnegative");
+    if ((order < -4) || (order == -3)) {
+      m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                        "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
+    }
+    if (hs_inv_size[1] == 0) {
+      h_inv_ = 1.0;
+    } else {
+      h_inv_ = hs_inv_data[0];
+    }
+    stride = us.size(0);
+    nrblks = order + 1;
     //  Number of row blocks
-    V.set_size(degree + 1, 1);
+    switch (order) {
+    case -1:
+      nrblks = 2;
+      break;
+    case -2:
+      nrblks = 3;
+      break;
+    case -4:
+      nrblks = 4;
+      break;
+    }
+    V.set_size(degree + 1, us.size(0) * nrblks);
     //  Compute rows corresponding to function values
-    V[0] = 1.0;
-    V[V.size(1)] = us_data[0];
+    if (degree != 0) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      i = us.size(1) * us.size(0);
+      V_tmp = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= i)) {
+          V_tmp = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          V_tmp = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          i1 = us.size(1) * us.size(0) - 1;
+          if (V_tmp > MAX_int32_T - us.size(1)) {
+            V_tmp = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            V_tmp += us.size(1);
+            if (V_tmp > i1) {
+              V_tmp -= i1;
+            }
+          }
+        }
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[V_tmp];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
     i = degree + 1;
     for (coder::SizeType ii{2}; ii <= i; ii++) {
-      V[V.size(1) * (ii - 1)] = V[V.size(1) * (ii - 2)] * us_data[0];
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      V_tmp = us.size(1) * us.size(0);
+      i1 = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= V_tmp)) {
+          i1 = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          coder::SizeType i2;
+          i2 = us.size(1) * us.size(0) - 1;
+          if (i1 > MAX_int32_T - us.size(1)) {
+            i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            i1 += us.size(1);
+            if (i1 > i2) {
+              i1 -= i2;
+            }
+          }
+        }
+        V[iPnt + V.size(1) * (ii - 1)] =
+            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
+      }
     }
     //  Add row blocks corresponding to kth derivatives
+    r = us.size(0);
+    if (order >= 0) {
+      for (coder::SizeType k{0}; k < order; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
+          real_T s;
+          s = h_inv_ * static_cast<real_T>(j);
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V_tmp = r + iPnt;
+            V[V_tmp + V.size(1) * j] =
+                V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
+          }
+        }
+        r += stride;
+      }
+    } else {
+      real_T s;
+      //      computing negative orders
+      if (-order > 2) {
+        i = 2;
+      } else {
+        i = -order;
+      }
+      for (coder::SizeType k{0}; k < i; k++) {
+        for (coder::SizeType j{0}; j <= k; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{k + 1}; j <= degree; j++) {
+          s = h_inv_ * static_cast<real_T>(j);
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V_tmp = r + iPnt;
+            V[V_tmp + V.size(1) * j] =
+                V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
+          }
+        }
+        r += stride;
+      }
+      //      Calculate Biharmonic if order = -4
+      if (order == -4) {
+        for (coder::SizeType j{0}; j < 4; j++) {
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V[(r + iPnt) + V.size(1) * j] = 0.0;
+          }
+        }
+        for (coder::SizeType j{2}; j <= degree; j++) {
+          s = h_inv_ * static_cast<real_T>(j);
+          for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+            V_tmp = r + iPnt;
+            V[V_tmp + V.size(1) * j] =
+                V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
+          }
+        }
+      }
+    }
   } break;
   case 2:
-    gen_vander_2d(us_data, degree, V);
+    gen_vander_2d(us, npoints, degree, order, hs_inv_data, hs_inv_size, V);
     break;
   default:
-    gen_vander_3d(us_data, degree, V);
+    gen_vander_3d(us, npoints, degree, order, hs_inv_data, hs_inv_size, V);
+    break;
+  }
+}
+
+//  gen_vander  Wrapper function for computing confluent Vandermonde matrix in
+static void gen_vander(const ::coder::array<real_T, 2U> &us,
+                       coder::SizeType npoints, coder::SizeType degree,
+                       const real_T hs_inv_data[],
+                       const coder::SizeType hs_inv_size[2],
+                       ::coder::array<real_T, 2U> &V)
+{
+  switch (us.size(1)) {
+  case 1: {
+    real_T h_inv_;
+    real_T s;
+    coder::SizeType V_tmp;
+    coder::SizeType b_npoints;
+    coder::SizeType i;
+    coder::SizeType i1;
+    coder::SizeType r;
+    coder::SizeType stride;
+    boolean_T b;
+    boolean_T b1;
+    b_npoints = npoints - 1;
+    m2cAssert(us.size(1) == 1, "");
+    //  Handle input arguments
+    if (npoints == 0) {
+      b_npoints = us.size(0) - 1;
+    } else {
+      m2cAssert(npoints <= us.size(0), "Input us is too small.");
+    }
+    m2cAssert(degree >= 0, "Degree must be nonnegative");
+    if (hs_inv_size[1] == 0) {
+      h_inv_ = 1.0;
+    } else {
+      h_inv_ = hs_inv_data[0];
+    }
+    stride = us.size(0);
+    //  Number of row blocks
+    V.set_size(degree + 1, us.size(0) << 2);
+    //  Compute rows corresponding to function values
+    if (degree != 0) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      V_tmp = us.size(1) * us.size(0);
+      i = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= V_tmp)) {
+          i = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          i1 = us.size(1) * us.size(0) - 1;
+          if (i > MAX_int32_T - us.size(1)) {
+            i = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            i += us.size(1);
+            if (i > i1) {
+              i -= i1;
+            }
+          }
+        }
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[i];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
+    V_tmp = degree + 1;
+    for (coder::SizeType ii{2}; ii <= V_tmp; ii++) {
+      b = true;
+      b1 = ((us.size(1) <= 0) || (us.size(0) <= 0));
+      i = us.size(1) * us.size(0);
+      i1 = 0;
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        if (b1 || (iPnt >= i)) {
+          i1 = 0;
+          b = true;
+        } else if (b) {
+          b = false;
+          i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+        } else {
+          coder::SizeType i2;
+          i2 = us.size(1) * us.size(0) - 1;
+          if (i1 > MAX_int32_T - us.size(1)) {
+            i1 = iPnt % us.size(0) * us.size(1) + iPnt / us.size(0);
+          } else {
+            i1 += us.size(1);
+            if (i1 > i2) {
+              i1 -= i2;
+            }
+          }
+        }
+        V[iPnt + V.size(1) * (ii - 1)] =
+            V[iPnt + V.size(1) * (ii - 2)] * us[i1];
+      }
+    }
+    //  Add row blocks corresponding to kth derivatives
+    r = us.size(0);
+    //      computing negative orders
+    for (coder::SizeType k{0}; k < 2; k++) {
+      for (coder::SizeType j{0}; j <= k; j++) {
+        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          V[(r + iPnt) + V.size(1) * j] = 0.0;
+        }
+      }
+      for (coder::SizeType j{k + 1}; j <= degree; j++) {
+        s = h_inv_ * static_cast<real_T>(j);
+        for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+          V_tmp = r + iPnt;
+          V[V_tmp + V.size(1) * j] =
+              V[(V_tmp - stride) + V.size(1) * (j - 1)] * s;
+        }
+      }
+      r += stride;
+    }
+    //      Calculate Biharmonic if order = -4
+    for (coder::SizeType j{0}; j < 4; j++) {
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V[(r + iPnt) + V.size(1) * j] = 0.0;
+      }
+    }
+    for (coder::SizeType j{2}; j <= degree; j++) {
+      s = h_inv_ * static_cast<real_T>(j);
+      for (coder::SizeType iPnt{0}; iPnt <= b_npoints; iPnt++) {
+        V_tmp = r + iPnt;
+        V[V_tmp + V.size(1) * j] =
+            V[(V_tmp - stride) + V.size(1) * (j - 2)] * s * (s - 1.0);
+      }
+    }
+  } break;
+  case 2:
+    gen_vander_2d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
+    break;
+  default:
+    gen_vander_3d(us, npoints, degree, hs_inv_data, hs_inv_size, V);
     break;
   }
 }
@@ -4339,6 +4340,832 @@ static void gen_vander_2d(const real_T us_data[], coder::SizeType degree,
     c++;
   }
   //  Compute the bi-degree terms if degree<0
+}
+
+//  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
+static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
+                          coder::SizeType npoints, coder::SizeType degree,
+                          coder::SizeType order,
+                          const ::coder::array<real_T, 1U> &weights,
+                          ::coder::array<real_T, 2U> &V)
+{
+  coder::SizeType b_degree;
+  coder::SizeType c;
+  coder::SizeType deg;
+  coder::SizeType i;
+  coder::SizeType nrblks;
+  coder::SizeType stride;
+  if (npoints > us.size(0)) {
+    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
+  }
+  if ((order < -4) || (order == -3)) {
+    m2cErrMsgIdAndTxt("wlslib:WrongOrder",
+                      "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
+  }
+  stride = us.size(0);
+  nrblks = (order + 1) * (order + 2) / 2;
+  //  Number of row blocks
+  switch (order) {
+  case -1:
+    nrblks = 3;
+    break;
+  case -2:
+    nrblks = 5;
+    break;
+  case -4:
+    if (degree > 0) {
+      nrblks = 8;
+    } else {
+      nrblks = 11;
+    }
+    break;
+  }
+  //  Allocate storage for V
+  if (degree >= 0) {
+    b_degree = (degree + 1) * (degree + 2) / 2;
+  } else {
+    b_degree = (1 - degree) * (1 - degree);
+  }
+  V.set_size(b_degree, us.size(0) * nrblks);
+  //  compute 0th order generalized Vandermonde matrix
+  if (weights.size(0) == 0) {
+    if (degree != 0) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = 1.0;
+        V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
+      }
+    } else {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt] = 1.0;
+      }
+    }
+  } else if (degree != 0) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = weights[iPnt];
+      V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
+      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
+    }
+  } else {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt] = weights[iPnt];
+    }
+  }
+  c = 3;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 2; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j < deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[iPnt + V.size(1) * c] =
+          V[iPnt + V.size(1) * ((c - deg) - 1)] * us[us.size(1) * iPnt + 1];
+    }
+    c++;
+  }
+  //  Compute the bi-degree terms if degree<0
+  i = -degree;
+  for (deg = i; deg >= 1; deg--) {
+    for (coder::SizeType k{0}; k < deg; k++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[iPnt + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
+      }
+      c++;
+    }
+  }
+  //  compute higher order confluent Vandermonde matrix blocks incrementally
+  if (order != 0) {
+    real_T scaleu;
+    real_T scalev;
+    coder::SizeType i1;
+    coder::SizeType offset;
+    //  This is an optimized version of update_vander_ordern for first-order CVM
+    m2cAssert(degree != 0, "");
+    //  Compute derivative with respect to u
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[stride + iPnt] = 0.0;
+      V[(stride + iPnt) + V.size(1)] = V[iPnt];
+      V[(stride + iPnt) + V.size(1) * 2] = 0.0;
+    }
+    c = 3;
+    if (degree < 0) {
+      i1 = -degree;
+    } else {
+      i1 = degree;
+    }
+    for (deg = 2; deg <= i1; deg++) {
+      scaleu = deg;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(stride + iPnt) + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - deg)] * static_cast<real_T>(deg);
+      }
+      c++;
+      for (coder::SizeType j{0}; j <= deg - 2; j++) {
+        scaleu--;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - deg)] * scaleu;
+        }
+        c++;
+      }
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(stride + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    //  Compute the bi-degree terms if degree<0
+    for (coder::SizeType len{i}; len >= 0; len--) {
+      scaleu = 1 - degree;
+      for (coder::SizeType k{0}; k < len; k++) {
+        scaleu--;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(stride + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (c - len)] * scaleu;
+        }
+        c++;
+      }
+    }
+    //  Compute derivative with respect to v
+    offset = us.size(0) + us.size(0);
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      b_degree = offset + iPnt;
+      V[b_degree] = 0.0;
+      V[b_degree + V.size(1)] = 0.0;
+      V[b_degree + V.size(1) * 2] = V[iPnt];
+    }
+    c = 3;
+    for (deg = 2; deg <= i1; deg++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+      for (coder::SizeType j{0}; j < deg; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * ((c - deg) - 1)] *
+              (static_cast<real_T>(j) + 1.0);
+        }
+        c++;
+      }
+    }
+    //  Compute the bi-degree terms if degree<0
+    deg = -degree;
+    for (coder::SizeType len{i}; len >= 0; len--) {
+      deg++;
+      scalev = (deg + degree) - 1;
+      for (coder::SizeType k{0}; k < len; k++) {
+        scalev++;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * ((c - len) - 1)] * scalev;
+        }
+        c++;
+      }
+    }
+    //      compute regular orders if order > 0
+    if (order > 0) {
+      for (coder::SizeType dd{2}; dd <= order; dd++) {
+        coder::SizeType i2;
+        coder::SizeType offset_prev;
+        coder::SizeType offset_tmp_tmp;
+        //  Compute order-N CVM row blocks from order-(N-1) CVM.
+        m2cAssert(degree != 0, "");
+        offset_tmp_tmp = dd * (dd + 1) / 2;
+        offset = offset_tmp_tmp * stride;
+        offset_prev = (dd - 1) * dd / 2 * stride;
+        //  Compute derivative with respect to u
+        if (degree < 0) {
+          i1 = -degree;
+        } else {
+          i1 = degree;
+        }
+        for (coder::SizeType b_i{0}; b_i < dd; b_i++) {
+          //  Initialize block to zero
+          i2 = offset + 1;
+          b_degree = offset + npoints;
+          for (coder::SizeType col{0}; col < offset_tmp_tmp; col++) {
+            for (coder::SizeType row{i2}; row <= b_degree; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = offset_tmp_tmp;
+          for (deg = dd; deg <= i1; deg++) {
+            scaleu = deg + 1;
+            i2 = deg - 1;
+            for (coder::SizeType j{0}; j <= i2; j++) {
+              scaleu--;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
+              }
+              c++;
+            }
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          //  Compute the bi-degree terms if degree<0
+          for (coder::SizeType len{i}; len >= 0; len--) {
+            scaleu = 1 - degree;
+            for (coder::SizeType k{0}; k < len; k++) {
+              scaleu--;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
+              }
+              c++;
+            }
+          }
+          offset += stride;
+          offset_prev += stride;
+        }
+        //  Compute derivative with respect to v
+        i1 = offset + 1;
+        i2 = offset + npoints;
+        for (coder::SizeType col{0}; col < offset_tmp_tmp; col++) {
+          for (coder::SizeType row{i1}; row <= i2; row++) {
+            V[(row + V.size(1) * col) - 1] = 0.0;
+          }
+        }
+        c = offset_tmp_tmp;
+        if (degree < 0) {
+          i1 = -degree;
+        } else {
+          i1 = degree;
+        }
+        for (deg = dd; deg <= i1; deg++) {
+          i2 = dd - 1;
+          for (coder::SizeType j{0}; j <= i2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType j{dd}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[((offset_prev - stride) + iPnt) +
+                    V.size(1) * ((c - deg) - 1)] *
+                  static_cast<real_T>(j);
+            }
+            c++;
+          }
+        }
+        //  Compute the bi-degree terms if degree<0
+        deg = -degree;
+        for (coder::SizeType len{i}; len >= 0; len--) {
+          deg++;
+          scalev = (deg + degree) - 1;
+          for (coder::SizeType k{0}; k < len; k++) {
+            scalev++;
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[((offset_prev - stride) + iPnt) +
+                    V.size(1) * ((c - len) - 1)] *
+                  scalev;
+            }
+            c++;
+          }
+        }
+      }
+    } else if (order < -1) {
+      //          compute efficient laplacian and bi-laplacian
+      switch (order) {
+      case -2: {
+        coder::SizeType i2;
+        coder::SizeType offset_prev;
+        //  Compute order-N CVM row blocks from order-(N-1) CVM.
+        m2cAssert(degree != 0, "");
+        offset = 3 * us.size(0);
+        offset_prev = us.size(0);
+        //  Compute derivative with respect to u
+        if (degree < 0) {
+          i1 = -degree;
+        } else {
+          i1 = degree;
+        }
+        //  Initialize block to zero
+        i2 = offset + 1;
+        b_degree = offset + npoints;
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{i2}; row <= b_degree; row++) {
+            V[(row + V.size(1) * col) - 1] = 0.0;
+          }
+        }
+        c = 3;
+        for (deg = 2; deg <= i1; deg++) {
+          scaleu = deg + 1;
+          i2 = deg - 1;
+          for (coder::SizeType j{0}; j <= i2; j++) {
+            scaleu--;
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
+            }
+            c++;
+          }
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(offset + iPnt) + V.size(1) * c] = 0.0;
+          }
+          c++;
+        }
+        //  Compute the bi-degree terms if degree<0
+        for (coder::SizeType len{i}; len >= 0; len--) {
+          scaleu = 1 - degree;
+          for (coder::SizeType k{0}; k < len; k++) {
+            scaleu--;
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
+            }
+            c++;
+          }
+        }
+        offset += us.size(0);
+        //  Compute derivative with respect to v
+        offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+        i1 = offset + 1;
+        i2 = offset + npoints;
+        for (coder::SizeType col{0}; col < 3; col++) {
+          for (coder::SizeType row{i1}; row <= i2; row++) {
+            V[(row + V.size(1) * col) - 1] = 0.0;
+          }
+        }
+        c = 3;
+        if (degree < 0) {
+          i1 = -degree;
+        } else {
+          i1 = degree;
+        }
+        for (deg = 2; deg <= i1; deg++) {
+          for (coder::SizeType j{0}; j < 2; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          for (coder::SizeType j{2}; j <= deg; j++) {
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[((offset_prev - stride) + iPnt) +
+                    V.size(1) * ((c - deg) - 1)] *
+                  static_cast<real_T>(j);
+            }
+            c++;
+          }
+        }
+        //  Compute the bi-degree terms if degree<0
+        deg = -degree;
+        for (coder::SizeType len{i}; len >= 0; len--) {
+          deg++;
+          scalev = (deg + degree) - 1;
+          for (coder::SizeType k{0}; k < len; k++) {
+            scalev++;
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] =
+                  V[((offset_prev - stride) + iPnt) +
+                    V.size(1) * ((c - len) - 1)] *
+                  scalev;
+            }
+            c++;
+          }
+        }
+      } break;
+      case -4: {
+        if (degree > 0) {
+          coder::SizeType offset_prev;
+          //  Compute order-N CVM row blocks from order-(N-1) CVM.
+          m2cAssert(true, "");
+          offset = 3 * us.size(0);
+          //  Compute derivative with respect to u
+          i = offset + 1;
+          i1 = offset + npoints;
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i}; row <= i1; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 3;
+          for (deg = 2; deg <= degree; deg++) {
+            scaleu = deg + 1;
+            i = deg - 1;
+            for (coder::SizeType j{0}; j <= i; j++) {
+              scaleu--;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(us.size(0) + iPnt) + V.size(1) * (c - deg)] * scaleu;
+              }
+              c++;
+            }
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          //  Compute the bi-degree terms if degree<0
+          offset += us.size(0);
+          //  Compute derivative with respect to v
+          offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+          i = offset + 1;
+          i1 = offset + npoints;
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i}; row <= i1; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 3;
+          for (deg = 2; deg <= degree; deg++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            for (coder::SizeType j{2}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - deg) - 1)] *
+                    static_cast<real_T>(j);
+              }
+              c++;
+            }
+          }
+          //  Compute the bi-degree terms if degree<0
+          offset = 5 * us.size(0);
+          offset_prev = 3 * us.size(0);
+          m2cAssert(degree >= 4, "");
+          //  compute du^4 and du^2*dv^2
+          for (coder::SizeType terms{0}; terms < 2; terms++) {
+            i = offset + 1;
+            i1 = offset + npoints;
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{i}; row <= i1; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+            c = 10;
+            for (deg = 4; deg <= degree; deg++) {
+              scaleu = deg + 1;
+              i = deg - 1;
+              for (coder::SizeType j{0}; j <= i; j++) {
+                scaleu--;
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] =
+                      V[(offset_prev + iPnt) +
+                        V.size(1) * ((c - (deg << 1)) + 1)] *
+                      scaleu * (scaleu - 1.0);
+                }
+                c++;
+              }
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            offset += stride;
+            offset_prev += stride;
+          }
+          //  compute dv^4
+          i = offset + 1;
+          i1 = offset + npoints;
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{i}; row <= i1; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 10;
+          for (deg = 4; deg <= degree; deg++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            for (coder::SizeType j{4}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - (deg << 1)) - 1)] *
+                    static_cast<real_T>(j) * (static_cast<real_T>(j) - 1.0);
+              }
+              c++;
+            }
+          }
+        } else {
+          coder::SizeType i2;
+          coder::SizeType offset_prev;
+          //  Compute order-N CVM row blocks from order-(N-1) CVM.
+          m2cAssert(degree != 0, "");
+          offset = 3 * us.size(0);
+          offset_prev = us.size(0);
+          //  Compute derivative with respect to u
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          //  Initialize block to zero
+          i2 = offset + 1;
+          b_degree = offset + npoints;
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i2}; row <= b_degree; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 3;
+          for (deg = 2; deg <= i1; deg++) {
+            scaleu = deg + 1;
+            i2 = deg - 1;
+            for (coder::SizeType j{0}; j <= i2; j++) {
+              scaleu--;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
+              }
+              c++;
+            }
+            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+              V[(offset + iPnt) + V.size(1) * c] = 0.0;
+            }
+            c++;
+          }
+          //  Compute the bi-degree terms if degree<0
+          for (coder::SizeType len{i}; len >= 0; len--) {
+            scaleu = 1 - degree;
+            for (coder::SizeType k{0}; k < len; k++) {
+              scaleu--;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
+              }
+              c++;
+            }
+          }
+          offset += us.size(0);
+          //  Compute derivative with respect to v
+          offset_prev = (us.size(0) + us.size(0)) + us.size(0);
+          i1 = offset + 1;
+          i2 = offset + npoints;
+          for (coder::SizeType col{0}; col < 3; col++) {
+            for (coder::SizeType row{i1}; row <= i2; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 3;
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          for (deg = 2; deg <= i1; deg++) {
+            for (coder::SizeType j{0}; j < 2; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            for (coder::SizeType j{2}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - deg) - 1)] *
+                    static_cast<real_T>(j);
+              }
+              c++;
+            }
+          }
+          //  Compute the bi-degree terms if degree<0
+          deg = -degree;
+          for (coder::SizeType len{i}; len >= 0; len--) {
+            deg++;
+            scalev = (deg + degree) - 1;
+            for (coder::SizeType k{0}; k < len; k++) {
+              scalev++;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - len) - 1)] *
+                    scalev;
+              }
+              c++;
+            }
+          }
+          //  Compute order-N CVM row blocks from order-(N-1) CVM.
+          m2cAssert(degree != 0, "");
+          offset = 5 * us.size(0);
+          offset_prev = 3 * us.size(0);
+          //  Compute derivative with respect to u
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
+            //  Initialize block to zero
+            i2 = offset + 1;
+            b_degree = offset + npoints;
+            for (coder::SizeType col{0}; col < 6; col++) {
+              for (coder::SizeType row{i2}; row <= b_degree; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+            c = 6;
+            for (deg = 3; deg <= i1; deg++) {
+              scaleu = deg + 1;
+              i2 = deg - 1;
+              for (coder::SizeType j{0}; j <= i2; j++) {
+                scaleu--;
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] =
+                      V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
+                }
+                c++;
+              }
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            //  Compute the bi-degree terms if degree<0
+            for (coder::SizeType len{i}; len >= 0; len--) {
+              scaleu = 1 - degree;
+              for (coder::SizeType k{0}; k < len; k++) {
+                scaleu--;
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] =
+                      V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
+                }
+                c++;
+              }
+            }
+            offset += stride;
+            offset_prev += stride;
+          }
+          //  Compute derivative with respect to v
+          i1 = offset + 1;
+          i2 = offset + npoints;
+          for (coder::SizeType col{0}; col < 6; col++) {
+            for (coder::SizeType row{i1}; row <= i2; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 6;
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          for (deg = 3; deg <= i1; deg++) {
+            for (coder::SizeType j{0}; j < 3; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            for (coder::SizeType j{3}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - deg) - 1)] *
+                    static_cast<real_T>(j);
+              }
+              c++;
+            }
+          }
+          //  Compute the bi-degree terms if degree<0
+          deg = -degree;
+          for (coder::SizeType len{i}; len >= 0; len--) {
+            deg++;
+            scalev = (deg + degree) - 1;
+            for (coder::SizeType k{0}; k < len; k++) {
+              scalev++;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - len) - 1)] *
+                    scalev;
+              }
+              c++;
+            }
+          }
+          //  Compute order-N CVM row blocks from order-(N-1) CVM.
+          m2cAssert(degree != 0, "");
+          offset = us.size(0) << 3;
+          offset_prev = 5 * us.size(0);
+          //  Compute derivative with respect to u
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
+            //  Initialize block to zero
+            i2 = offset + 1;
+            b_degree = offset + npoints;
+            for (coder::SizeType col{0}; col < 10; col++) {
+              for (coder::SizeType row{i2}; row <= b_degree; row++) {
+                V[(row + V.size(1) * col) - 1] = 0.0;
+              }
+            }
+            c = 10;
+            for (deg = 4; deg <= i1; deg++) {
+              scaleu = deg + 1;
+              i2 = deg - 1;
+              for (coder::SizeType j{0}; j <= i2; j++) {
+                scaleu--;
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] =
+                      V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
+                }
+                c++;
+              }
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            //  Compute the bi-degree terms if degree<0
+            for (coder::SizeType len{i}; len >= 0; len--) {
+              scaleu = 1 - degree;
+              for (coder::SizeType k{0}; k < len; k++) {
+                scaleu--;
+                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                  V[(offset + iPnt) + V.size(1) * c] =
+                      V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
+                }
+                c++;
+              }
+            }
+            offset += stride;
+            offset_prev += stride;
+          }
+          //  Compute derivative with respect to v
+          offset_prev += us.size(0);
+          i1 = offset + 1;
+          i2 = offset + npoints;
+          for (coder::SizeType col{0}; col < 10; col++) {
+            for (coder::SizeType row{i1}; row <= i2; row++) {
+              V[(row + V.size(1) * col) - 1] = 0.0;
+            }
+          }
+          c = 10;
+          if (degree < 0) {
+            i1 = -degree;
+          } else {
+            i1 = 0;
+          }
+          for (deg = 4; deg <= i1; deg++) {
+            for (coder::SizeType j{0}; j < 4; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] = 0.0;
+              }
+              c++;
+            }
+            for (coder::SizeType j{4}; j <= deg; j++) {
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - deg) - 1)] *
+                    static_cast<real_T>(j);
+              }
+              c++;
+            }
+          }
+          //  Compute the bi-degree terms if degree<0
+          deg = -degree;
+          for (coder::SizeType len{i}; len >= 0; len--) {
+            deg++;
+            scalev = (deg + degree) - 1;
+            for (coder::SizeType k{0}; k < len; k++) {
+              scalev++;
+              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+                V[(offset + iPnt) + V.size(1) * c] =
+                    V[((offset_prev - stride) + iPnt) +
+                      V.size(1) * ((c - len) - 1)] *
+                    scalev;
+              }
+              c++;
+            }
+          }
+        }
+      } break;
+      default:
+        m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
+        break;
+      }
+    }
+  }
 }
 
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
@@ -5177,71 +6004,6 @@ static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
 static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                           coder::SizeType npoints, coder::SizeType degree,
-                          ::coder::array<real_T, 2U> &V)
-{
-  coder::SizeType b_degree;
-  coder::SizeType c;
-  if (npoints == 0) {
-    npoints = us.size(0);
-  } else if (npoints > us.size(0)) {
-    m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
-  }
-  //  Number of row blocks
-  if (degree >= 0) {
-    b_degree = (degree + 1) * (degree + 2) / 2;
-  } else {
-    b_degree = (1 - degree) * (1 - degree);
-  }
-  V.set_size(b_degree, us.size(0));
-  //  compute 0th order generalized Vandermonde matrix
-  if (degree != 0) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = 1.0;
-      V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-    }
-  } else {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = 1.0;
-    }
-  }
-  c = 3;
-  if (degree < 0) {
-    b_degree = -degree;
-  } else {
-    b_degree = degree;
-  }
-  for (coder::SizeType deg{2}; deg <= b_degree; deg++) {
-    for (coder::SizeType j{0}; j < deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt + V.size(1) * c] =
-          V[iPnt + V.size(1) * ((c - deg) - 1)] * us[us.size(1) * iPnt + 1];
-    }
-    c++;
-  }
-  //  Compute the bi-degree terms if degree<0
-  b_degree = -degree;
-  for (coder::SizeType deg{b_degree}; deg >= 1; deg--) {
-    for (coder::SizeType k{0}; k < deg; k++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - deg)] * us[us.size(1) * iPnt];
-      }
-      c++;
-    }
-  }
-  //  compute higher order confluent Vandermonde matrix blocks incrementally
-}
-
-//  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
-static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
-                          coder::SizeType npoints, coder::SizeType degree,
                           const real_T hs_inv_data[],
                           const coder::SizeType hs_inv_size[2],
                           ::coder::array<real_T, 2U> &V)
@@ -5829,79 +6591,41 @@ static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
 //  gen_vander_2d  Generate generalized/confluent Vandermonde matrix in 2D.
 static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
                           coder::SizeType npoints, coder::SizeType degree,
-                          coder::SizeType order,
-                          const ::coder::array<real_T, 1U> &weights,
                           ::coder::array<real_T, 2U> &V)
 {
   coder::SizeType b_degree;
   coder::SizeType c;
-  coder::SizeType deg;
-  coder::SizeType i;
-  coder::SizeType nrblks;
-  coder::SizeType stride;
-  if (npoints > us.size(0)) {
+  if (npoints == 0) {
+    npoints = us.size(0);
+  } else if (npoints > us.size(0)) {
     m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
   }
-  if ((order < -4) || (order == -3)) {
-    m2cErrMsgIdAndTxt("wlslib:WrongOrder",
-                      "Order %d must be 0, 1, 2, -1, -2, or -4", (int)order);
-  }
-  stride = us.size(0);
-  nrblks = (order + 1) * (order + 2) / 2;
   //  Number of row blocks
-  switch (order) {
-  case -1:
-    nrblks = 3;
-    break;
-  case -2:
-    nrblks = 5;
-    break;
-  case -4:
-    if (degree > 0) {
-      nrblks = 8;
-    } else {
-      nrblks = 11;
-    }
-    break;
-  }
-  //  Allocate storage for V
   if (degree >= 0) {
     b_degree = (degree + 1) * (degree + 2) / 2;
   } else {
     b_degree = (1 - degree) * (1 - degree);
   }
-  V.set_size(b_degree, us.size(0) * nrblks);
+  V.set_size(b_degree, us.size(0));
   //  compute 0th order generalized Vandermonde matrix
-  if (weights.size(0) == 0) {
-    if (degree != 0) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = 1.0;
-        V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
-        V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
-      }
-    } else {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[iPnt] = 1.0;
-      }
-    }
-  } else if (degree != 0) {
+  if (degree != 0) {
     for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = weights[iPnt];
-      V[iPnt + V.size(1)] = us[us.size(1) * iPnt] * weights[iPnt];
-      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1] * weights[iPnt];
+      V[iPnt] = 1.0;
+      V[iPnt + V.size(1)] = us[us.size(1) * iPnt];
+      V[iPnt + V.size(1) * 2] = us[us.size(1) * iPnt + 1];
     }
   } else {
     for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[iPnt] = weights[iPnt];
+      V[iPnt] = 1.0;
     }
   }
   c = 3;
   if (degree < 0) {
-    i = -degree;
+    b_degree = -degree;
   } else {
-    i = degree;
+    b_degree = degree;
   }
-  for (deg = 2; deg <= i; deg++) {
+  for (coder::SizeType deg{2}; deg <= b_degree; deg++) {
     for (coder::SizeType j{0}; j < deg; j++) {
       for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
@@ -5916,8 +6640,8 @@ static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
     c++;
   }
   //  Compute the bi-degree terms if degree<0
-  i = -degree;
-  for (deg = i; deg >= 1; deg--) {
+  b_degree = -degree;
+  for (coder::SizeType deg{b_degree}; deg >= 1; deg--) {
     for (coder::SizeType k{0}; k < deg; k++) {
       for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
         V[iPnt + V.size(1) * c] =
@@ -5927,729 +6651,6 @@ static void gen_vander_2d(const ::coder::array<real_T, 2U> &us,
     }
   }
   //  compute higher order confluent Vandermonde matrix blocks incrementally
-  if (order != 0) {
-    real_T scaleu;
-    real_T scalev;
-    coder::SizeType i1;
-    coder::SizeType offset;
-    //  This is an optimized version of update_vander_ordern for first-order CVM
-    m2cAssert(degree != 0, "");
-    //  Compute derivative with respect to u
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[stride + iPnt] = 0.0;
-      V[(stride + iPnt) + V.size(1)] = V[iPnt];
-      V[(stride + iPnt) + V.size(1) * 2] = 0.0;
-    }
-    c = 3;
-    if (degree < 0) {
-      i1 = -degree;
-    } else {
-      i1 = degree;
-    }
-    for (deg = 2; deg <= i1; deg++) {
-      scaleu = deg;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(stride + iPnt) + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - deg)] * static_cast<real_T>(deg);
-      }
-      c++;
-      for (coder::SizeType j{0}; j <= deg - 2; j++) {
-        scaleu--;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - deg)] * scaleu;
-        }
-        c++;
-      }
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(stride + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    //  Compute the bi-degree terms if degree<0
-    for (coder::SizeType len{i}; len >= 0; len--) {
-      scaleu = 1 - degree;
-      for (coder::SizeType k{0}; k < len; k++) {
-        scaleu--;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(stride + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (c - len)] * scaleu;
-        }
-        c++;
-      }
-    }
-    //  Compute derivative with respect to v
-    offset = us.size(0) + us.size(0);
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      b_degree = offset + iPnt;
-      V[b_degree] = 0.0;
-      V[b_degree + V.size(1)] = 0.0;
-      V[b_degree + V.size(1) * 2] = V[iPnt];
-    }
-    c = 3;
-    for (deg = 2; deg <= i1; deg++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-      for (coder::SizeType j{0}; j < deg; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * ((c - deg) - 1)] *
-              (static_cast<real_T>(j) + 1.0);
-        }
-        c++;
-      }
-    }
-    //  Compute the bi-degree terms if degree<0
-    deg = -degree;
-    for (coder::SizeType len{i}; len >= 0; len--) {
-      deg++;
-      scalev = (deg + degree) - 1;
-      for (coder::SizeType k{0}; k < len; k++) {
-        scalev++;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * ((c - len) - 1)] * scalev;
-        }
-        c++;
-      }
-    }
-    //      compute regular orders if order > 0
-    if (order > 0) {
-      for (coder::SizeType dd{2}; dd <= order; dd++) {
-        coder::SizeType i2;
-        coder::SizeType offset_prev;
-        coder::SizeType offset_tmp_tmp;
-        //  Compute order-N CVM row blocks from order-(N-1) CVM.
-        m2cAssert(degree != 0, "");
-        offset_tmp_tmp = dd * (dd + 1) / 2;
-        offset = offset_tmp_tmp * stride;
-        offset_prev = (dd - 1) * dd / 2 * stride;
-        //  Compute derivative with respect to u
-        if (degree < 0) {
-          i1 = -degree;
-        } else {
-          i1 = degree;
-        }
-        for (coder::SizeType b_i{0}; b_i < dd; b_i++) {
-          //  Initialize block to zero
-          i2 = offset + 1;
-          b_degree = offset + npoints;
-          for (coder::SizeType col{0}; col < offset_tmp_tmp; col++) {
-            for (coder::SizeType row{i2}; row <= b_degree; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = offset_tmp_tmp;
-          for (deg = dd; deg <= i1; deg++) {
-            scaleu = deg + 1;
-            i2 = deg - 1;
-            for (coder::SizeType j{0}; j <= i2; j++) {
-              scaleu--;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
-              }
-              c++;
-            }
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          //  Compute the bi-degree terms if degree<0
-          for (coder::SizeType len{i}; len >= 0; len--) {
-            scaleu = 1 - degree;
-            for (coder::SizeType k{0}; k < len; k++) {
-              scaleu--;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
-              }
-              c++;
-            }
-          }
-          offset += stride;
-          offset_prev += stride;
-        }
-        //  Compute derivative with respect to v
-        i1 = offset + 1;
-        i2 = offset + npoints;
-        for (coder::SizeType col{0}; col < offset_tmp_tmp; col++) {
-          for (coder::SizeType row{i1}; row <= i2; row++) {
-            V[(row + V.size(1) * col) - 1] = 0.0;
-          }
-        }
-        c = offset_tmp_tmp;
-        if (degree < 0) {
-          i1 = -degree;
-        } else {
-          i1 = degree;
-        }
-        for (deg = dd; deg <= i1; deg++) {
-          i2 = dd - 1;
-          for (coder::SizeType j{0}; j <= i2; j++) {
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          for (coder::SizeType j{dd}; j <= deg; j++) {
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[((offset_prev - stride) + iPnt) +
-                    V.size(1) * ((c - deg) - 1)] *
-                  static_cast<real_T>(j);
-            }
-            c++;
-          }
-        }
-        //  Compute the bi-degree terms if degree<0
-        deg = -degree;
-        for (coder::SizeType len{i}; len >= 0; len--) {
-          deg++;
-          scalev = (deg + degree) - 1;
-          for (coder::SizeType k{0}; k < len; k++) {
-            scalev++;
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[((offset_prev - stride) + iPnt) +
-                    V.size(1) * ((c - len) - 1)] *
-                  scalev;
-            }
-            c++;
-          }
-        }
-      }
-    } else if (order < -1) {
-      //          compute efficient laplacian and bi-laplacian
-      switch (order) {
-      case -2: {
-        coder::SizeType i2;
-        coder::SizeType offset_prev;
-        //  Compute order-N CVM row blocks from order-(N-1) CVM.
-        m2cAssert(degree != 0, "");
-        offset = 3 * us.size(0);
-        offset_prev = us.size(0);
-        //  Compute derivative with respect to u
-        if (degree < 0) {
-          i1 = -degree;
-        } else {
-          i1 = degree;
-        }
-        //  Initialize block to zero
-        i2 = offset + 1;
-        b_degree = offset + npoints;
-        for (coder::SizeType col{0}; col < 3; col++) {
-          for (coder::SizeType row{i2}; row <= b_degree; row++) {
-            V[(row + V.size(1) * col) - 1] = 0.0;
-          }
-        }
-        c = 3;
-        for (deg = 2; deg <= i1; deg++) {
-          scaleu = deg + 1;
-          i2 = deg - 1;
-          for (coder::SizeType j{0}; j <= i2; j++) {
-            scaleu--;
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
-            }
-            c++;
-          }
-          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(offset + iPnt) + V.size(1) * c] = 0.0;
-          }
-          c++;
-        }
-        //  Compute the bi-degree terms if degree<0
-        for (coder::SizeType len{i}; len >= 0; len--) {
-          scaleu = 1 - degree;
-          for (coder::SizeType k{0}; k < len; k++) {
-            scaleu--;
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
-            }
-            c++;
-          }
-        }
-        offset += us.size(0);
-        //  Compute derivative with respect to v
-        offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-        i1 = offset + 1;
-        i2 = offset + npoints;
-        for (coder::SizeType col{0}; col < 3; col++) {
-          for (coder::SizeType row{i1}; row <= i2; row++) {
-            V[(row + V.size(1) * col) - 1] = 0.0;
-          }
-        }
-        c = 3;
-        if (degree < 0) {
-          i1 = -degree;
-        } else {
-          i1 = degree;
-        }
-        for (deg = 2; deg <= i1; deg++) {
-          for (coder::SizeType j{0}; j < 2; j++) {
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          for (coder::SizeType j{2}; j <= deg; j++) {
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[((offset_prev - stride) + iPnt) +
-                    V.size(1) * ((c - deg) - 1)] *
-                  static_cast<real_T>(j);
-            }
-            c++;
-          }
-        }
-        //  Compute the bi-degree terms if degree<0
-        deg = -degree;
-        for (coder::SizeType len{i}; len >= 0; len--) {
-          deg++;
-          scalev = (deg + degree) - 1;
-          for (coder::SizeType k{0}; k < len; k++) {
-            scalev++;
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] =
-                  V[((offset_prev - stride) + iPnt) +
-                    V.size(1) * ((c - len) - 1)] *
-                  scalev;
-            }
-            c++;
-          }
-        }
-      } break;
-      case -4: {
-        if (degree > 0) {
-          coder::SizeType offset_prev;
-          //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          m2cAssert(true, "");
-          offset = 3 * us.size(0);
-          //  Compute derivative with respect to u
-          i = offset + 1;
-          i1 = offset + npoints;
-          for (coder::SizeType col{0}; col < 3; col++) {
-            for (coder::SizeType row{i}; row <= i1; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 3;
-          for (deg = 2; deg <= degree; deg++) {
-            scaleu = deg + 1;
-            i = deg - 1;
-            for (coder::SizeType j{0}; j <= i; j++) {
-              scaleu--;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(us.size(0) + iPnt) + V.size(1) * (c - deg)] * scaleu;
-              }
-              c++;
-            }
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          //  Compute the bi-degree terms if degree<0
-          offset += us.size(0);
-          //  Compute derivative with respect to v
-          offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-          i = offset + 1;
-          i1 = offset + npoints;
-          for (coder::SizeType col{0}; col < 3; col++) {
-            for (coder::SizeType row{i}; row <= i1; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 3;
-          for (deg = 2; deg <= degree; deg++) {
-            for (coder::SizeType j{0}; j < 2; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            for (coder::SizeType j{2}; j <= deg; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - deg) - 1)] *
-                    static_cast<real_T>(j);
-              }
-              c++;
-            }
-          }
-          //  Compute the bi-degree terms if degree<0
-          offset = 5 * us.size(0);
-          offset_prev = 3 * us.size(0);
-          m2cAssert(degree >= 4, "");
-          //  compute du^4 and du^2*dv^2
-          for (coder::SizeType terms{0}; terms < 2; terms++) {
-            i = offset + 1;
-            i1 = offset + npoints;
-            for (coder::SizeType col{0}; col < 10; col++) {
-              for (coder::SizeType row{i}; row <= i1; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-            c = 10;
-            for (deg = 4; deg <= degree; deg++) {
-              scaleu = deg + 1;
-              i = deg - 1;
-              for (coder::SizeType j{0}; j <= i; j++) {
-                scaleu--;
-                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] =
-                      V[(offset_prev + iPnt) +
-                        V.size(1) * ((c - (deg << 1)) + 1)] *
-                      scaleu * (scaleu - 1.0);
-                }
-                c++;
-              }
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            offset += stride;
-            offset_prev += stride;
-          }
-          //  compute dv^4
-          i = offset + 1;
-          i1 = offset + npoints;
-          for (coder::SizeType col{0}; col < 10; col++) {
-            for (coder::SizeType row{i}; row <= i1; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 10;
-          for (deg = 4; deg <= degree; deg++) {
-            for (coder::SizeType j{0}; j < 4; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            for (coder::SizeType j{4}; j <= deg; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - (deg << 1)) - 1)] *
-                    static_cast<real_T>(j) * (static_cast<real_T>(j) - 1.0);
-              }
-              c++;
-            }
-          }
-        } else {
-          coder::SizeType i2;
-          coder::SizeType offset_prev;
-          //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          m2cAssert(degree != 0, "");
-          offset = 3 * us.size(0);
-          offset_prev = us.size(0);
-          //  Compute derivative with respect to u
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          //  Initialize block to zero
-          i2 = offset + 1;
-          b_degree = offset + npoints;
-          for (coder::SizeType col{0}; col < 3; col++) {
-            for (coder::SizeType row{i2}; row <= b_degree; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 3;
-          for (deg = 2; deg <= i1; deg++) {
-            scaleu = deg + 1;
-            i2 = deg - 1;
-            for (coder::SizeType j{0}; j <= i2; j++) {
-              scaleu--;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
-              }
-              c++;
-            }
-            for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-              V[(offset + iPnt) + V.size(1) * c] = 0.0;
-            }
-            c++;
-          }
-          //  Compute the bi-degree terms if degree<0
-          for (coder::SizeType len{i}; len >= 0; len--) {
-            scaleu = 1 - degree;
-            for (coder::SizeType k{0}; k < len; k++) {
-              scaleu--;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
-              }
-              c++;
-            }
-          }
-          offset += us.size(0);
-          //  Compute derivative with respect to v
-          offset_prev = (us.size(0) + us.size(0)) + us.size(0);
-          i1 = offset + 1;
-          i2 = offset + npoints;
-          for (coder::SizeType col{0}; col < 3; col++) {
-            for (coder::SizeType row{i1}; row <= i2; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 3;
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          for (deg = 2; deg <= i1; deg++) {
-            for (coder::SizeType j{0}; j < 2; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            for (coder::SizeType j{2}; j <= deg; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - deg) - 1)] *
-                    static_cast<real_T>(j);
-              }
-              c++;
-            }
-          }
-          //  Compute the bi-degree terms if degree<0
-          deg = -degree;
-          for (coder::SizeType len{i}; len >= 0; len--) {
-            deg++;
-            scalev = (deg + degree) - 1;
-            for (coder::SizeType k{0}; k < len; k++) {
-              scalev++;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - len) - 1)] *
-                    scalev;
-              }
-              c++;
-            }
-          }
-          //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          m2cAssert(degree != 0, "");
-          offset = 5 * us.size(0);
-          offset_prev = 3 * us.size(0);
-          //  Compute derivative with respect to u
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
-            //  Initialize block to zero
-            i2 = offset + 1;
-            b_degree = offset + npoints;
-            for (coder::SizeType col{0}; col < 6; col++) {
-              for (coder::SizeType row{i2}; row <= b_degree; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-            c = 6;
-            for (deg = 3; deg <= i1; deg++) {
-              scaleu = deg + 1;
-              i2 = deg - 1;
-              for (coder::SizeType j{0}; j <= i2; j++) {
-                scaleu--;
-                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] =
-                      V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
-                }
-                c++;
-              }
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            //  Compute the bi-degree terms if degree<0
-            for (coder::SizeType len{i}; len >= 0; len--) {
-              scaleu = 1 - degree;
-              for (coder::SizeType k{0}; k < len; k++) {
-                scaleu--;
-                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] =
-                      V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
-                }
-                c++;
-              }
-            }
-            offset += stride;
-            offset_prev += stride;
-          }
-          //  Compute derivative with respect to v
-          i1 = offset + 1;
-          i2 = offset + npoints;
-          for (coder::SizeType col{0}; col < 6; col++) {
-            for (coder::SizeType row{i1}; row <= i2; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 6;
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          for (deg = 3; deg <= i1; deg++) {
-            for (coder::SizeType j{0}; j < 3; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            for (coder::SizeType j{3}; j <= deg; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - deg) - 1)] *
-                    static_cast<real_T>(j);
-              }
-              c++;
-            }
-          }
-          //  Compute the bi-degree terms if degree<0
-          deg = -degree;
-          for (coder::SizeType len{i}; len >= 0; len--) {
-            deg++;
-            scalev = (deg + degree) - 1;
-            for (coder::SizeType k{0}; k < len; k++) {
-              scalev++;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - len) - 1)] *
-                    scalev;
-              }
-              c++;
-            }
-          }
-          //  Compute order-N CVM row blocks from order-(N-1) CVM.
-          m2cAssert(degree != 0, "");
-          offset = us.size(0) << 3;
-          offset_prev = 5 * us.size(0);
-          //  Compute derivative with respect to u
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          for (coder::SizeType b_i{0}; b_i < 2; b_i++) {
-            //  Initialize block to zero
-            i2 = offset + 1;
-            b_degree = offset + npoints;
-            for (coder::SizeType col{0}; col < 10; col++) {
-              for (coder::SizeType row{i2}; row <= b_degree; row++) {
-                V[(row + V.size(1) * col) - 1] = 0.0;
-              }
-            }
-            c = 10;
-            for (deg = 4; deg <= i1; deg++) {
-              scaleu = deg + 1;
-              i2 = deg - 1;
-              for (coder::SizeType j{0}; j <= i2; j++) {
-                scaleu--;
-                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] =
-                      V[(offset_prev + iPnt) + V.size(1) * (c - deg)] * scaleu;
-                }
-                c++;
-              }
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            //  Compute the bi-degree terms if degree<0
-            for (coder::SizeType len{i}; len >= 0; len--) {
-              scaleu = 1 - degree;
-              for (coder::SizeType k{0}; k < len; k++) {
-                scaleu--;
-                for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                  V[(offset + iPnt) + V.size(1) * c] =
-                      V[(offset_prev + iPnt) + V.size(1) * (c - len)] * scaleu;
-                }
-                c++;
-              }
-            }
-            offset += stride;
-            offset_prev += stride;
-          }
-          //  Compute derivative with respect to v
-          offset_prev += us.size(0);
-          i1 = offset + 1;
-          i2 = offset + npoints;
-          for (coder::SizeType col{0}; col < 10; col++) {
-            for (coder::SizeType row{i1}; row <= i2; row++) {
-              V[(row + V.size(1) * col) - 1] = 0.0;
-            }
-          }
-          c = 10;
-          if (degree < 0) {
-            i1 = -degree;
-          } else {
-            i1 = 0;
-          }
-          for (deg = 4; deg <= i1; deg++) {
-            for (coder::SizeType j{0}; j < 4; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] = 0.0;
-              }
-              c++;
-            }
-            for (coder::SizeType j{4}; j <= deg; j++) {
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - deg) - 1)] *
-                    static_cast<real_T>(j);
-              }
-              c++;
-            }
-          }
-          //  Compute the bi-degree terms if degree<0
-          deg = -degree;
-          for (coder::SizeType len{i}; len >= 0; len--) {
-            deg++;
-            scalev = (deg + degree) - 1;
-            for (coder::SizeType k{0}; k < len; k++) {
-              scalev++;
-              for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-                V[(offset + iPnt) + V.size(1) * c] =
-                    V[((offset_prev - stride) + iPnt) +
-                      V.size(1) * ((c - len) - 1)] *
-                    scalev;
-              }
-              c++;
-            }
-          }
-        }
-      } break;
-      default:
-        m2cAssert(false, "Order must be 0, 1, 2, -1, -2, or -4");
-        break;
-      }
-    }
-  }
 }
 
 static void gen_vander_2d_dag(coder::SizeType degree,
@@ -10348,25 +10349,73 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
 static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
                           coder::SizeType npoints, coder::SizeType degree,
+                          const real_T hs_inv_data[],
+                          const coder::SizeType hs_inv_size[2],
                           ::coder::array<real_T, 2U> &V)
 {
+  real_T b_u2v2_tmp;
+  real_T hs_inv_idx_0;
+  real_T hs_inv_idx_1;
+  real_T hs_inv_idx_2;
+  real_T scaleu;
+  real_T scalev;
+  real_T scalew;
+  real_T u2v2;
+  real_T u2v2_tmp;
+  real_T u2w2;
+  real_T u2w2_tmp;
+  real_T uu2;
+  real_T uu4;
+  real_T v2w2;
+  real_T v4;
+  real_T vv2;
+  real_T ww2;
+  real_T ww4;
   coder::SizeType b_degree;
+  coder::SizeType balance;
   coder::SizeType c;
+  coder::SizeType c_degree;
+  coder::SizeType cornerTriangle;
+  coder::SizeType counterBottomRow;
   coder::SizeType d;
   coder::SizeType deg;
+  coder::SizeType degg;
+  coder::SizeType excess;
   coder::SizeType i;
+  coder::SizeType i1;
+  coder::SizeType maxLayers;
+  coder::SizeType nTermsInLayer;
+  coder::SizeType nTermsInPrevLayer;
+  coder::SizeType offset;
+  coder::SizeType partition;
+  coder::SizeType stride;
   if (npoints == 0) {
     npoints = us.size(0);
   } else if (npoints > us.size(0)) {
     m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
   }
+  if (hs_inv_size[1] == 0) {
+    hs_inv_idx_0 = 1.0;
+    hs_inv_idx_1 = 1.0;
+    hs_inv_idx_2 = 1.0;
+  } else {
+    hs_inv_idx_0 = hs_inv_data[0];
+    hs_inv_idx_1 = hs_inv_data[1];
+    hs_inv_idx_2 = hs_inv_data[2];
+  }
+  stride = us.size(0);
   //  Allocate storage for V
   if (degree >= 0) {
     b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
   } else {
     b_degree = (1 - degree) * (1 - degree) * (1 - degree);
   }
-  V.set_size(b_degree, us.size(0));
+  if (degree > 0) {
+    c_degree = 13;
+  } else {
+    c_degree = 19;
+  }
+  V.set_size(b_degree, us.size(0) * c_degree);
   //  compute 0th order generalized Vandermonde matrix
   if (degree != 0) {
     for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
@@ -10412,10 +10461,6 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
   }
   //  Compute the tri-degree terms if degree<0
   if (degree < 0) {
-    coder::SizeType cornerTriangle;
-    coder::SizeType excess;
-    coder::SizeType maxLayers;
-    coder::SizeType nTermsInLayer;
     deg = -degree;
     maxLayers = -degree * 3;
     // max number of layers needed in the Pascal tetrahedron
@@ -10427,9 +10472,7 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
     // excess based on overlapping of growing Pascal triangles
     i = 1 - degree;
     for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      coder::SizeType counterBottomRow;
       coder::SizeType gap;
-      coder::SizeType nTermsInPrevLayer;
       //  Within each level, x^deg is at the peak of Pascal triangle
       cornerTriangle = (cornerTriangle + p) + degree;
       counterBottomRow = 1;
@@ -10453,8 +10496,8 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
       nTermsInPrevLayer = nTermsInLayer;
       nTermsInLayer = d + 3 * (excess - cornerTriangle);
       gap = (nTermsInPrevLayer + counterBottomRow) - 1;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
+      i1 = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= i1; j++) {
         for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[iPnt + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
@@ -10464,6 +10507,839 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
     }
   }
   m2cAssert(true, "");
+  //      compute higher order confluent Vandermonde matrix blocks
+  m2cAssert(
+      degree > 0,
+      "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
+  //  Compute order-1 CVM row blocks from order-0 GVM.
+  m2cAssert(degree != 0, "");
+  // compute derivatives with respect to u
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    c_degree = stride + iPnt;
+    V[c_degree] = 0.0;
+    V[c_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
+    V[c_degree + V.size(1) * 2] = 0.0;
+    V[c_degree + V.size(1) * 3] = 0.0;
+  }
+  c = 4;
+  d = 3;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 2; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * c] =
+          V[iPnt + V.size(1) * (c - d)] * scaleu;
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(stride + iPnt) + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * scaleu;
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = stride + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  // tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = stride + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = stride + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  // compute derivatives with respect to v
+  offset = us.size(0) + us.size(0);
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    c_degree = offset + iPnt;
+    V[c_degree] = 0.0;
+    V[c_degree + V.size(1)] = 0.0;
+    V[c_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
+    V[c_degree + V.size(1) * 3] = 0.0;
+  }
+  c = 4;
+  d = 4;
+  for (deg = 2; deg <= i; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[iPnt + V.size(1) * (c - d)] * scalev;
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[iPnt + V.size(1) * (c - d)] * scalev;
+    }
+    c++;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    d = (d + deg) + 1;
+  }
+  // compute the tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d - 2;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer + 1;
+      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+      balance = nTermsInPrevLayer + counterBottomRow;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  // compute derivatives with respect to w
+  offset += us.size(0);
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    V[b_degree] = 0.0;
+    V[b_degree + V.size(1)] = 0.0;
+    V[b_degree + V.size(1) * 2] = 0.0;
+    V[b_degree + V.size(1) * 3] = V[iPnt] * hs_inv_idx_2;
+  }
+  c = 4;
+  d = 3;
+  for (deg = 2; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  // compute tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      c_degree = p + degree;
+      b_degree = ((c_degree << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = nTermsInPrevLayer + counterBottomRow;
+      degg = -degree;
+      for (coder::SizeType k{0}; k < degg; k++) {
+        b_degree = (c_degree - k) - 1;
+        if (b_degree < 0) {
+          b_degree = -b_degree;
+        }
+        partition = -degree - b_degree;
+        for (coder::SizeType j{0}; j <= partition; j++) {
+          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(iPnt + offset) + V.size(1) * c] =
+                V[iPnt + V.size(1) * (c - balance)] * scalew;
+          }
+          c++;
+        }
+      }
+    }
+  }
+  //  compute du^2
+  offset = us.size(0) << 2;
+  uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    V[b_degree] = 0.0;
+    V[b_degree + V.size(1)] = 0.0;
+    V[b_degree + V.size(1) * 2] = 0.0;
+    V[b_degree + V.size(1) * 3] = 0.0;
+    V[b_degree + V.size(1) * 4] = uu2 * V[iPnt];
+    for (i = 0; i < 5; i++) {
+      V[b_degree + V.size(1) * (i + 5)] = 0.0;
+    }
+  }
+  c = 10;
+  d = 6;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 3; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  // compute tri degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 1;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt + 1];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  //  compute dv^2
+  offset += us.size(0);
+  vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    for (i1 = 0; i1 < 6; i1++) {
+      V[b_degree + V.size(1) * i1] = 0.0;
+    }
+    V[b_degree + V.size(1) * 6] = vv2 * V[iPnt];
+    V[b_degree + V.size(1) * 7] = 0.0;
+    V[b_degree + V.size(1) * 8] = 0.0;
+    V[b_degree + V.size(1) * 9] = 0.0;
+  }
+  c = 10;
+  d = 7;
+  for (deg = 3; deg <= i; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
+    }
+    c++;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    c++;
+    d = (d + deg) + 1;
+  }
+  // compute the tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d - 2;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i1 = 1 - degree;
+    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
+              us[us.size(1) * iPnt];
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      b_degree = (((p + degree) << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer + 1;
+      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
+      balance = nTermsInPrevLayer + counterBottomRow;
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          c_degree = offset + iPnt;
+          V[c_degree + V.size(1) * c] =
+              V[c_degree + V.size(1) * (c - balance)] *
+              us[us.size(1) * iPnt + 2];
+        }
+        c++;
+      }
+    }
+  }
+  //  compute dw^2
+  offset += us.size(0);
+  ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    b_degree = offset + iPnt;
+    for (i1 = 0; i1 < 9; i1++) {
+      V[b_degree + V.size(1) * i1] = 0.0;
+    }
+    V[b_degree + V.size(1) * 9] = ww2 * V[iPnt];
+  }
+  c = 10;
+  d = 6;
+  for (deg = 3; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
+              scalew;
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  // compute tri-degree terms if degree < 0
+  if (degree < 0) {
+    deg = -degree;
+    maxLayers = -degree * 3;
+    // max number of layers needed in the Pascal tetrahedron
+    cornerTriangle = 0;
+    // number of elements subtracted in each corner Pascal triangle
+    nTermsInLayer = d;
+    // initializing number of elements in layer
+    excess = 0;
+    // excess based on overlapping of growing Pascal triangles
+    i = 1 - degree;
+    for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      //  Within each level, x^deg is at the peak of Pascal triangle
+      cornerTriangle = (cornerTriangle + p) + degree;
+      counterBottomRow = 0;
+      // counter for the bottom row to be subtracted later
+      for (coder::SizeType k{0}; k < deg; k++) {
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] = 0.0;
+        }
+        c++;
+        counterBottomRow++;
+      }
+      deg--;
+      c_degree = p + degree;
+      b_degree = ((c_degree << 1) - p) - 1;
+      if (b_degree < 0) {
+        b_degree = 0;
+      }
+      excess += b_degree;
+      d = (d + p) + 1;
+      // number of terms in Pascal tetrahedron
+      nTermsInPrevLayer = nTermsInLayer;
+      nTermsInLayer = d + 3 * (excess - cornerTriangle);
+      balance = nTermsInPrevLayer + counterBottomRow;
+      degg = -degree;
+      for (coder::SizeType k{0}; k < degg; k++) {
+        b_degree = (c_degree - k) - 1;
+        if (b_degree < 0) {
+          b_degree = -b_degree;
+        }
+        partition = -degree - b_degree;
+        for (coder::SizeType j{0}; j <= partition; j++) {
+          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
+          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+            V[(iPnt + offset) + V.size(1) * c] =
+                V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
+          }
+          c++;
+        }
+      }
+    }
+  }
+  //  compute du^4
+  offset = us.size(0) * 7;
+  uu4 = 24.0 * std::pow(hs_inv_idx_0, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 20] = uu4 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  if (degree < 0) {
+    i = -degree;
+  } else {
+    i = degree;
+  }
+  for (deg = 5; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+          scaleu * (scaleu - hs_inv_idx_0);
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scaleu * (scaleu - hs_inv_idx_0);
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  //  compute du^2dv^2
+  offset = us.size(0) << 3;
+  u2v2_tmp = 4.0 * (hs_inv_idx_0 * hs_inv_idx_0);
+  b_u2v2_tmp = hs_inv_idx_1 * hs_inv_idx_1;
+  u2v2 = u2v2_tmp * b_u2v2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 22] = u2v2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] =
+          V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] * scaleu *
+          (scaleu - hs_inv_idx_0);
+    }
+    c++;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      scaleu -= hs_inv_idx_0;
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] =
+            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scaleu * (scaleu - hs_inv_idx_0);
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * (c + 1)] =
+            V[c_degree + V.size(1) * ((c - d) - deg)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    c += 2;
+    d = (d + deg) + 1;
+  }
+  //  compute dv^4
+  offset = us.size(0) * 9;
+  v4 = 24.0 * std::pow(hs_inv_idx_1, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 24] = v4 * V[iPnt];
+  }
+  c = 34;
+  d = 15;
+  for (deg = 5; deg <= degree; deg++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
+    }
+    scalev = hs_inv_idx_1;
+    for (coder::SizeType j{0}; j <= deg - 2; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * (c + 2)] =
+            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
+            scalev * (scalev - hs_inv_idx_1);
+      }
+      scalev += hs_inv_idx_1;
+      c++;
+    }
+    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * (c + 2)] =
+          V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] * scalev *
+          (scalev - hs_inv_idx_1);
+    }
+    c += 3;
+    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        c_degree = offset + iPnt;
+        V[c_degree + V.size(1) * c] =
+            V[c_degree + V.size(1) * (((c - d) - deg) - 1)] *
+            us[us.size(1) * iPnt + 2];
+      }
+      c++;
+    }
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * c] = 0.0;
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute du^2*dw^2
+  offset += us.size(0);
+  u2w2_tmp = hs_inv_idx_2 * hs_inv_idx_2;
+  u2w2 = u2v2_tmp * u2w2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 29] = u2w2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + (stride << 2)) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute dv^2*dw^2
+  offset += us.size(0);
+  v2w2 = 4.0 * b_u2v2_tmp * u2w2_tmp;
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 31] = v2w2 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 5 * stride) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
+  //  compute dw^4
+  offset += us.size(0);
+  ww4 = 24.0 * std::pow(hs_inv_idx_2, 4.0);
+  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
+    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
+    }
+  }
+  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+    V[(offset + iPnt) + V.size(1) * 34] = ww4 * V[iPnt];
+  }
+  c = 35;
+  d = 15;
+  for (deg = 5; deg <= i; deg++) {
+    for (coder::SizeType j{0}; j <= deg; j++) {
+      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+        V[(offset + iPnt) + V.size(1) * c] = 0.0;
+      }
+      c++;
+    }
+    for (coder::SizeType k{0}; k < deg; k++) {
+      i1 = (deg - k) - 1;
+      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
+        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
+        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
+          V[(offset + iPnt) + V.size(1) * c] =
+              V[(iPnt + 6 * stride) +
+                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
+              scalew * (scalew - hs_inv_idx_2);
+        }
+        c++;
+      }
+    }
+    d = (d + deg) + 1;
+  }
 }
 
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
@@ -13988,113 +14864,27 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
 }
 
 //  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
-static void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
-                          ::coder::array<real_T, 2U> &V)
-{
-  coder::SizeType c;
-  coder::SizeType d;
-  coder::SizeType i;
-  V.set_size((degree + 1) * (degree + 2) * (degree + 3) / 6, 1);
-  //  compute 0th order generalized Vandermonde matrix
-  V[V.size(1) * 3] = us_data[2];
-  V[V.size(1) * 2] = us_data[1];
-  V[V.size(1)] = us_data[0];
-  V[0] = 1.0;
-  c = 4;
-  d = 4;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (coder::SizeType deg{2}; deg <= i; deg++) {
-    //  Within each level, use convention of Pascal triangle with x^deg at peak
-    for (coder::SizeType j{0}; j < deg; j++) {
-      V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
-      c++;
-    }
-    V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
-    c++;
-    for (coder::SizeType j{0}; j <= d - 2; j++) {
-      V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
-      c++;
-    }
-    d = (d + deg) + 1;
-  }
-  //  Compute the tri-degree terms if degree<0
-  m2cAssert(true, "");
-}
-
-//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
 static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
                           coder::SizeType npoints, coder::SizeType degree,
-                          const real_T hs_inv_data[],
-                          const coder::SizeType hs_inv_size[2],
                           ::coder::array<real_T, 2U> &V)
 {
-  real_T b_u2v2_tmp;
-  real_T hs_inv_idx_0;
-  real_T hs_inv_idx_1;
-  real_T hs_inv_idx_2;
-  real_T scaleu;
-  real_T scalev;
-  real_T scalew;
-  real_T u2v2;
-  real_T u2v2_tmp;
-  real_T u2w2;
-  real_T u2w2_tmp;
-  real_T uu2;
-  real_T uu4;
-  real_T v2w2;
-  real_T v4;
-  real_T vv2;
-  real_T ww2;
-  real_T ww4;
   coder::SizeType b_degree;
-  coder::SizeType balance;
   coder::SizeType c;
-  coder::SizeType c_degree;
-  coder::SizeType cornerTriangle;
-  coder::SizeType counterBottomRow;
   coder::SizeType d;
   coder::SizeType deg;
-  coder::SizeType degg;
-  coder::SizeType excess;
   coder::SizeType i;
-  coder::SizeType i1;
-  coder::SizeType maxLayers;
-  coder::SizeType nTermsInLayer;
-  coder::SizeType nTermsInPrevLayer;
-  coder::SizeType offset;
-  coder::SizeType partition;
-  coder::SizeType stride;
   if (npoints == 0) {
     npoints = us.size(0);
   } else if (npoints > us.size(0)) {
     m2cErrMsgIdAndTxt("wlslib:BufferTooSmall", "Input us is too small.");
   }
-  if (hs_inv_size[1] == 0) {
-    hs_inv_idx_0 = 1.0;
-    hs_inv_idx_1 = 1.0;
-    hs_inv_idx_2 = 1.0;
-  } else {
-    hs_inv_idx_0 = hs_inv_data[0];
-    hs_inv_idx_1 = hs_inv_data[1];
-    hs_inv_idx_2 = hs_inv_data[2];
-  }
-  stride = us.size(0);
   //  Allocate storage for V
   if (degree >= 0) {
     b_degree = (degree + 1) * (degree + 2) * (degree + 3) / 6;
   } else {
     b_degree = (1 - degree) * (1 - degree) * (1 - degree);
   }
-  if (degree > 0) {
-    c_degree = 13;
-  } else {
-    c_degree = 19;
-  }
-  V.set_size(b_degree, us.size(0) * c_degree);
+  V.set_size(b_degree, us.size(0));
   //  compute 0th order generalized Vandermonde matrix
   if (degree != 0) {
     for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
@@ -14140,6 +14930,10 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
   }
   //  Compute the tri-degree terms if degree<0
   if (degree < 0) {
+    coder::SizeType cornerTriangle;
+    coder::SizeType excess;
+    coder::SizeType maxLayers;
+    coder::SizeType nTermsInLayer;
     deg = -degree;
     maxLayers = -degree * 3;
     // max number of layers needed in the Pascal tetrahedron
@@ -14151,7 +14945,9 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
     // excess based on overlapping of growing Pascal triangles
     i = 1 - degree;
     for (coder::SizeType p{i}; p <= maxLayers; p++) {
+      coder::SizeType counterBottomRow;
       coder::SizeType gap;
+      coder::SizeType nTermsInPrevLayer;
       //  Within each level, x^deg is at the peak of Pascal triangle
       cornerTriangle = (cornerTriangle + p) + degree;
       counterBottomRow = 1;
@@ -14175,8 +14971,8 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
       nTermsInPrevLayer = nTermsInLayer;
       nTermsInLayer = d + 3 * (excess - cornerTriangle);
       gap = (nTermsInPrevLayer + counterBottomRow) - 1;
-      i1 = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= i1; j++) {
+      b_degree = nTermsInLayer - counterBottomRow;
+      for (coder::SizeType j{0}; j <= b_degree; j++) {
         for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
           V[iPnt + V.size(1) * c] =
               V[iPnt + V.size(1) * (c - gap)] * us[us.size(1) * iPnt + 2];
@@ -14186,839 +14982,44 @@ static void gen_vander_3d(const ::coder::array<real_T, 2U> &us,
     }
   }
   m2cAssert(true, "");
-  //      compute higher order confluent Vandermonde matrix blocks
-  m2cAssert(
-      degree > 0,
-      "Biharnomic is only supported for Pascal-tetrahedral monomials in 3D.");
-  //  Compute order-1 CVM row blocks from order-0 GVM.
-  m2cAssert(degree != 0, "");
-  // compute derivatives with respect to u
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    c_degree = stride + iPnt;
-    V[c_degree] = 0.0;
-    V[c_degree + V.size(1)] = V[iPnt] * hs_inv_idx_0;
-    V[c_degree + V.size(1) * 2] = 0.0;
-    V[c_degree + V.size(1) * 3] = 0.0;
-  }
-  c = 4;
-  d = 3;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 2; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * c] =
-          V[iPnt + V.size(1) * (c - d)] * scaleu;
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(stride + iPnt) + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * scaleu;
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = stride + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(stride + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  // tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = stride + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = stride + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  // compute derivatives with respect to v
-  offset = us.size(0) + us.size(0);
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    c_degree = offset + iPnt;
-    V[c_degree] = 0.0;
-    V[c_degree + V.size(1)] = 0.0;
-    V[c_degree + V.size(1) * 2] = V[iPnt] * hs_inv_idx_1;
-    V[c_degree + V.size(1) * 3] = 0.0;
-  }
+}
+
+//  gen_vander_3d  Generate generalized/confluent Vandermonde matrix in 3D.
+static void gen_vander_3d(const real_T us_data[], coder::SizeType degree,
+                          ::coder::array<real_T, 2U> &V)
+{
+  coder::SizeType c;
+  coder::SizeType d;
+  coder::SizeType i;
+  V.set_size((degree + 1) * (degree + 2) * (degree + 3) / 6, 1);
+  //  compute 0th order generalized Vandermonde matrix
+  V[V.size(1) * 3] = us_data[2];
+  V[V.size(1) * 2] = us_data[1];
+  V[V.size(1)] = us_data[0];
+  V[0] = 1.0;
   c = 4;
   d = 4;
-  for (deg = 2; deg <= i; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[iPnt + V.size(1) * (c - d)] * scalev;
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[iPnt + V.size(1) * (c - d)] * scalev;
-    }
-    c++;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    d = (d + deg) + 1;
-  }
-  // compute the tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d - 2;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer + 1;
-      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-      balance = nTermsInPrevLayer + counterBottomRow;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  // compute derivatives with respect to w
-  offset += us.size(0);
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    V[b_degree] = 0.0;
-    V[b_degree + V.size(1)] = 0.0;
-    V[b_degree + V.size(1) * 2] = 0.0;
-    V[b_degree + V.size(1) * 3] = V[iPnt] * hs_inv_idx_2;
-  }
-  c = 4;
-  d = 3;
-  for (deg = 2; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[iPnt + V.size(1) * (((c - d) - deg) - 1)] * scalew;
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  // compute tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType k{0}; k < deg; k++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      c_degree = p + degree;
-      b_degree = ((c_degree << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = nTermsInPrevLayer + counterBottomRow;
-      degg = -degree;
-      for (coder::SizeType k{0}; k < degg; k++) {
-        b_degree = (c_degree - k) - 1;
-        if (b_degree < 0) {
-          b_degree = -b_degree;
-        }
-        partition = -degree - b_degree;
-        for (coder::SizeType j{0}; j <= partition; j++) {
-          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
-          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(iPnt + offset) + V.size(1) * c] =
-                V[iPnt + V.size(1) * (c - balance)] * scalew;
-          }
-          c++;
-        }
-      }
-    }
-  }
-  //  compute du^2
-  offset = us.size(0) << 2;
-  uu2 = 2.0 * hs_inv_idx_0 * hs_inv_idx_0;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    V[b_degree] = 0.0;
-    V[b_degree + V.size(1)] = 0.0;
-    V[b_degree + V.size(1) * 2] = 0.0;
-    V[b_degree + V.size(1) * 3] = 0.0;
-    V[b_degree + V.size(1) * 4] = uu2 * V[iPnt];
-    for (i = 0; i < 5; i++) {
-      V[b_degree + V.size(1) * (i + 5)] = 0.0;
-    }
-  }
-  c = 10;
-  d = 6;
   if (degree < 0) {
     i = -degree;
   } else {
     i = degree;
   }
-  for (deg = 3; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
+  for (coder::SizeType deg{2}; deg <= i; deg++) {
+    //  Within each level, use convention of Pascal triangle with x^deg at peak
+    for (coder::SizeType j{0}; j < deg; j++) {
+      V[V.size(1) * c] = V[V.size(1) * ((c - d) + 1)] * us_data[0];
+      c++;
     }
+    V[V.size(1) * c] = V[V.size(1) * (c - d)] * us_data[1];
     c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + stride) + V.size(1) * (c - d)] * scaleu;
-      }
+    for (coder::SizeType j{0}; j <= d - 2; j++) {
+      V[V.size(1) * c] = V[V.size(1) * ((c - d) - deg)] * us_data[2];
       c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  // compute tri degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 1;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt + 1];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = (nTermsInPrevLayer + counterBottomRow) - 1;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  //  compute dv^2
-  offset += us.size(0);
-  vv2 = 2.0 * hs_inv_idx_1 * hs_inv_idx_1;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    for (i1 = 0; i1 < 6; i1++) {
-      V[b_degree + V.size(1) * i1] = 0.0;
-    }
-    V[b_degree + V.size(1) * 6] = vv2 * V[iPnt];
-    V[b_degree + V.size(1) * 7] = 0.0;
-    V[b_degree + V.size(1) * 8] = 0.0;
-    V[b_degree + V.size(1) * 9] = 0.0;
-  }
-  c = 10;
-  d = 7;
-  for (deg = 3; deg <= i; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + (stride << 1)) + V.size(1) * (c - d)] * scalev;
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[((stride << 1) + iPnt) + V.size(1) * (c - d)] * scalev;
-    }
-    c++;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 3; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    c++;
-    d = (d + deg) + 1;
-  }
-  // compute the tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d - 2;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i1 = 1 - degree;
-    for (coder::SizeType p{i1}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType kdegree{0}; kdegree < deg; kdegree++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - nTermsInLayer)] *
-              us[us.size(1) * iPnt];
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      b_degree = (((p + degree) << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer + 1;
-      nTermsInLayer = (d + 3 * (excess - cornerTriangle)) - 2;
-      balance = nTermsInPrevLayer + counterBottomRow;
-      b_degree = nTermsInLayer - counterBottomRow;
-      for (coder::SizeType j{0}; j <= b_degree; j++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          c_degree = offset + iPnt;
-          V[c_degree + V.size(1) * c] =
-              V[c_degree + V.size(1) * (c - balance)] *
-              us[us.size(1) * iPnt + 2];
-        }
-        c++;
-      }
-    }
-  }
-  //  compute dw^2
-  offset += us.size(0);
-  ww2 = 2.0 * hs_inv_idx_2 * hs_inv_idx_2;
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    b_degree = offset + iPnt;
-    for (i1 = 0; i1 < 9; i1++) {
-      V[b_degree + V.size(1) * i1] = 0.0;
-    }
-    V[b_degree + V.size(1) * 9] = ww2 * V[iPnt];
-  }
-  c = 10;
-  d = 6;
-  for (deg = 3; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 3 * stride) + V.size(1) * (((c - d) - deg) - 1)] *
-              scalew;
-        }
-        c++;
-      }
     }
     d = (d + deg) + 1;
   }
-  // compute tri-degree terms if degree < 0
-  if (degree < 0) {
-    deg = -degree;
-    maxLayers = -degree * 3;
-    // max number of layers needed in the Pascal tetrahedron
-    cornerTriangle = 0;
-    // number of elements subtracted in each corner Pascal triangle
-    nTermsInLayer = d;
-    // initializing number of elements in layer
-    excess = 0;
-    // excess based on overlapping of growing Pascal triangles
-    i = 1 - degree;
-    for (coder::SizeType p{i}; p <= maxLayers; p++) {
-      //  Within each level, x^deg is at the peak of Pascal triangle
-      cornerTriangle = (cornerTriangle + p) + degree;
-      counterBottomRow = 0;
-      // counter for the bottom row to be subtracted later
-      for (coder::SizeType k{0}; k < deg; k++) {
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] = 0.0;
-        }
-        c++;
-        counterBottomRow++;
-      }
-      deg--;
-      c_degree = p + degree;
-      b_degree = ((c_degree << 1) - p) - 1;
-      if (b_degree < 0) {
-        b_degree = 0;
-      }
-      excess += b_degree;
-      d = (d + p) + 1;
-      // number of terms in Pascal tetrahedron
-      nTermsInPrevLayer = nTermsInLayer;
-      nTermsInLayer = d + 3 * (excess - cornerTriangle);
-      balance = nTermsInPrevLayer + counterBottomRow;
-      degg = -degree;
-      for (coder::SizeType k{0}; k < degg; k++) {
-        b_degree = (c_degree - k) - 1;
-        if (b_degree < 0) {
-          b_degree = -b_degree;
-        }
-        partition = -degree - b_degree;
-        for (coder::SizeType j{0}; j <= partition; j++) {
-          scalew = static_cast<real_T>(k + 1) * hs_inv_idx_2;
-          for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-            V[(iPnt + offset) + V.size(1) * c] =
-                V[(iPnt + 3 * stride) + V.size(1) * (c - balance)] * scalew;
-          }
-          c++;
-        }
-      }
-    }
-  }
-  //  compute du^4
-  offset = us.size(0) * 7;
-  uu4 = 24.0 * std::pow(hs_inv_idx_0, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 20] = uu4 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  if (degree < 0) {
-    i = -degree;
-  } else {
-    i = degree;
-  }
-  for (deg = 5; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-          scaleu * (scaleu - hs_inv_idx_0);
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + (stride << 2)) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scaleu * (scaleu - hs_inv_idx_0);
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  //  compute du^2dv^2
-  offset = us.size(0) << 3;
-  u2v2_tmp = 4.0 * (hs_inv_idx_0 * hs_inv_idx_0);
-  b_u2v2_tmp = hs_inv_idx_1 * hs_inv_idx_1;
-  u2v2 = u2v2_tmp * b_u2v2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 22] = u2v2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    scaleu = static_cast<real_T>(deg) * hs_inv_idx_0;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] =
-          V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] * scaleu *
-          (scaleu - hs_inv_idx_0);
-    }
-    c++;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      scaleu -= hs_inv_idx_0;
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] =
-            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scaleu * (scaleu - hs_inv_idx_0);
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * (c + 1)] =
-            V[c_degree + V.size(1) * ((c - d) - deg)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    c += 2;
-    d = (d + deg) + 1;
-  }
-  //  compute dv^4
-  offset = us.size(0) * 9;
-  v4 = 24.0 * std::pow(hs_inv_idx_1, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 24] = v4 * V[iPnt];
-  }
-  c = 34;
-  d = 15;
-  for (deg = 5; deg <= degree; deg++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 1)] = 0.0;
-    }
-    scalev = hs_inv_idx_1;
-    for (coder::SizeType j{0}; j <= deg - 2; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * (c + 2)] =
-            V[(iPnt + 5 * stride) + V.size(1) * ((c - (d << 1)) + deg)] *
-            scalev * (scalev - hs_inv_idx_1);
-      }
-      scalev += hs_inv_idx_1;
-      c++;
-    }
-    scalev = static_cast<real_T>(deg) * hs_inv_idx_1;
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * (c + 2)] =
-          V[(5 * stride + iPnt) + V.size(1) * ((c - (d << 1)) + deg)] * scalev *
-          (scalev - hs_inv_idx_1);
-    }
-    c += 3;
-    for (coder::SizeType kdegree{0}; kdegree <= d - 2; kdegree++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        c_degree = offset + iPnt;
-        V[c_degree + V.size(1) * c] =
-            V[c_degree + V.size(1) * (((c - d) - deg) - 1)] *
-            us[us.size(1) * iPnt + 2];
-      }
-      c++;
-    }
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * c] = 0.0;
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute du^2*dw^2
-  offset += us.size(0);
-  u2w2_tmp = hs_inv_idx_2 * hs_inv_idx_2;
-  u2w2 = u2v2_tmp * u2w2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 29] = u2w2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + (stride << 2)) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute dv^2*dw^2
-  offset += us.size(0);
-  v2w2 = 4.0 * b_u2v2_tmp * u2w2_tmp;
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 31] = v2w2 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 5 * stride) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
-  //  compute dw^4
-  offset += us.size(0);
-  ww4 = 24.0 * std::pow(hs_inv_idx_2, 4.0);
-  for (coder::SizeType b_i{0}; b_i < 35; b_i++) {
-    for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-      V[(offset + iPnt) + V.size(1) * b_i] = 0.0;
-    }
-  }
-  for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-    V[(offset + iPnt) + V.size(1) * 34] = ww4 * V[iPnt];
-  }
-  c = 35;
-  d = 15;
-  for (deg = 5; deg <= i; deg++) {
-    for (coder::SizeType j{0}; j <= deg; j++) {
-      for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-        V[(offset + iPnt) + V.size(1) * c] = 0.0;
-      }
-      c++;
-    }
-    for (coder::SizeType k{0}; k < deg; k++) {
-      i1 = (deg - k) - 1;
-      for (coder::SizeType b_i{0}; b_i <= i1; b_i++) {
-        scalew = (static_cast<real_T>(k) + 1.0) * hs_inv_idx_2;
-        for (coder::SizeType iPnt{0}; iPnt < npoints; iPnt++) {
-          V[(offset + iPnt) + V.size(1) * c] =
-              V[(iPnt + 6 * stride) +
-                V.size(1) * (((c - (d << 1)) - deg) - 1)] *
-              scalew * (scalew - hs_inv_idx_2);
-        }
-        c++;
-      }
-    }
-    d = (d + deg) + 1;
-  }
+  //  Compute the tri-degree terms if degree<0
+  m2cAssert(true, "");
 }
 
 //  gen_vander_3d_dag  Build a DAG for Vandermonde matrix in 3D.
@@ -15692,6 +15693,59 @@ static void wls_eno_weights(const ::coder::array<real_T, 2U> &us,
 //  wls_invdist_weights  Weights based on inverse distance
 static void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
                                 coder::SizeType npoints, coder::SizeType degree,
+                                ::coder::array<real_T, 1U> &ws)
+{
+  real_T alpha;
+  coder::SizeType b_degree;
+  if (degree < 0) {
+    b_degree = -degree;
+  } else {
+    b_degree = degree;
+  }
+  alpha = static_cast<real_T>(b_degree) / 2.0;
+  if (ws.size(0) == 0) {
+    ws.set_size(npoints);
+  } else {
+    m2cAssert(ws.size(0) >= npoints,
+              "length of ws cannot be smaller than npoints");
+  }
+  for (coder::SizeType i{0}; i < npoints; i++) {
+    real_T r;
+    real_T r2;
+    r = std::abs(us[us.size(1) * i]);
+    if (us.size(1) > 1) {
+      if (degree > 0) {
+        //  Compute 2-norm
+        r2 = r * r;
+        b_degree = us.size(1);
+        for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
+          real_T d;
+          d = us[(b_i + us.size(1) * i) - 1];
+          r2 += d * d;
+        }
+      } else {
+        //  Compute inf-norm for tensor-product
+        b_degree = us.size(1);
+        for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
+          real_T r1;
+          r1 = std::abs(us[(b_i + us.size(1) * i) - 1]);
+          if (r1 > r) {
+            r = r1;
+          }
+        }
+        r2 = r * r;
+      }
+    } else {
+      r2 = r * r;
+    }
+    //  Compute weight
+    ws[i] = std::pow(std::sqrt(r2 + 0.01), -alpha);
+  }
+}
+
+//  wls_invdist_weights  Weights based on inverse distance
+static void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
+                                coder::SizeType npoints, coder::SizeType degree,
                                 const ::coder::array<real_T, 1U> &params_sh,
                                 const ::coder::array<real_T, 2U> &params_pw,
                                 ::coder::array<real_T, 1U> &ws)
@@ -15792,59 +15846,6 @@ static void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
         ws[i] = b_gamma * std::pow(std::sqrt(r2 + epsilon), -alpha);
       }
     }
-  }
-}
-
-//  wls_invdist_weights  Weights based on inverse distance
-static void wls_invdist_weights(const ::coder::array<real_T, 2U> &us,
-                                coder::SizeType npoints, coder::SizeType degree,
-                                ::coder::array<real_T, 1U> &ws)
-{
-  real_T alpha;
-  coder::SizeType b_degree;
-  if (degree < 0) {
-    b_degree = -degree;
-  } else {
-    b_degree = degree;
-  }
-  alpha = static_cast<real_T>(b_degree) / 2.0;
-  if (ws.size(0) == 0) {
-    ws.set_size(npoints);
-  } else {
-    m2cAssert(ws.size(0) >= npoints,
-              "length of ws cannot be smaller than npoints");
-  }
-  for (coder::SizeType i{0}; i < npoints; i++) {
-    real_T r;
-    real_T r2;
-    r = std::abs(us[us.size(1) * i]);
-    if (us.size(1) > 1) {
-      if (degree > 0) {
-        //  Compute 2-norm
-        r2 = r * r;
-        b_degree = us.size(1);
-        for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
-          real_T d;
-          d = us[(b_i + us.size(1) * i) - 1];
-          r2 += d * d;
-        }
-      } else {
-        //  Compute inf-norm for tensor-product
-        b_degree = us.size(1);
-        for (coder::SizeType b_i{2}; b_i <= b_degree; b_i++) {
-          real_T r1;
-          r1 = std::abs(us[(b_i + us.size(1) * i) - 1]);
-          if (r1 > r) {
-            r = r1;
-          }
-        }
-        r2 = r * r;
-      }
-    } else {
-      r2 = r * r;
-    }
-    //  Compute weight
-    ws[i] = std::pow(std::sqrt(r2 + 0.01), -alpha);
   }
 }
 
@@ -16029,16 +16030,22 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
               ::coder::array<real_T, 2U> &vdops,
               ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_nevpnts;
   coder::SizeType i;
   coder::SizeType i1;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nrows;
   coder::SizeType u0;
   coder::SizeType u1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   b_nevpnts = nevpnts;
   if (nevpnts == 0) {
     b_nevpnts = eval_pnts.size(0);
@@ -16084,6 +16091,14 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
           b_wls->V[iEval + b_wls->V.size(1) * (j - 1)];
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -16095,8 +16110,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -16108,6 +16123,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -16144,8 +16164,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert(vdops.size(1) == eval_pnts.size(0), "Logic error.");
   m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
   result.set_size(eval_pnts.size(0), fs.size(1));
-  loop_ub = fs.size(1) * eval_pnts.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = fs.size(1) * eval_pnts.size(0);
+  for (i = 0; i < u1; i++) {
     result[i] = 0.0;
   }
   //  Compute solution
@@ -16166,6 +16186,13 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         iOp++;
       }
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -16175,10 +16202,10 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
               ::coder::array<real_T, 2U> &vdops,
               ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType i1;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -16186,6 +16213,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -16228,6 +16260,14 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
           b_wls->V[iEval + b_wls->V.size(1) * (j - 1)];
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -16239,8 +16279,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -16252,6 +16292,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -16288,8 +16333,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert(vdops.size(1) == eval_pnts.size(0), "Logic error.");
   m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
   result.set_size(eval_pnts.size(0), fs.size(1));
-  loop_ub = fs.size(1) * eval_pnts.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = fs.size(1) * eval_pnts.size(0);
+  for (i = 0; i < u1; i++) {
     result[i] = 0.0;
   }
   //  Compute solution
@@ -16311,12 +16356,20 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_func - Evaluate wls-fitting at one or more points.
 void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
               ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType j;
   coder::SizeType nDims;
@@ -16326,6 +16379,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -16367,6 +16425,14 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       b_wls->rhs[iMonomial + b_wls->rhs.size(1) * iEval] =
           b_wls->V[iEval + b_wls->V.size(1) * (j - 1)];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
   }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
@@ -16381,9 +16447,8 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      coder::SizeType loop_ub;
-      loop_ub = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < loop_ub; i1++) {
+      u1 = b_wls->QR.size(0);
+      for (coder::SizeType i1{0}; i1 < u1; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
             b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
@@ -16393,6 +16458,11 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -16424,6 +16494,13 @@ void wls_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       vdops[j] = 1.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
@@ -16432,6 +16509,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               coder::SizeType order, coder::SizeType interp0, boolean_T use_dag,
               coder::SizeType nstpnts)
 {
+  real_T timestamp;
   coder::SizeType dim;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -16697,6 +16775,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         weight->params_pointwise, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, nstpnts, degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -16719,8 +16802,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * nstpnts;
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -16735,6 +16816,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * nstpnts;
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -16793,12 +16884,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
 void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const ::coder::array<char_T, 2U> &weight, coder::SizeType degree)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType interp0;
   coder::SizeType nstpnts;
@@ -17057,6 +17156,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, us.size(0), degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -17079,9 +17183,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -17139,6 +17252,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -17146,6 +17266,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const ::coder::array<char_T, 2U> &weight, coder::SizeType degree,
               coder::SizeType order)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType interp0;
   coder::SizeType nstpnts;
@@ -17401,6 +17522,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, us.size(0), degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -17423,9 +17549,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -17483,6 +17618,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -17490,6 +17632,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const ::coder::array<char_T, 2U> &weight, coder::SizeType degree,
               coder::SizeType order, coder::SizeType interp0)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType nstpnts;
   boolean_T use_dag;
@@ -17745,6 +17888,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, us.size(0), degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -17767,9 +17915,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -17827,6 +17984,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -17834,6 +17998,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const ::coder::array<char_T, 2U> &weight, coder::SizeType degree,
               coder::SizeType order, coder::SizeType interp0, boolean_T use_dag)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType nstpnts;
   m2cAssert(us.size(1) >= 1, "");
@@ -18088,6 +18253,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, us.size(0), degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -18110,9 +18280,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -18170,12 +18349,20 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
 //  wls_init  Initialize WlsObject in 1D, 2D, or 3D.
 void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us)
 {
+  real_T timestamp;
   coder::SizeType degree;
   coder::SizeType dim;
   coder::SizeType interp0;
@@ -18423,6 +18610,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us)
         b_wls->rweights[i] = 1.0;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -18445,9 +18637,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us)
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -18505,6 +18706,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us)
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -18512,6 +18720,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us)
 void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const WlsWeight *weight)
 {
+  real_T timestamp;
   coder::SizeType degree;
   coder::SizeType dim;
   coder::SizeType interp0;
@@ -18781,6 +18990,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -18803,8 +19017,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * us.size(0);
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -18819,6 +19031,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * us.size(0);
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -18877,6 +19099,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -18884,6 +19113,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
 void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const WlsWeight *weight, coder::SizeType degree)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType interp0;
   coder::SizeType nstpnts;
@@ -19151,6 +19381,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -19173,8 +19408,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * us.size(0);
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -19189,6 +19422,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * us.size(0);
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -19247,6 +19490,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -19255,6 +19505,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const WlsWeight *weight, coder::SizeType degree,
               coder::SizeType order)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType interp0;
   coder::SizeType nstpnts;
@@ -19519,6 +19770,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -19541,8 +19797,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * us.size(0);
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -19557,6 +19811,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * us.size(0);
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -19615,6 +19879,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -19623,6 +19894,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const WlsWeight *weight, coder::SizeType degree,
               coder::SizeType order, coder::SizeType interp0)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType nstpnts;
   boolean_T use_dag;
@@ -19887,6 +20159,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -19909,8 +20186,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * us.size(0);
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -19925,6 +20200,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * us.size(0);
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -19983,6 +20268,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -19991,6 +20283,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const WlsWeight *weight, coder::SizeType degree,
               coder::SizeType order, coder::SizeType interp0, boolean_T use_dag)
 {
+  real_T timestamp;
   coder::SizeType dim;
   coder::SizeType nstpnts;
   m2cAssert(us.size(1) >= 1, "");
@@ -20254,6 +20547,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
                         b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -20276,8 +20574,6 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
-    b_wls->nrows = nrblks * us.size(0);
-    b_wls->ncols = ncols;
     //  Omit rows in CVM if needed
     b_us = weight->omit_rows.size(0);
     u1 = b_wls->nrows;
@@ -20292,6 +20588,16 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
+    b_wls->nrows = nrblks * us.size(0);
+    b_wls->ncols = ncols;
     //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
@@ -20350,6 +20656,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -20359,6 +20672,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               coder::SizeType order, coder::SizeType interp0, boolean_T use_dag,
               coder::SizeType nstpnts)
 {
+  real_T timestamp;
   coder::SizeType dim;
   m2cAssert(us.size(1) >= 1, "");
   //  Process input arguments
@@ -20618,6 +20932,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, nstpnts, degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, nstpnts, degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -20640,9 +20959,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * nstpnts;
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -20700,6 +21028,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
+    }
   }
 }
 
@@ -20707,6 +21042,7 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
 void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
               const ::coder::array<char_T, 2U> &weight)
 {
+  real_T timestamp;
   coder::SizeType degree;
   coder::SizeType dim;
   coder::SizeType interp0;
@@ -20967,6 +21303,11 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         wls_buhmann_weights(b_wls->us, us.size(0), degree, b_wls->rweights);
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Compute Vandermonde system and recompute DAG if needed
     gen_vander(b_wls->us, us.size(0), degree, order, b_wls->rweights, b_wls->V);
     nrblks = b_wls->V.size(1) / b_wls->stride;
@@ -20989,9 +21330,18 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
         }
       }
     }
+    //  Omit rows in CVM if needed
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[0] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     b_wls->nrows = nrblks * us.size(0);
     b_wls->ncols = ncols;
-    //  Omit rows in CVM if needed
+    //  Perform QR with column pivoting
     if ((degree > 1) && (degree < 7)) {
       thres = dv[degree - 1];
     } else {
@@ -21048,6 +21398,13 @@ void wls_init(WlsObject *b_wls, const ::coder::array<real_T, 2U> &us,
           trg = (trg + nstpnts) + 1;
         }
       }
+    }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[1] = t - timestamp;
     }
   }
 }
@@ -21647,9 +22004,9 @@ void wls_var_bilap(WlsObject *b_wls,
                    ::coder::array<real_T, 2U> &varargout_1,
                    ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType bilap_size_idx_1;
   coder::SizeType i;
-  coder::SizeType i1;
   coder::SizeType iWeight;
   coder::SizeType lenWs;
   coder::SizeType nDims;
@@ -21693,6 +22050,12 @@ void wls_var_bilap(WlsObject *b_wls,
     break;
   }
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -21770,6 +22133,14 @@ void wls_var_bilap(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -21781,10 +22152,10 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      bilap_size_idx_1 = b_wls->QR.size(0);
-      for (i1 = 0; i1 < bilap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (bilap_size_idx_1 = 0; bilap_size_idx_1 < u1; bilap_size_idx_1++) {
+        b_wls->QRt[bilap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * bilap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -21792,6 +22163,11 @@ void wls_var_bilap(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -21827,12 +22203,19 @@ void wls_var_bilap(WlsObject *b_wls,
   //  Compute solution
   i = varargin_2.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    i1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+    bilap_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < bilap_size_idx_1; iRow++) {
       varargout_2[iFunc] =
           varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                    varargout_1[varargout_1.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -21844,9 +22227,9 @@ void wls_var_bilap(WlsObject *b_wls,
                    ::coder::array<real_T, 2U> &varargout_1,
                    ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType bilap_size_idx_1;
   coder::SizeType i;
-  coder::SizeType i1;
   coder::SizeType iWeight;
   coder::SizeType lenWs;
   coder::SizeType nDims;
@@ -21890,6 +22273,11 @@ void wls_var_bilap(WlsObject *b_wls,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -21965,6 +22353,14 @@ void wls_var_bilap(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -21976,10 +22372,10 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      bilap_size_idx_1 = b_wls->QR.size(0);
-      for (i1 = 0; i1 < bilap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (bilap_size_idx_1 = 0; bilap_size_idx_1 < u1; bilap_size_idx_1++) {
+        b_wls->QRt[bilap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * bilap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -21987,6 +22383,11 @@ void wls_var_bilap(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -22022,12 +22423,19 @@ void wls_var_bilap(WlsObject *b_wls,
   //  Compute solution
   i = varargin_2.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    i1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+    bilap_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < bilap_size_idx_1; iRow++) {
       varargout_2[iFunc] =
           varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                    varargout_1[varargout_1.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -22036,6 +22444,7 @@ void wls_var_bilap(WlsObject *b_wls,
                    const ::coder::array<real_T, 2U> &eval_pnts,
                    ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType bilap_size_idx_1;
   coder::SizeType i;
   coder::SizeType nDims;
@@ -22079,6 +22488,11 @@ void wls_var_bilap(WlsObject *b_wls,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -22133,6 +22547,14 @@ void wls_var_bilap(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22144,10 +22566,10 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      bilap_size_idx_1 = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < bilap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (bilap_size_idx_1 = 0; bilap_size_idx_1 < u1; bilap_size_idx_1++) {
+        b_wls->QRt[bilap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * bilap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22155,6 +22577,11 @@ void wls_var_bilap(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -22179,6 +22606,13 @@ void wls_var_bilap(WlsObject *b_wls,
     }
     varargout_1[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_bilap  Compute bi-Laplacian operators as weighted sum at
@@ -22187,6 +22621,7 @@ void wls_var_bilap(WlsObject *b_wls,
                    const ::coder::array<real_T, 2U> &varargin_1,
                    ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType bilap_size_idx_1;
   coder::SizeType i;
   coder::SizeType iWeight;
@@ -22232,6 +22667,11 @@ void wls_var_bilap(WlsObject *b_wls,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -22307,6 +22747,14 @@ void wls_var_bilap(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22318,10 +22766,10 @@ void wls_var_bilap(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      bilap_size_idx_1 = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < bilap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (bilap_size_idx_1 = 0; bilap_size_idx_1 < u1; bilap_size_idx_1++) {
+        b_wls->QRt[bilap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * bilap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22329,6 +22777,11 @@ void wls_var_bilap(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -22353,6 +22806,13 @@ void wls_var_bilap(WlsObject *b_wls,
     }
     varargout_1[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_convdiff - Compute convection-diffusion operator at evaluation
@@ -22365,6 +22825,7 @@ void wls_var_convdiff(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops,
                       ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_nevpnts;
   coder::SizeType grad_size_idx_1;
   coder::SizeType i;
@@ -22404,6 +22865,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     grad_data[2] = 4;
     lap_data[2] = 7;
     break;
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
   }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   b_nevpnts = nevpnts - 1;
@@ -22517,6 +22983,14 @@ void wls_var_convdiff(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22528,11 +23002,10 @@ void wls_var_convdiff(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      grad_size_idx_1 = b_wls->QR.size(0);
-      for (lap_size_idx_1 = 0; lap_size_idx_1 < grad_size_idx_1;
-           lap_size_idx_1++) {
-        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
+      u1 = b_wls->QR.size(0);
+      for (grad_size_idx_1 = 0; grad_size_idx_1 < u1; grad_size_idx_1++) {
+        b_wls->QRt[grad_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * grad_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22540,6 +23013,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -22574,11 +23052,18 @@ void wls_var_convdiff(WlsObject *b_wls,
   //  Compute solution
   i = fs.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    lap_size_idx_1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
+    grad_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < grad_size_idx_1; iRow++) {
       result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
                                           vdops[vdops.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -22591,6 +23076,7 @@ void wls_var_convdiff(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops,
                       ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType grad_size_idx_1;
   coder::SizeType i;
   coder::SizeType iWeight;
@@ -22632,6 +23118,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     grad_data[2] = 4;
     lap_data[2] = 7;
     break;
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
   }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -22741,6 +23232,14 @@ void wls_var_convdiff(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22752,11 +23251,10 @@ void wls_var_convdiff(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      grad_size_idx_1 = b_wls->QR.size(0);
-      for (lap_size_idx_1 = 0; lap_size_idx_1 < grad_size_idx_1;
-           lap_size_idx_1++) {
-        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
+      u1 = b_wls->QR.size(0);
+      for (grad_size_idx_1 = 0; grad_size_idx_1 < u1; grad_size_idx_1++) {
+        b_wls->QRt[grad_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * grad_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22764,6 +23262,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -22798,11 +23301,18 @@ void wls_var_convdiff(WlsObject *b_wls,
   //  Compute solution
   i = fs.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    lap_size_idx_1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
+    grad_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < grad_size_idx_1; iRow++) {
       result[iFunc] = result[iFunc] + fs[iFunc + fs.size(1) * iRow] *
                                           vdops[vdops.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -22813,6 +23323,7 @@ void wls_var_convdiff(WlsObject *b_wls,
                       const ::coder::array<real_T, 2U> &ws_grad,
                       ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType grad_size_idx_1;
   coder::SizeType i;
   coder::SizeType iWeight;
@@ -22854,6 +23365,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     grad_data[2] = 4;
     lap_data[2] = 7;
     break;
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
   }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -22963,6 +23479,14 @@ void wls_var_convdiff(WlsObject *b_wls,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22974,11 +23498,10 @@ void wls_var_convdiff(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      grad_size_idx_1 = b_wls->QR.size(0);
-      for (lap_size_idx_1 = 0; lap_size_idx_1 < grad_size_idx_1;
-           lap_size_idx_1++) {
-        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
+      u1 = b_wls->QR.size(0);
+      for (grad_size_idx_1 = 0; grad_size_idx_1 < u1; grad_size_idx_1++) {
+        b_wls->QRt[grad_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * grad_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -22986,6 +23509,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -23010,6 +23538,13 @@ void wls_var_convdiff(WlsObject *b_wls,
     }
     vdops[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_convdiff - Compute convection-diffusion operator at evaluation
@@ -23017,6 +23552,7 @@ void wls_var_convdiff(WlsObject *b_wls,
                       const ::coder::array<real_T, 2U> &eval_pnts,
                       ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType grad_size_idx_1;
   coder::SizeType i;
   coder::SizeType j;
@@ -23056,6 +23592,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     grad_data[2] = 4;
     lap_data[2] = 7;
     break;
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
   }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -23123,6 +23664,14 @@ void wls_var_convdiff(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23134,11 +23683,10 @@ void wls_var_convdiff(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      grad_size_idx_1 = b_wls->QR.size(0);
-      for (lap_size_idx_1 = 0; lap_size_idx_1 < grad_size_idx_1;
-           lap_size_idx_1++) {
-        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
+      u1 = b_wls->QR.size(0);
+      for (grad_size_idx_1 = 0; grad_size_idx_1 < u1; grad_size_idx_1++) {
+        b_wls->QRt[grad_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * grad_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23146,6 +23694,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -23170,6 +23723,13 @@ void wls_var_convdiff(WlsObject *b_wls,
     }
     vdops[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_convdiff - Compute convection-diffusion operator at evaluation
@@ -23178,6 +23738,7 @@ void wls_var_convdiff(WlsObject *b_wls,
                       const ::coder::array<real_T, 2U> &ws_lap,
                       ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType grad_size_idx_1;
   coder::SizeType i;
   coder::SizeType iWeight;
@@ -23219,6 +23780,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     grad_data[2] = 4;
     lap_data[2] = 7;
     break;
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
   }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
@@ -23307,6 +23873,14 @@ void wls_var_convdiff(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23318,11 +23892,10 @@ void wls_var_convdiff(WlsObject *b_wls,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      grad_size_idx_1 = b_wls->QR.size(0);
-      for (lap_size_idx_1 = 0; lap_size_idx_1 < grad_size_idx_1;
-           lap_size_idx_1++) {
-        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
+      u1 = b_wls->QR.size(0);
+      for (grad_size_idx_1 = 0; grad_size_idx_1 < u1; grad_size_idx_1++) {
+        b_wls->QRt[grad_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * grad_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23330,6 +23903,11 @@ void wls_var_convdiff(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -23354,6 +23932,13 @@ void wls_var_convdiff(WlsObject *b_wls,
     }
     vdops[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_curl  Variational curl operators as weighted sum at evaluation
@@ -23363,12 +23948,13 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   coder::SizeType varargin_1, ::coder::array<real_T, 2U> &vdops,
                   const real_T[], coder::SizeType result_size[2])
 {
+  real_T timestamp;
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -23377,6 +23963,12 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -23414,8 +24006,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -23453,6 +24045,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23462,8 +24062,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -23529,32 +24129,37 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
       real_T c_vdops;
-      real_T d_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 2];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
+      t = vdops[vdops.size(1) * b_i + 1];
       c_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 2] = t;
       vdops[vdops.size(1) * b_i + 3] = b_vdops;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
       vdops[vdops.size(1) * b_i + 5] = -c_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -t;
       vdops[vdops.size(1) * b_i + 7] = c_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -23562,6 +24167,12 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -23599,8 +24210,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -23650,6 +24261,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23659,8 +24278,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -23672,6 +24291,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, 9);
     //  Transpose the operator for row-major
@@ -23721,6 +24345,12 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
@@ -23728,21 +24358,20 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       real_T d_vdops;
       real_T e_vdops;
       real_T f_vdops;
-      real_T g_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 3];
       c_vdops = vdops[vdops.size(1) * b_i];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      e_vdops = vdops[vdops.size(1) * b_i + 4];
-      f_vdops = vdops[vdops.size(1) * b_i + 5];
-      g_vdops = vdops[vdops.size(1) * b_i + 2];
+      t = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i + 4];
+      e_vdops = vdops[vdops.size(1) * b_i + 5];
+      f_vdops = vdops[vdops.size(1) * b_i + 2];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
       vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -f_vdops;
-      vdops[vdops.size(1) * b_i + 7] = g_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
+      vdops[vdops.size(1) * b_i + 7] = f_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   }
@@ -23758,15 +24387,15 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &vdops, real_T result_data[],
                   coder::SizeType result_size[2])
 {
-  real_T d_vdops;
+  real_T c_vdops;
   real_T e_vdops;
-  real_T f_vdops;
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   if (ws.size(1) <= 1) {
     coder::SizeType i2;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -23775,6 +24404,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -23810,8 +24444,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -23849,6 +24483,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -23858,8 +24500,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -23925,21 +24567,27 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
+      real_T d_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 2];
-      e_vdops = vdops[vdops.size(1) * b_i + 1];
-      c_vdops = vdops[vdops.size(1) * b_i];
+      c_vdops = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = e_vdops;
+      vdops[vdops.size(1) * b_i + 2] = c_vdops;
       vdops[vdops.size(1) * b_i + 3] = b_vdops;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -c_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 7] = c_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -c_vdops;
+      vdops[vdops.size(1) * b_i + 7] = d_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
@@ -23947,7 +24595,6 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -23955,6 +24602,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -23990,8 +24642,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -24041,6 +24693,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -24050,8 +24710,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -24063,6 +24723,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, 9);
     //  Transpose the operator for row-major
@@ -24112,25 +24777,31 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
-      real_T g_vdops;
+      real_T d_vdops;
+      real_T f_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 3];
-      c_vdops = vdops[vdops.size(1) * b_i];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      f_vdops = vdops[vdops.size(1) * b_i + 4];
-      e_vdops = vdops[vdops.size(1) * b_i + 5];
-      g_vdops = vdops[vdops.size(1) * b_i + 2];
+      d_vdops = vdops[vdops.size(1) * b_i];
+      t = vdops[vdops.size(1) * b_i + 1];
+      e_vdops = vdops[vdops.size(1) * b_i + 4];
+      c_vdops = vdops[vdops.size(1) * b_i + 5];
+      f_vdops = vdops[vdops.size(1) * b_i + 2];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
+      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -f_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 7] = g_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -e_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -c_vdops;
+      vdops[vdops.size(1) * b_i + 7] = f_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   }
@@ -24143,18 +24814,18 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     result_data[2] = 0.0;
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
-      e_vdops = fs[fs.size(1) * b_i + 1];
-      d_vdops = fs[fs.size(1) * b_i + 2];
+      c_vdops = fs[fs.size(1) * b_i + 1];
+      t = fs[fs.size(1) * b_i + 2];
       result_data[0] =
-          (result_data[0] + vdops[vdops.size(1) * b_i + 1] * e_vdops) +
-          vdops[vdops.size(1) * b_i + 2] * d_vdops;
-      f_vdops = fs[fs.size(1) * b_i];
+          (result_data[0] + vdops[vdops.size(1) * b_i + 1] * c_vdops) +
+          vdops[vdops.size(1) * b_i + 2] * t;
+      e_vdops = fs[fs.size(1) * b_i];
       result_data[1] =
-          (result_data[1] + f_vdops * vdops[vdops.size(1) * b_i + 3]) +
-          d_vdops * vdops[vdops.size(1) * b_i + 5];
+          (result_data[1] + e_vdops * vdops[vdops.size(1) * b_i + 3]) +
+          t * vdops[vdops.size(1) * b_i + 5];
       result_data[2] =
-          (result_data[2] + f_vdops * vdops[vdops.size(1) * b_i + 6]) +
-          e_vdops * vdops[vdops.size(1) * b_i + 7];
+          (result_data[2] + e_vdops * vdops[vdops.size(1) * b_i + 6]) +
+          c_vdops * vdops[vdops.size(1) * b_i + 7];
     }
   } else {
     result_size[1] = 0;
@@ -24166,10 +24837,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &vdops)
 {
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nevpnts;
@@ -24177,6 +24849,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -24212,8 +24889,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(9, u0);
-  loop_ub = u0 * 9;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * 9;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -24242,6 +24919,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -24251,8 +24936,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (coder::SizeType i2{0}; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -24264,6 +24949,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 9);
   //  Transpose the operator for row-major
@@ -24302,22 +24992,27 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       vdops[j] = static_cast<real_T>(totalw) - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
   i = b_wls->nrows;
   for (b_i = 0; b_i < i; b_i++) {
     real_T b_vdops;
-    real_T c_vdops;
     real_T d;
-    b_vdops = vdops[vdops.size(1) * b_i + 2];
+    t = vdops[vdops.size(1) * b_i + 2];
     d = vdops[vdops.size(1) * b_i + 1];
-    c_vdops = vdops[vdops.size(1) * b_i];
+    b_vdops = vdops[vdops.size(1) * b_i];
     vdops[vdops.size(1) * b_i] = 0.0;
-    vdops[vdops.size(1) * b_i + 1] = -b_vdops;
+    vdops[vdops.size(1) * b_i + 1] = -t;
     vdops[vdops.size(1) * b_i + 2] = d;
-    vdops[vdops.size(1) * b_i + 3] = b_vdops;
+    vdops[vdops.size(1) * b_i + 3] = t;
     vdops[vdops.size(1) * b_i + 4] = 0.0;
-    vdops[vdops.size(1) * b_i + 5] = -c_vdops;
+    vdops[vdops.size(1) * b_i + 5] = -b_vdops;
     vdops[vdops.size(1) * b_i + 6] = -d;
-    vdops[vdops.size(1) * b_i + 7] = c_vdops;
+    vdops[vdops.size(1) * b_i + 7] = b_vdops;
     vdops[vdops.size(1) * b_i + 8] = 0.0;
   }
   //  compute output value
@@ -24328,12 +25023,13 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   const ::coder::array<real_T, 2U> &ws,
                   ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -24342,6 +25038,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -24377,8 +25078,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -24416,6 +25117,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -24425,8 +25134,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -24492,32 +25201,37 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
       real_T c_vdops;
-      real_T d_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 2];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
+      t = vdops[vdops.size(1) * b_i + 1];
       c_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 2] = t;
       vdops[vdops.size(1) * b_i + 3] = b_vdops;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
       vdops[vdops.size(1) * b_i + 5] = -c_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -t;
       vdops[vdops.size(1) * b_i + 7] = c_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -24525,6 +25239,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -24560,8 +25279,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -24611,6 +25330,14 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -24620,8 +25347,8 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -24633,6 +25360,11 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, 9);
     //  Transpose the operator for row-major
@@ -24682,6 +25414,12 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
@@ -24689,21 +25427,20 @@ void wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       real_T d_vdops;
       real_T e_vdops;
       real_T f_vdops;
-      real_T g_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 3];
       c_vdops = vdops[vdops.size(1) * b_i];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      e_vdops = vdops[vdops.size(1) * b_i + 4];
-      f_vdops = vdops[vdops.size(1) * b_i + 5];
-      g_vdops = vdops[vdops.size(1) * b_i + 2];
+      t = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i + 4];
+      e_vdops = vdops[vdops.size(1) * b_i + 5];
+      f_vdops = vdops[vdops.size(1) * b_i + 2];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
       vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -f_vdops;
-      vdops[vdops.size(1) * b_i + 7] = g_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
+      vdops[vdops.size(1) * b_i + 7] = f_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   }
@@ -24719,15 +25456,16 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        ::coder::array<real_T, 2U> &vdops, const real_T[],
                        coder::SizeType result_size[2])
 {
+  real_T timestamp;
   coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType hess_size;
     coder::SizeType i;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -24757,6 +25495,12 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -24794,8 +25538,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(hess_size, u0);
-    loop_ub = u0 * hess_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * hess_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -24833,6 +25577,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -24844,8 +25596,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -24857,6 +25609,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -24904,17 +25661,22 @@ void wls_var_curl_curl(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         real_T b_vdops;
-        real_T c_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i];
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i];
         vdops[vdops.size(1) * b_i] = -vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = -c_vdops;
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = -b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
@@ -24924,22 +25686,21 @@ void wls_var_curl_curl(WlsObject *b_wls,
         real_T d;
         real_T d1;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 2];
-        c_vdops = vdops[vdops.size(1) * b_i + 5];
-        d_vdops = vdops[vdops.size(1) * b_i + 1];
-        e_vdops = vdops[vdops.size(1) * b_i + 3];
+        t = vdops[vdops.size(1) * b_i + 2];
+        b_vdops = vdops[vdops.size(1) * b_i + 5];
+        c_vdops = vdops[vdops.size(1) * b_i + 1];
+        d_vdops = vdops[vdops.size(1) * b_i + 3];
         d = vdops[vdops.size(1) * b_i];
         d1 = vdops[vdops.size(1) * b_i + 4];
-        vdops[vdops.size(1) * b_i] = -b_vdops - c_vdops;
-        vdops[vdops.size(1) * b_i + 1] = d_vdops;
-        vdops[vdops.size(1) * b_i + 2] = e_vdops;
-        vdops[vdops.size(1) * b_i + 3] = d_vdops;
-        vdops[vdops.size(1) * b_i + 4] = -d - c_vdops;
+        vdops[vdops.size(1) * b_i] = -t - b_vdops;
+        vdops[vdops.size(1) * b_i + 1] = c_vdops;
+        vdops[vdops.size(1) * b_i + 2] = d_vdops;
+        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        vdops[vdops.size(1) * b_i + 4] = -d - b_vdops;
         vdops[vdops.size(1) * b_i + 5] = d1;
-        vdops[vdops.size(1) * b_i + 6] = e_vdops;
+        vdops[vdops.size(1) * b_i + 6] = d_vdops;
         vdops[vdops.size(1) * b_i + 7] = d1;
-        vdops[vdops.size(1) * b_i + 8] = -d - b_vdops;
+        vdops[vdops.size(1) * b_i + 8] = -d - t;
       }
     }
   } else {
@@ -24951,7 +25712,6 @@ void wls_var_curl_curl(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -24985,6 +25745,12 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -25022,8 +25788,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size_idx_0, u0);
-    loop_ub = u0 * grad_div_size_idx_0;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size_idx_0;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -25076,6 +25842,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -25087,8 +25861,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -25160,14 +25934,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[hess_size] > 1) {
           totalw = 0.0;
         } else {
-          loop_ub = ws.size(0);
+          u1 = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = nevpnts;
             //  Unit weights summed together
           } else {
             //  All weights summed together
             totalw = 0.0;
-            for (b_i = 0; b_i < loop_ub; b_i++) {
+            for (b_i = 0; b_i < u1; b_i++) {
               totalw += ws[(iWeight + ws.size(1) * b_i) - 1];
             }
             iWeight += iWeight < ws.size(1);
@@ -25175,6 +25949,13 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
         vdops[j] = totalw - s;
       }
+    }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
     }
     //  Flip the signs of diagonal entries
     if (dim == 2) {
@@ -25205,9 +25986,10 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        ::coder::array<real_T, 2U> &vdops, real_T result_data[],
                        coder::SizeType result_size[2])
 {
-  real_T b_vdops;
   real_T d;
   real_T d1;
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType dim;
   coder::SizeType i;
@@ -25216,7 +25998,6 @@ void wls_var_curl_curl(WlsObject *b_wls,
   if (ws.size(1) <= 1) {
     coder::SizeType hess_size;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -25246,6 +26027,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -25281,8 +26067,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(hess_size, u0);
-    loop_ub = u0 * hess_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * hess_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -25320,6 +26106,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -25331,8 +26125,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -25344,6 +26138,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -25391,38 +26190,44 @@ void wls_var_curl_curl(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
-        real_T c_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i];
+        real_T b_vdops;
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i];
         vdops[vdops.size(1) * b_i] = -vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = -c_vdops;
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = -b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
+        real_T b_vdops;
         real_T c_vdops;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 2];
-        c_vdops = vdops[vdops.size(1) * b_i + 5];
-        d_vdops = vdops[vdops.size(1) * b_i + 1];
-        e_vdops = vdops[vdops.size(1) * b_i + 3];
+        t = vdops[vdops.size(1) * b_i + 2];
+        b_vdops = vdops[vdops.size(1) * b_i + 5];
+        c_vdops = vdops[vdops.size(1) * b_i + 1];
+        d_vdops = vdops[vdops.size(1) * b_i + 3];
         d = vdops[vdops.size(1) * b_i];
         d1 = vdops[vdops.size(1) * b_i + 4];
-        vdops[vdops.size(1) * b_i] = -b_vdops - c_vdops;
-        vdops[vdops.size(1) * b_i + 1] = d_vdops;
-        vdops[vdops.size(1) * b_i + 2] = e_vdops;
-        vdops[vdops.size(1) * b_i + 3] = d_vdops;
-        vdops[vdops.size(1) * b_i + 4] = -d - c_vdops;
+        vdops[vdops.size(1) * b_i] = -t - b_vdops;
+        vdops[vdops.size(1) * b_i + 1] = c_vdops;
+        vdops[vdops.size(1) * b_i + 2] = d_vdops;
+        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        vdops[vdops.size(1) * b_i + 4] = -d - b_vdops;
         vdops[vdops.size(1) * b_i + 5] = d1;
-        vdops[vdops.size(1) * b_i + 6] = e_vdops;
+        vdops[vdops.size(1) * b_i + 6] = d_vdops;
         vdops[vdops.size(1) * b_i + 7] = d1;
-        vdops[vdops.size(1) * b_i + 8] = -d - b_vdops;
+        vdops[vdops.size(1) * b_i + 8] = -d - t;
       }
     }
   } else {
@@ -25432,7 +26237,6 @@ void wls_var_curl_curl(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -25466,6 +26270,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -25501,8 +26310,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size_idx_0, u0);
-    loop_ub = u0 * grad_div_size_idx_0;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size_idx_0;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -25555,6 +26364,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -25566,8 +26383,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -25639,14 +26456,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[hess_size] > 1) {
           totalw = 0.0;
         } else {
-          loop_ub = ws.size(0);
+          u1 = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = nevpnts;
             //  Unit weights summed together
           } else {
             //  All weights summed together
             totalw = 0.0;
-            for (b_i = 0; b_i < loop_ub; b_i++) {
+            for (b_i = 0; b_i < u1; b_i++) {
               totalw += ws[(iWeight + ws.size(1) * b_i) - 1];
             }
             iWeight += iWeight < ws.size(1);
@@ -25654,6 +26471,12 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
         vdops[j] = totalw - s;
       }
+    }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
     }
     //  Flip the signs of diagonal entries
     if (dim == 2) {
@@ -25701,18 +26524,18 @@ void wls_var_curl_curl(WlsObject *b_wls,
       for (b_i = 0; b_i < i; b_i++) {
         d = fs[fs.size(1) * b_i];
         d1 = fs[fs.size(1) * b_i + 1];
-        b_vdops = fs[fs.size(1) * b_i + 2];
+        t = fs[fs.size(1) * b_i + 2];
         result_data[0] = ((result_data[0] + vdops[vdops.size(1) * b_i] * d) +
                           vdops[vdops.size(1) * b_i + 1] * d1) +
-                         vdops[vdops.size(1) * b_i + 2] * b_vdops;
+                         vdops[vdops.size(1) * b_i + 2] * t;
         result_data[1] =
             ((result_data[1] + d * vdops[vdops.size(1) * b_i + 3]) +
              d1 * vdops[vdops.size(1) * b_i + 4]) +
-            b_vdops * vdops[vdops.size(1) * b_i + 5];
+            t * vdops[vdops.size(1) * b_i + 5];
         result_data[2] =
             ((result_data[2] + d * vdops[vdops.size(1) * b_i + 6]) +
              d1 * vdops[vdops.size(1) * b_i + 7]) +
-            b_vdops * vdops[vdops.size(1) * b_i + 8];
+            t * vdops[vdops.size(1) * b_i + 8];
       }
       break;
     }
@@ -25727,12 +26550,13 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<real_T, 2U> &eval_pnts,
                        ::coder::array<real_T, 2U> &vdops)
 {
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType dim;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -25763,6 +26587,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -25798,8 +26627,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -25828,6 +26657,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -25839,8 +26676,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (hess_size = 0; hess_size < u0; hess_size++) {
         b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -25852,6 +26689,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -25890,17 +26732,22 @@ void wls_var_curl_curl(WlsObject *b_wls,
       vdops[j] = static_cast<real_T>(totalw) - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
   if (dim == 2) {
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
-      b_vdops = vdops[vdops.size(1) * b_i + 1];
-      c_vdops = vdops[vdops.size(1) * b_i];
+      t = vdops[vdops.size(1) * b_i + 1];
+      b_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = -vdops[vdops.size(1) * b_i + 2];
-      vdops[vdops.size(1) * b_i + 1] = b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = b_vdops;
-      vdops[vdops.size(1) * b_i + 3] = -c_vdops;
+      vdops[vdops.size(1) * b_i + 1] = t;
+      vdops[vdops.size(1) * b_i + 2] = t;
+      vdops[vdops.size(1) * b_i + 3] = -b_vdops;
     }
   } else if (dim == 3) {
     i = b_wls->nrows;
@@ -25910,22 +26757,21 @@ void wls_var_curl_curl(WlsObject *b_wls,
       real_T d;
       real_T d1;
       real_T d_vdops;
-      real_T e_vdops;
-      b_vdops = vdops[vdops.size(1) * b_i + 2];
-      c_vdops = vdops[vdops.size(1) * b_i + 5];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      e_vdops = vdops[vdops.size(1) * b_i + 3];
+      t = vdops[vdops.size(1) * b_i + 2];
+      b_vdops = vdops[vdops.size(1) * b_i + 5];
+      c_vdops = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i + 3];
       d = vdops[vdops.size(1) * b_i];
       d1 = vdops[vdops.size(1) * b_i + 4];
-      vdops[vdops.size(1) * b_i] = -b_vdops - c_vdops;
-      vdops[vdops.size(1) * b_i + 1] = d_vdops;
-      vdops[vdops.size(1) * b_i + 2] = e_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
-      vdops[vdops.size(1) * b_i + 4] = -d - c_vdops;
+      vdops[vdops.size(1) * b_i] = -t - b_vdops;
+      vdops[vdops.size(1) * b_i + 1] = c_vdops;
+      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = c_vdops;
+      vdops[vdops.size(1) * b_i + 4] = -d - b_vdops;
       vdops[vdops.size(1) * b_i + 5] = d1;
-      vdops[vdops.size(1) * b_i + 6] = e_vdops;
+      vdops[vdops.size(1) * b_i + 6] = d_vdops;
       vdops[vdops.size(1) * b_i + 7] = d1;
-      vdops[vdops.size(1) * b_i + 8] = -d - b_vdops;
+      vdops[vdops.size(1) * b_i + 8] = -d - t;
     }
   }
   //  compute output value
@@ -25937,15 +26783,16 @@ void wls_var_curl_curl(WlsObject *b_wls,
                        const ::coder::array<real_T, 2U> &ws,
                        ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType hess_size;
     coder::SizeType i;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -25975,6 +26822,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -26010,8 +26862,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(hess_size, u0);
-    loop_ub = u0 * hess_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * hess_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -26049,6 +26901,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -26060,8 +26920,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -26073,6 +26933,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -26120,17 +26985,22 @@ void wls_var_curl_curl(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         real_T b_vdops;
-        real_T c_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i];
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i];
         vdops[vdops.size(1) * b_i] = -vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = -c_vdops;
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = -b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
@@ -26140,22 +27010,21 @@ void wls_var_curl_curl(WlsObject *b_wls,
         real_T d;
         real_T d1;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 2];
-        c_vdops = vdops[vdops.size(1) * b_i + 5];
-        d_vdops = vdops[vdops.size(1) * b_i + 1];
-        e_vdops = vdops[vdops.size(1) * b_i + 3];
+        t = vdops[vdops.size(1) * b_i + 2];
+        b_vdops = vdops[vdops.size(1) * b_i + 5];
+        c_vdops = vdops[vdops.size(1) * b_i + 1];
+        d_vdops = vdops[vdops.size(1) * b_i + 3];
         d = vdops[vdops.size(1) * b_i];
         d1 = vdops[vdops.size(1) * b_i + 4];
-        vdops[vdops.size(1) * b_i] = -b_vdops - c_vdops;
-        vdops[vdops.size(1) * b_i + 1] = d_vdops;
-        vdops[vdops.size(1) * b_i + 2] = e_vdops;
-        vdops[vdops.size(1) * b_i + 3] = d_vdops;
-        vdops[vdops.size(1) * b_i + 4] = -d - c_vdops;
+        vdops[vdops.size(1) * b_i] = -t - b_vdops;
+        vdops[vdops.size(1) * b_i + 1] = c_vdops;
+        vdops[vdops.size(1) * b_i + 2] = d_vdops;
+        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        vdops[vdops.size(1) * b_i + 4] = -d - b_vdops;
         vdops[vdops.size(1) * b_i + 5] = d1;
-        vdops[vdops.size(1) * b_i + 6] = e_vdops;
+        vdops[vdops.size(1) * b_i + 6] = d_vdops;
         vdops[vdops.size(1) * b_i + 7] = d1;
-        vdops[vdops.size(1) * b_i + 8] = -d - b_vdops;
+        vdops[vdops.size(1) * b_i + 8] = -d - t;
       }
     }
   } else {
@@ -26167,7 +27036,6 @@ void wls_var_curl_curl(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -26201,6 +27069,11 @@ void wls_var_curl_curl(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -26236,8 +27109,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size_idx_0, u0);
-    loop_ub = u0 * grad_div_size_idx_0;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size_idx_0;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -26290,6 +27163,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -26301,8 +27182,8 @@ void wls_var_curl_curl(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (hess_size = 0; hess_size < u0; hess_size++) {
           b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -26374,14 +27255,14 @@ void wls_var_curl_curl(WlsObject *b_wls,
         if (grad_div_data[hess_size] > 1) {
           totalw = 0.0;
         } else {
-          loop_ub = ws.size(0);
+          u1 = ws.size(0);
           if (ws.size(0) == 0) {
             totalw = nevpnts;
             //  Unit weights summed together
           } else {
             //  All weights summed together
             totalw = 0.0;
-            for (b_i = 0; b_i < loop_ub; b_i++) {
+            for (b_i = 0; b_i < u1; b_i++) {
               totalw += ws[(iWeight + ws.size(1) * b_i) - 1];
             }
             iWeight += iWeight < ws.size(1);
@@ -26389,6 +27270,13 @@ void wls_var_curl_curl(WlsObject *b_wls,
         }
         vdops[j] = totalw - s;
       }
+    }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
     }
     //  Flip the signs of diagonal entries
     if (dim == 2) {
@@ -26417,6 +27305,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1,
                  real_T varargout_2_data[], coder::SizeType varargout_2_size[1])
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType iFunc;
@@ -26424,7 +27313,6 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -26450,6 +27338,12 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -26486,8 +27380,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -26528,6 +27422,14 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -26539,8 +27441,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (coder::SizeType i1{0}; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -26552,6 +27454,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -26613,6 +27520,13 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iFunc++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_div  Compute variational divergence operators as weighted sum at
@@ -26622,6 +27536,7 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1,
                  real_T varargout_2_data[], coder::SizeType varargout_2_size[1])
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType iFunc;
@@ -26629,7 +27544,6 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -26655,6 +27569,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -26689,8 +27608,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -26731,6 +27650,14 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -26742,8 +27669,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (coder::SizeType i1{0}; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -26755,6 +27682,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -26816,16 +27748,23 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iFunc++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_div  Compute variational divergence operators as weighted sum at
 void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -26851,6 +27790,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -26885,8 +27829,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -26905,6 +27849,14 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -26916,8 +27868,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (grad_size = 0; grad_size < u0; grad_size++) {
         b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
@@ -26929,6 +27881,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -26960,6 +27917,13 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_div  Compute variational divergence operators as weighted sum at
@@ -26967,12 +27931,12 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  const ::coder::array<real_T, 2U> &varargin_1,
                  ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -26998,6 +27962,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -27032,8 +28001,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -27074,6 +28043,14 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -27085,8 +28062,8 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (grad_size = 0; grad_size < u0; grad_size++) {
         b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
@@ -27098,6 +28075,11 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -27129,6 +28111,13 @@ void wls_var_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_func  Compute variational WLS-fitting as weighted sum at
@@ -27139,6 +28128,7 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType i1;
   coder::SizeType nDims;
@@ -27147,6 +28137,12 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -27203,6 +28199,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -27214,9 +28218,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      coder::SizeType loop_ub;
-      loop_ub = b_wls->QR.size(0);
-      for (i1 = 0; i1 < loop_ub; i1++) {
+      u1 = b_wls->QR.size(0);
+      for (i1 = 0; i1 < u1; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
             b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
@@ -27226,6 +28229,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -27280,6 +28288,13 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                                    varargout_1[varargout_1.size(1) * iRow];
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_func  Compute variational WLS-fitting as weighted sum at
@@ -27289,6 +28304,7 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType i1;
   coder::SizeType nDims;
@@ -27297,6 +28313,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -27351,6 +28372,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -27362,9 +28391,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      coder::SizeType loop_ub;
-      loop_ub = b_wls->QR.size(0);
-      for (i1 = 0; i1 < loop_ub; i1++) {
+      u1 = b_wls->QR.size(0);
+      for (i1 = 0; i1 < u1; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
             b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
@@ -27374,6 +28402,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -27428,12 +28461,20 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                                    varargout_1[varargout_1.size(1) * iRow];
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_func  Compute variational WLS-fitting as weighted sum at
 void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType nDims;
   coder::SizeType nevpnts;
@@ -27441,6 +28482,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -27487,6 +28533,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
           b_wls->rhs[iMonomial] + b_wls->V[iEval + b_wls->V.size(1) * (j - 1)];
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -27498,9 +28552,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      coder::SizeType loop_ub;
-      loop_ub = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < loop_ub; i1++) {
+      u1 = b_wls->QR.size(0);
+      for (coder::SizeType i1{0}; i1 < u1; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
             b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
@@ -27510,6 +28563,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -27535,6 +28593,13 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     //  Unit weights summed together
     varargout_1[0] = static_cast<real_T>(eval_pnts.size(0)) - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_func  Compute variational WLS-fitting as weighted sum at
@@ -27542,6 +28607,7 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   const ::coder::array<real_T, 2U> &varargin_1,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType nDims;
   coder::SizeType nevpnts;
@@ -27549,6 +28615,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -27603,6 +28674,14 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -27614,9 +28693,8 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      coder::SizeType loop_ub;
-      loop_ub = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < loop_ub; i1++) {
+      u1 = b_wls->QR.size(0);
+      for (coder::SizeType i1{0}; i1 < u1; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
             b_wls->QR[i + b_wls->QR.size(1) * i1];
       }
@@ -27626,6 +28704,11 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -27662,6 +28745,13 @@ void wls_var_func(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     varargout_1[0] = totalw - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_grad  Compute variational gradient operators as weighted sum at
@@ -27672,6 +28762,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType i1;
@@ -27679,7 +28770,6 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -27705,6 +28795,12 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -27741,8 +28837,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -27783,6 +28879,14 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -27794,8 +28898,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -27807,6 +28911,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -27843,8 +28952,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
             "Cannot be empty");
   varargout_2.set_size(grad_size, varargin_2.size(1));
-  loop_ub = varargin_2.size(1) * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = varargin_2.size(1) * grad_size;
+  for (i = 0; i < u1; i++) {
     varargout_2[i] = 0.0;
   }
   //  Compute solution
@@ -27866,6 +28975,13 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_grad  Compute variational gradient operators as weighted sum at
@@ -27875,6 +28991,7 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType i1;
@@ -27882,7 +28999,6 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -27908,6 +29024,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -27942,8 +29063,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -27984,6 +29105,14 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -27995,8 +29124,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -28008,6 +29137,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -28044,8 +29178,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
             "Cannot be empty");
   varargout_2.set_size(grad_size, varargin_2.size(1));
-  loop_ub = varargin_2.size(1) * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = varargin_2.size(1) * grad_size;
+  for (i = 0; i < u1; i++) {
     varargout_2[i] = 0.0;
   }
   //  Compute solution
@@ -28067,16 +29201,23 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_grad  Compute variational gradient operators as weighted sum at
 void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -28102,6 +29243,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -28136,8 +29282,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -28156,6 +29302,14 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -28167,8 +29321,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (grad_size = 0; grad_size < u0; grad_size++) {
         b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
@@ -28180,6 +29334,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -28211,6 +29370,13 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_grad  Compute variational gradient operators as weighted sum at
@@ -28218,12 +29384,12 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   const ::coder::array<real_T, 2U> &varargin_1,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType grad_size;
   coder::SizeType i;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -28249,6 +29415,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -28283,8 +29454,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(grad_size, u0);
-  loop_ub = u0 * grad_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * grad_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -28325,6 +29496,14 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -28336,8 +29515,8 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (grad_size = 0; grad_size < u0; grad_size++) {
         b_wls->QRt[grad_size + b_wls->QRt.size(1) * i] =
@@ -28349,6 +29528,11 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -28380,6 +29564,13 @@ void wls_var_grad(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_grad_div  Variational grad-div operators as weighted sum at
@@ -28391,15 +29582,16 @@ void wls_var_grad_div(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops, const real_T[],
                       coder::SizeType result_size[2])
 {
+  real_T timestamp;
   coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType grad_div_size;
     coder::SizeType i;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -28430,6 +29622,12 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -28467,8 +29665,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -28506,6 +29704,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -28517,8 +29723,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -28584,16 +29790,21 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         real_T b_vdops;
-        real_T c_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 2];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
@@ -28602,20 +29813,19 @@ void wls_var_grad_div(WlsObject *b_wls,
         real_T c_vdops;
         real_T d;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 3];
-        d_vdops = vdops[vdops.size(1) * b_i + 2];
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 3];
+        c_vdops = vdops[vdops.size(1) * b_i + 2];
         d = vdops[vdops.size(1) * b_i + 4];
-        e_vdops = vdops[vdops.size(1) * b_i + 5];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = c_vdops;
-        vdops[vdops.size(1) * b_i + 3] = b_vdops;
-        vdops[vdops.size(1) * b_i + 4] = d_vdops;
+        d_vdops = vdops[vdops.size(1) * b_i + 5];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = b_vdops;
+        vdops[vdops.size(1) * b_i + 3] = t;
+        vdops[vdops.size(1) * b_i + 4] = c_vdops;
         vdops[vdops.size(1) * b_i + 5] = d;
-        vdops[vdops.size(1) * b_i + 6] = c_vdops;
+        vdops[vdops.size(1) * b_i + 6] = b_vdops;
         vdops[vdops.size(1) * b_i + 7] = d;
-        vdops[vdops.size(1) * b_i + 8] = e_vdops;
+        vdops[vdops.size(1) * b_i + 8] = d_vdops;
       }
     }
   } else {
@@ -28624,7 +29834,6 @@ void wls_var_grad_div(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDims;
     coder::SizeType nRhs;
     coder::SizeType nevpnts;
@@ -28653,6 +29862,12 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = varargin_1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
+    //  Step 1: Tabulate monomial basis functions at evaluation points
     if (varargin_1 == 0) {
       nevpnts = eval_pnts.size(0);
     }
@@ -28689,8 +29904,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -28731,6 +29946,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -28742,8 +29965,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -28755,6 +29978,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -28786,6 +30014,13 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = 0.0 - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
   }
   //  compute output value
   result_size[1] = 0;
@@ -28801,8 +30036,9 @@ void wls_var_grad_div(WlsObject *b_wls,
                       coder::SizeType result_size[2])
 {
   real_T b_vdops;
-  real_T c_vdops;
   real_T d;
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType dim;
   coder::SizeType i;
@@ -28811,7 +30047,6 @@ void wls_var_grad_div(WlsObject *b_wls,
   if (ws.size(1) <= 1) {
     coder::SizeType grad_div_size;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -28841,6 +30076,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -28876,8 +30116,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -28915,6 +30155,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -28926,8 +30174,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -28991,33 +30239,39 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 2];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
+        real_T c_vdops;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 3];
-        d_vdops = vdops[vdops.size(1) * b_i + 2];
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 3];
+        c_vdops = vdops[vdops.size(1) * b_i + 2];
         d = vdops[vdops.size(1) * b_i + 4];
-        e_vdops = vdops[vdops.size(1) * b_i + 5];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = c_vdops;
-        vdops[vdops.size(1) * b_i + 3] = b_vdops;
-        vdops[vdops.size(1) * b_i + 4] = d_vdops;
+        d_vdops = vdops[vdops.size(1) * b_i + 5];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = b_vdops;
+        vdops[vdops.size(1) * b_i + 3] = t;
+        vdops[vdops.size(1) * b_i + 4] = c_vdops;
         vdops[vdops.size(1) * b_i + 5] = d;
-        vdops[vdops.size(1) * b_i + 6] = c_vdops;
+        vdops[vdops.size(1) * b_i + 6] = b_vdops;
         vdops[vdops.size(1) * b_i + 7] = d;
-        vdops[vdops.size(1) * b_i + 8] = e_vdops;
+        vdops[vdops.size(1) * b_i + 8] = d_vdops;
       }
     }
   } else {
@@ -29025,7 +30279,6 @@ void wls_var_grad_div(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDims;
     coder::SizeType nRhs;
     coder::SizeType nevpnts;
@@ -29054,6 +30307,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0) - 1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -29088,8 +30346,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -29130,6 +30388,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -29141,8 +30407,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -29154,6 +30420,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -29185,6 +30456,12 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = 0.0 - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
   }
   //  compute output value
   if ((fs.size(0) != 0) && (fs.size(1) != 0)) {
@@ -29204,30 +30481,30 @@ void wls_var_grad_div(WlsObject *b_wls,
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         d = fs[fs.size(1) * b_i];
-        b_vdops = fs[fs.size(1) * b_i + 1];
+        t = fs[fs.size(1) * b_i + 1];
         result_data[0] = (result_data[0] + vdops[vdops.size(1) * b_i] * d) +
-                         vdops[vdops.size(1) * b_i + 1] * b_vdops;
+                         vdops[vdops.size(1) * b_i + 1] * t;
         result_data[1] = (result_data[1] + d * vdops[vdops.size(1) * b_i + 2]) +
-                         b_vdops * vdops[vdops.size(1) * b_i + 3];
+                         t * vdops[vdops.size(1) * b_i + 3];
       }
       break;
     case 3:
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         d = fs[fs.size(1) * b_i];
-        b_vdops = fs[fs.size(1) * b_i + 1];
-        c_vdops = fs[fs.size(1) * b_i + 2];
+        t = fs[fs.size(1) * b_i + 1];
+        b_vdops = fs[fs.size(1) * b_i + 2];
         result_data[0] = ((result_data[0] + vdops[vdops.size(1) * b_i] * d) +
-                          vdops[vdops.size(1) * b_i + 1] * b_vdops) +
-                         vdops[vdops.size(1) * b_i + 2] * c_vdops;
+                          vdops[vdops.size(1) * b_i + 1] * t) +
+                         vdops[vdops.size(1) * b_i + 2] * b_vdops;
         result_data[1] =
             ((result_data[1] + d * vdops[vdops.size(1) * b_i + 3]) +
-             b_vdops * vdops[vdops.size(1) * b_i + 4]) +
-            c_vdops * vdops[vdops.size(1) * b_i + 5];
+             t * vdops[vdops.size(1) * b_i + 4]) +
+            b_vdops * vdops[vdops.size(1) * b_i + 5];
         result_data[2] =
             ((result_data[2] + d * vdops[vdops.size(1) * b_i + 6]) +
-             b_vdops * vdops[vdops.size(1) * b_i + 7]) +
-            c_vdops * vdops[vdops.size(1) * b_i + 8];
+             t * vdops[vdops.size(1) * b_i + 7]) +
+            b_vdops * vdops[vdops.size(1) * b_i + 8];
       }
       break;
     }
@@ -29242,12 +30519,13 @@ void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<real_T, 2U> &eval_pnts,
                       ::coder::array<real_T, 2U> &vdops)
 {
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType dim;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -29278,6 +30556,11 @@ void wls_var_grad_div(WlsObject *b_wls,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -29313,8 +30596,8 @@ void wls_var_grad_div(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -29343,6 +30626,14 @@ void wls_var_grad_div(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -29354,8 +30645,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (hess_size = 0; hess_size < u0; hess_size++) {
         b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -29367,6 +30658,11 @@ void wls_var_grad_div(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -29405,16 +30701,21 @@ void wls_var_grad_div(WlsObject *b_wls,
       vdops[j] = static_cast<real_T>(totalw) - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
   if (dim == 2) {
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
-      b_vdops = vdops[vdops.size(1) * b_i + 1];
-      c_vdops = vdops[vdops.size(1) * b_i + 2];
-      vdops[vdops.size(1) * b_i + 1] = b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = b_vdops;
-      vdops[vdops.size(1) * b_i + 3] = c_vdops;
+      t = vdops[vdops.size(1) * b_i + 1];
+      b_vdops = vdops[vdops.size(1) * b_i + 2];
+      vdops[vdops.size(1) * b_i + 1] = t;
+      vdops[vdops.size(1) * b_i + 2] = t;
+      vdops[vdops.size(1) * b_i + 3] = b_vdops;
     }
   } else if (dim == 3) {
     i = b_wls->nrows;
@@ -29423,20 +30724,19 @@ void wls_var_grad_div(WlsObject *b_wls,
       real_T c_vdops;
       real_T d;
       real_T d_vdops;
-      real_T e_vdops;
-      b_vdops = vdops[vdops.size(1) * b_i + 1];
-      c_vdops = vdops[vdops.size(1) * b_i + 3];
-      d_vdops = vdops[vdops.size(1) * b_i + 2];
+      t = vdops[vdops.size(1) * b_i + 1];
+      b_vdops = vdops[vdops.size(1) * b_i + 3];
+      c_vdops = vdops[vdops.size(1) * b_i + 2];
       d = vdops[vdops.size(1) * b_i + 4];
-      e_vdops = vdops[vdops.size(1) * b_i + 5];
-      vdops[vdops.size(1) * b_i + 1] = b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = b_vdops;
-      vdops[vdops.size(1) * b_i + 4] = d_vdops;
+      d_vdops = vdops[vdops.size(1) * b_i + 5];
+      vdops[vdops.size(1) * b_i + 1] = t;
+      vdops[vdops.size(1) * b_i + 2] = b_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
+      vdops[vdops.size(1) * b_i + 4] = c_vdops;
       vdops[vdops.size(1) * b_i + 5] = d;
-      vdops[vdops.size(1) * b_i + 6] = c_vdops;
+      vdops[vdops.size(1) * b_i + 6] = b_vdops;
       vdops[vdops.size(1) * b_i + 7] = d;
-      vdops[vdops.size(1) * b_i + 8] = e_vdops;
+      vdops[vdops.size(1) * b_i + 8] = d_vdops;
     }
   }
   //  compute output value
@@ -29448,15 +30748,16 @@ void wls_var_grad_div(WlsObject *b_wls,
                       const ::coder::array<real_T, 2U> &ws,
                       ::coder::array<real_T, 2U> &vdops)
 {
+  real_T timestamp;
   coder::SizeType dim;
   dim = b_wls->us.size(1);
   //  compute and reorganize vdops
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType grad_div_size;
     coder::SizeType i;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nRhs;
@@ -29486,6 +30787,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -29521,8 +30827,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -29560,6 +30866,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -29571,8 +30885,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -29636,16 +30950,21 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     if (dim == 2) {
       i = b_wls->nrows;
       for (b_i = 0; b_i < i; b_i++) {
         real_T b_vdops;
-        real_T c_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 2];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = b_vdops;
-        vdops[vdops.size(1) * b_i + 3] = c_vdops;
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 2];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = t;
+        vdops[vdops.size(1) * b_i + 3] = b_vdops;
       }
     } else if (dim == 3) {
       i = b_wls->nrows;
@@ -29654,20 +30973,19 @@ void wls_var_grad_div(WlsObject *b_wls,
         real_T c_vdops;
         real_T d;
         real_T d_vdops;
-        real_T e_vdops;
-        b_vdops = vdops[vdops.size(1) * b_i + 1];
-        c_vdops = vdops[vdops.size(1) * b_i + 3];
-        d_vdops = vdops[vdops.size(1) * b_i + 2];
+        t = vdops[vdops.size(1) * b_i + 1];
+        b_vdops = vdops[vdops.size(1) * b_i + 3];
+        c_vdops = vdops[vdops.size(1) * b_i + 2];
         d = vdops[vdops.size(1) * b_i + 4];
-        e_vdops = vdops[vdops.size(1) * b_i + 5];
-        vdops[vdops.size(1) * b_i + 1] = b_vdops;
-        vdops[vdops.size(1) * b_i + 2] = c_vdops;
-        vdops[vdops.size(1) * b_i + 3] = b_vdops;
-        vdops[vdops.size(1) * b_i + 4] = d_vdops;
+        d_vdops = vdops[vdops.size(1) * b_i + 5];
+        vdops[vdops.size(1) * b_i + 1] = t;
+        vdops[vdops.size(1) * b_i + 2] = b_vdops;
+        vdops[vdops.size(1) * b_i + 3] = t;
+        vdops[vdops.size(1) * b_i + 4] = c_vdops;
         vdops[vdops.size(1) * b_i + 5] = d;
-        vdops[vdops.size(1) * b_i + 6] = c_vdops;
+        vdops[vdops.size(1) * b_i + 6] = b_vdops;
         vdops[vdops.size(1) * b_i + 7] = d;
-        vdops[vdops.size(1) * b_i + 8] = e_vdops;
+        vdops[vdops.size(1) * b_i + 8] = d_vdops;
       }
     }
   } else {
@@ -29676,7 +30994,6 @@ void wls_var_grad_div(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDims;
     coder::SizeType nRhs;
     coder::SizeType nevpnts;
@@ -29705,6 +31022,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       break;
     }
     nevpnts = eval_pnts.size(0) - 1;
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -29739,8 +31061,8 @@ void wls_var_grad_div(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(grad_div_size, u0);
-    loop_ub = u0 * grad_div_size;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * grad_div_size;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -29781,6 +31103,14 @@ void wls_var_grad_div(WlsObject *b_wls,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     nRhs = b_wls->rhs.size(0);
     //  Multiply by generalized inverse of Vandermonde matrix
@@ -29792,8 +31122,8 @@ void wls_var_grad_div(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (grad_div_size = 0; grad_div_size < u0; grad_div_size++) {
           b_wls->QRt[grad_div_size + b_wls->QRt.size(1) * i] =
@@ -29805,6 +31135,11 @@ void wls_var_grad_div(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, nRhs);
     //  Transpose the operator for row-major
@@ -29836,6 +31171,13 @@ void wls_var_grad_div(WlsObject *b_wls,
         vdops[j] = 0.0 - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T t;
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
   }
   //  compute output value
 }
@@ -29848,6 +31190,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType i1;
@@ -29855,7 +31198,6 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -29882,6 +31224,12 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -29918,8 +31266,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -29960,6 +31308,14 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -29971,8 +31327,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -29984,6 +31340,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -30020,8 +31381,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
             "Cannot be empty");
   varargout_2.set_size(hess_size, varargin_2.size(1));
-  loop_ub = varargin_2.size(1) * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = varargin_2.size(1) * hess_size;
+  for (i = 0; i < u1; i++) {
     varargout_2[i] = 0.0;
   }
   //  Compute solution
@@ -30043,6 +31404,13 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_hess  Compute variational Hessian operators as weighted sum at
@@ -30052,6 +31420,7 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1,
                   ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType i1;
@@ -30059,7 +31428,6 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -30086,6 +31454,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -30120,8 +31493,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -30162,6 +31535,14 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -30173,8 +31554,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i1 = 0; i1 < u0; i1++) {
         b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
@@ -30186,6 +31567,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -30222,8 +31608,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   m2cAssert((varargin_2.size(0) != 0) && (varargin_2.size(1) != 0),
             "Cannot be empty");
   varargout_2.set_size(hess_size, varargin_2.size(1));
-  loop_ub = varargin_2.size(1) * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = varargin_2.size(1) * hess_size;
+  for (i = 0; i < u1; i++) {
     varargout_2[i] = 0.0;
   }
   //  Compute solution
@@ -30245,16 +31631,23 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_hess  Compute variational Hessian operators as weighted sum at
 void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -30281,6 +31674,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -30315,8 +31713,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -30335,6 +31733,14 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -30346,8 +31752,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (hess_size = 0; hess_size < u0; hess_size++) {
         b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -30359,6 +31765,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -30390,6 +31801,13 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_hess  Compute variational Hessian operators as weighted sum at
@@ -30397,12 +31815,12 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                   const ::coder::array<real_T, 2U> &varargin_1,
                   ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType hess_size;
   coder::SizeType i;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDims;
   coder::SizeType nRhs;
   coder::SizeType nevpnts;
@@ -30429,6 +31847,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -30463,8 +31886,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(hess_size, u0);
-  loop_ub = u0 * hess_size;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * hess_size;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -30505,6 +31928,14 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -30516,8 +31947,8 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (hess_size = 0; hess_size < u0; hess_size++) {
         b_wls->QRt[hess_size + b_wls->QRt.size(1) * i] =
@@ -30529,6 +31960,11 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -30560,6 +31996,13 @@ void wls_var_hess(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       varargout_1[j] = 0.0 - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_kernel  Kernel function for compute variational differential
@@ -30572,6 +32015,7 @@ void wls_var_kernel(WlsObject *b_wls,
                     coder::SizeType nevpnts, ::coder::array<real_T, 2U> &vdops,
                     ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType b_nevpnts;
   coder::SizeType i;
@@ -30580,7 +32024,6 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -30588,6 +32031,12 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType u0;
   coder::SizeType u1;
   boolean_T isdiv;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   b_nevpnts = nevpnts;
   if (nevpnts == 0) {
     b_nevpnts = eval_pnts.size(0);
@@ -30626,8 +32075,8 @@ void wls_var_kernel(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(diff_idx.size(0), u0);
-  loop_ub = u0 * diff_idx.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * diff_idx.size(0);
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -30681,6 +32130,14 @@ void wls_var_kernel(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -30692,8 +32149,8 @@ void wls_var_kernel(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i2 = 0; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -30705,6 +32162,11 @@ void wls_var_kernel(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -30789,8 +32251,8 @@ void wls_var_kernel(WlsObject *b_wls,
   m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
   if (!isdiv) {
     result.set_size(nrows, fs.size(1));
-    loop_ub = fs.size(1) * nrows;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = fs.size(1) * nrows;
+    for (i = 0; i < u1; i++) {
       result[i] = 0.0;
     }
     //  Compute solution
@@ -30841,6 +32303,13 @@ void wls_var_kernel(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_kernel  Kernel function for compute variational differential
@@ -30850,6 +32319,7 @@ void wls_var_kernel(
     const ::coder::array<real_T, 2U> &ws, const ::coder::array<real_T, 2U> &fs,
     ::coder::array<real_T, 2U> &vdops, ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   coder::SizeType i2;
@@ -30857,7 +32327,6 @@ void wls_var_kernel(
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -30867,6 +32336,11 @@ void wls_var_kernel(
   coder::SizeType u1;
   boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -30902,8 +32376,8 @@ void wls_var_kernel(
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(diff_idx.size(0), u0);
-  loop_ub = u0 * diff_idx.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * diff_idx.size(0);
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -30957,6 +32431,14 @@ void wls_var_kernel(
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -30968,8 +32450,8 @@ void wls_var_kernel(
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i2 = 0; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -30981,6 +32463,11 @@ void wls_var_kernel(
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -31065,8 +32552,8 @@ void wls_var_kernel(
   m2cAssert((fs.size(0) != 0) && (fs.size(1) != 0), "Cannot be empty");
   if (!isdiv) {
     result.set_size(nrows, fs.size(1));
-    loop_ub = fs.size(1) * nrows;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = fs.size(1) * nrows;
+    for (i = 0; i < u1; i++) {
       result[i] = 0.0;
     }
     //  Compute solution
@@ -31117,6 +32604,13 @@ void wls_var_kernel(
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_kernel  Kernel function for compute variational differential
@@ -31127,11 +32621,11 @@ void wls_var_kernel(WlsObject *b_wls,
                     ::coder::array<real_T, 2U> &vdops,
                     ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   coder::SizeType i2;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -31141,6 +32635,11 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType u1;
   boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -31176,8 +32675,8 @@ void wls_var_kernel(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(diff_idx.size(0), u0);
-  loop_ub = u0 * diff_idx.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * diff_idx.size(0);
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -31211,6 +32710,14 @@ void wls_var_kernel(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -31222,8 +32729,8 @@ void wls_var_kernel(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i2 = 0; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -31235,6 +32742,11 @@ void wls_var_kernel(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -31315,6 +32827,13 @@ void wls_var_kernel(WlsObject *b_wls,
     }
     //  Compute solution
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_kernel  Kernel function for compute variational differential
@@ -31326,13 +32845,13 @@ void wls_var_kernel(WlsObject *b_wls,
                     ::coder::array<real_T, 2U> &vdops,
                     ::coder::array<real_T, 2U> &result)
 {
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   coder::SizeType i2;
   coder::SizeType iWeight;
   coder::SizeType j;
   coder::SizeType lenWs;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nRhs;
@@ -31342,6 +32861,11 @@ void wls_var_kernel(WlsObject *b_wls,
   coder::SizeType u1;
   boolean_T isdiv;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -31377,8 +32901,8 @@ void wls_var_kernel(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(diff_idx.size(0), u0);
-  loop_ub = u0 * diff_idx.size(0);
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * diff_idx.size(0);
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -31432,6 +32956,14 @@ void wls_var_kernel(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   nRhs = b_wls->rhs.size(0);
   //  Multiply by generalized inverse of Vandermonde matrix
@@ -31443,8 +32975,8 @@ void wls_var_kernel(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (i2 = 0; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -31456,6 +32988,11 @@ void wls_var_kernel(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, nRhs,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, nRhs);
   //  Transpose the operator for row-major
@@ -31547,6 +33084,13 @@ void wls_var_kernel(WlsObject *b_wls,
     }
     //  Compute solution
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_lap  Compute variational Laplacian as weighted sum at evaluation
@@ -31557,8 +33101,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1,
                  ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType i;
-  coder::SizeType i1;
   coder::SizeType iWeight;
   coder::SizeType lap_size_idx_1;
   coder::SizeType lenWs;
@@ -31586,6 +33130,12 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = varargin_3;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
+  //  Step 1: Tabulate monomial basis functions at evaluation points
   if (varargin_3 == 0) {
     nevpnts = eval_pnts.size(0);
   }
@@ -31663,6 +33213,14 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -31674,10 +33232,10 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      lap_size_idx_1 = b_wls->QR.size(0);
-      for (i1 = 0; i1 < lap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (lap_size_idx_1 = 0; lap_size_idx_1 < u1; lap_size_idx_1++) {
+        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -31685,6 +33243,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -31720,12 +33283,19 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   //  Compute solution
   i = varargin_2.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    i1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+    lap_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
       varargout_2[iFunc] =
           varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                    varargout_1[varargout_1.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -31736,8 +33306,8 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1,
                  ::coder::array<real_T, 2U> &varargout_2)
 {
+  real_T timestamp;
   coder::SizeType i;
-  coder::SizeType i1;
   coder::SizeType iWeight;
   coder::SizeType lap_size_idx_1;
   coder::SizeType lenWs;
@@ -31765,6 +33335,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -31840,6 +33415,14 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -31851,10 +33434,10 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      lap_size_idx_1 = b_wls->QR.size(0);
-      for (i1 = 0; i1 < lap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (lap_size_idx_1 = 0; lap_size_idx_1 < u1; lap_size_idx_1++) {
+        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -31862,6 +33445,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -31897,12 +33485,19 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
   //  Compute solution
   i = varargin_2.size(1);
   for (coder::SizeType iFunc{0}; iFunc < i; iFunc++) {
-    i1 = b_wls->nrows;
-    for (coder::SizeType iRow{0}; iRow < i1; iRow++) {
+    lap_size_idx_1 = b_wls->nrows;
+    for (coder::SizeType iRow{0}; iRow < lap_size_idx_1; iRow++) {
       varargout_2[iFunc] =
           varargout_2[iFunc] + varargin_2[iFunc + varargin_2.size(1) * iRow] *
                                    varargout_1[varargout_1.size(1) * iRow];
     }
+  }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
   }
 }
 
@@ -31910,6 +33505,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType lap_size_idx_1;
   coder::SizeType nDims;
@@ -31936,6 +33532,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -31990,6 +33591,14 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32001,10 +33610,10 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      lap_size_idx_1 = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < lap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (lap_size_idx_1 = 0; lap_size_idx_1 < u1; lap_size_idx_1++) {
+        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32012,6 +33621,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -32036,6 +33650,13 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     varargout_1[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_lap  Compute variational Laplacian as weighted sum at evaluation
@@ -32043,6 +33664,7 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
                  const ::coder::array<real_T, 2U> &varargin_1,
                  ::coder::array<real_T, 2U> &varargout_1)
 {
+  real_T timestamp;
   coder::SizeType i;
   coder::SizeType iWeight;
   coder::SizeType lap_size_idx_1;
@@ -32071,6 +33693,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     break;
   }
   nevpnts = eval_pnts.size(0) - 1;
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -32146,6 +33773,14 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
       iWeight++;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32157,10 +33792,10 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
     u0 = b_wls->QR.size(1);
     for (i = 0; i < u0; i++) {
-      lap_size_idx_1 = b_wls->QR.size(0);
-      for (coder::SizeType i1{0}; i1 < lap_size_idx_1; i1++) {
-        b_wls->QRt[i1 + b_wls->QRt.size(1) * i] =
-            b_wls->QR[i + b_wls->QR.size(1) * i1];
+      u1 = b_wls->QR.size(0);
+      for (lap_size_idx_1 = 0; lap_size_idx_1 < u1; lap_size_idx_1++) {
+        b_wls->QRt[lap_size_idx_1 + b_wls->QRt.size(1) * i] =
+            b_wls->QR[i + b_wls->QR.size(1) * lap_size_idx_1];
       }
     }
     rrqr_rtsolve(b_wls->QRt, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32168,6 +33803,11 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 1,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   varargout_1.set_size(u1, 1);
   //  Transpose the operator for row-major
@@ -32192,6 +33832,13 @@ void wls_var_lap(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
     }
     varargout_1[0] = 0.0 - s;
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T t;
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
 }
 
 //  wls_var_sym_grad  Variational symmetric-gradient operators as weighted sum
@@ -32202,15 +33849,15 @@ void wls_var_sym_grad(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops, real_T result_data[],
                       coder::SizeType result_size[2])
 {
-  real_T d_vdops;
+  real_T c_vdops;
   real_T e_vdops;
-  real_T f_vdops;
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   if (ws.size(1) <= 1) {
     coder::SizeType i2;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -32219,6 +33866,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -32254,8 +33906,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -32293,6 +33945,14 @@ void wls_var_sym_grad(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32302,8 +33962,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -32369,21 +34029,27 @@ void wls_var_sym_grad(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
+      real_T d_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 2];
-      e_vdops = vdops[vdops.size(1) * b_i + 1];
-      c_vdops = vdops[vdops.size(1) * b_i];
+      c_vdops = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = e_vdops;
+      vdops[vdops.size(1) * b_i + 2] = c_vdops;
       vdops[vdops.size(1) * b_i + 3] = b_vdops;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -c_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 7] = c_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -c_vdops;
+      vdops[vdops.size(1) * b_i + 7] = d_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
@@ -32391,7 +34057,6 @@ void wls_var_sym_grad(WlsObject *b_wls,
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -32399,6 +34064,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -32434,8 +34104,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -32485,6 +34155,14 @@ void wls_var_sym_grad(WlsObject *b_wls,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32494,8 +34172,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -32507,6 +34185,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, 9);
     //  Transpose the operator for row-major
@@ -32556,25 +34239,31 @@ void wls_var_sym_grad(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
-      real_T c_vdops;
-      real_T g_vdops;
+      real_T d_vdops;
+      real_T f_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 3];
-      c_vdops = vdops[vdops.size(1) * b_i];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      f_vdops = vdops[vdops.size(1) * b_i + 4];
-      e_vdops = vdops[vdops.size(1) * b_i + 5];
-      g_vdops = vdops[vdops.size(1) * b_i + 2];
+      d_vdops = vdops[vdops.size(1) * b_i];
+      t = vdops[vdops.size(1) * b_i + 1];
+      e_vdops = vdops[vdops.size(1) * b_i + 4];
+      c_vdops = vdops[vdops.size(1) * b_i + 5];
+      f_vdops = vdops[vdops.size(1) * b_i + 2];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
+      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -f_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 7] = g_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -e_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -c_vdops;
+      vdops[vdops.size(1) * b_i + 7] = f_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   }
@@ -32587,18 +34276,18 @@ void wls_var_sym_grad(WlsObject *b_wls,
     result_data[2] = 0.0;
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
-      e_vdops = fs[fs.size(1) * b_i + 1];
-      d_vdops = fs[fs.size(1) * b_i + 2];
+      c_vdops = fs[fs.size(1) * b_i + 1];
+      t = fs[fs.size(1) * b_i + 2];
       result_data[0] =
-          (result_data[0] + vdops[vdops.size(1) * b_i + 1] * e_vdops) +
-          vdops[vdops.size(1) * b_i + 2] * d_vdops;
-      f_vdops = fs[fs.size(1) * b_i];
+          (result_data[0] + vdops[vdops.size(1) * b_i + 1] * c_vdops) +
+          vdops[vdops.size(1) * b_i + 2] * t;
+      e_vdops = fs[fs.size(1) * b_i];
       result_data[1] =
-          (result_data[1] + f_vdops * vdops[vdops.size(1) * b_i + 3]) +
-          d_vdops * vdops[vdops.size(1) * b_i + 5];
+          (result_data[1] + e_vdops * vdops[vdops.size(1) * b_i + 3]) +
+          t * vdops[vdops.size(1) * b_i + 5];
       result_data[2] =
-          (result_data[2] + f_vdops * vdops[vdops.size(1) * b_i + 6]) +
-          e_vdops * vdops[vdops.size(1) * b_i + 7];
+          (result_data[2] + e_vdops * vdops[vdops.size(1) * b_i + 6]) +
+          c_vdops * vdops[vdops.size(1) * b_i + 7];
     }
   } else {
     result_size[1] = 0;
@@ -32612,10 +34301,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops, const real_T[],
                       coder::SizeType result_size[2])
 {
+  real_T t;
+  real_T timestamp;
   coder::SizeType b_i;
   coder::SizeType i;
   coder::SizeType j;
-  coder::SizeType loop_ub;
   coder::SizeType nDiff;
   coder::SizeType nDims;
   coder::SizeType nevpnts;
@@ -32623,6 +34313,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
   coder::SizeType u0;
   coder::SizeType u1;
   nevpnts = eval_pnts.size(0);
+  if (b_wls->runtimes.size[0] != 0) {
+    timestamp = static_cast<std::chrono::duration<double>>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+  }
   //  Step 1: Tabulate monomial basis functions at evaluation points
   nDims = eval_pnts.size(1) - 1;
   b_wls->nevpnts = eval_pnts.size(0);
@@ -32658,8 +34353,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
   }
   u0 = u1 - b_wls->interp0;
   b_wls->rhs.set_size(9, u0);
-  loop_ub = u0 * 9;
-  for (i = 0; i < loop_ub; i++) {
+  u1 = u0 * 9;
+  for (i = 0; i < u1; i++) {
     b_wls->rhs[i] = 0.0;
   }
   //  Omit zeros in the diff operators
@@ -32688,6 +34383,14 @@ void wls_var_sym_grad(WlsObject *b_wls,
       }
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    real_T timestamp1;
+    timestamp1 = static_cast<std::chrono::duration<double>>(
+                     std::chrono::system_clock::now().time_since_epoch())
+                     .count();
+    b_wls->runtimes.data[2] = timestamp1 - timestamp;
+    timestamp = timestamp1;
+  }
   //  Step 3: Solve the Vandermonde system to build the operator
   if (b_wls->rowmajor) {
     rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32697,8 +34400,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
                 b_wls->work);
   } else {
     b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-    loop_ub = b_wls->QR.size(1);
-    for (i = 0; i < loop_ub; i++) {
+    u1 = b_wls->QR.size(1);
+    for (i = 0; i < u1; i++) {
       u0 = b_wls->QR.size(0);
       for (coder::SizeType i2{0}; i2 < u0; i2++) {
         b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -32710,6 +34413,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
     rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                 b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                 b_wls->work);
+  }
+  u0 = b_wls->ncols;
+  u1 = b_wls->nrows;
+  if (u0 >= u1) {
+    u1 = u0;
   }
   vdops.set_size(u1, 9);
   //  Transpose the operator for row-major
@@ -32748,22 +34456,27 @@ void wls_var_sym_grad(WlsObject *b_wls,
       vdops[j] = static_cast<real_T>(totalw) - s;
     }
   }
+  if (b_wls->runtimes.size[0] != 0) {
+    t = static_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    b_wls->runtimes.data[3] = t - timestamp;
+  }
   i = b_wls->nrows;
   for (b_i = 0; b_i < i; b_i++) {
     real_T b_vdops;
-    real_T c_vdops;
     real_T d;
-    b_vdops = vdops[vdops.size(1) * b_i + 2];
+    t = vdops[vdops.size(1) * b_i + 2];
     d = vdops[vdops.size(1) * b_i + 1];
-    c_vdops = vdops[vdops.size(1) * b_i];
+    b_vdops = vdops[vdops.size(1) * b_i];
     vdops[vdops.size(1) * b_i] = 0.0;
-    vdops[vdops.size(1) * b_i + 1] = -b_vdops;
+    vdops[vdops.size(1) * b_i + 1] = -t;
     vdops[vdops.size(1) * b_i + 2] = d;
-    vdops[vdops.size(1) * b_i + 3] = b_vdops;
+    vdops[vdops.size(1) * b_i + 3] = t;
     vdops[vdops.size(1) * b_i + 4] = 0.0;
-    vdops[vdops.size(1) * b_i + 5] = -c_vdops;
+    vdops[vdops.size(1) * b_i + 5] = -b_vdops;
     vdops[vdops.size(1) * b_i + 6] = -d;
-    vdops[vdops.size(1) * b_i + 7] = c_vdops;
+    vdops[vdops.size(1) * b_i + 7] = b_vdops;
     vdops[vdops.size(1) * b_i + 8] = 0.0;
   }
   //  compute output value
@@ -32778,12 +34491,13 @@ void wls_var_sym_grad(WlsObject *b_wls,
                       ::coder::array<real_T, 2U> &vdops, const real_T[],
                       coder::SizeType result_size[2])
 {
+  real_T timestamp;
   if (ws.size(1) <= 1) {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType j;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -32792,6 +34506,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -32827,8 +34546,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -32866,6 +34585,14 @@ void wls_var_sym_grad(WlsObject *b_wls,
         }
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -32875,8 +34602,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -32942,32 +34669,37 @@ void wls_var_sym_grad(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
       real_T c_vdops;
-      real_T d_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 2];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
+      t = vdops[vdops.size(1) * b_i + 1];
       c_vdops = vdops[vdops.size(1) * b_i];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
-      vdops[vdops.size(1) * b_i + 2] = d_vdops;
+      vdops[vdops.size(1) * b_i + 2] = t;
       vdops[vdops.size(1) * b_i + 3] = b_vdops;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
       vdops[vdops.size(1) * b_i + 5] = -c_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -t;
       vdops[vdops.size(1) * b_i + 7] = c_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   } else {
+    real_T t;
     coder::SizeType b_i;
     coder::SizeType i;
     coder::SizeType i2;
     coder::SizeType iWeight;
     coder::SizeType j;
     coder::SizeType lenWs;
-    coder::SizeType loop_ub;
     coder::SizeType nDiff;
     coder::SizeType nDims;
     coder::SizeType nevpnts;
@@ -32975,6 +34707,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
     coder::SizeType u0;
     coder::SizeType u1;
     nevpnts = eval_pnts.size(0);
+    if (b_wls->runtimes.size[0] != 0) {
+      timestamp = static_cast<std::chrono::duration<double>>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+    }
     //  Step 1: Tabulate monomial basis functions at evaluation points
     nDims = eval_pnts.size(1) - 1;
     b_wls->nevpnts = eval_pnts.size(0);
@@ -33010,8 +34747,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
     }
     u0 = u1 - b_wls->interp0;
     b_wls->rhs.set_size(9, u0);
-    loop_ub = u0 * 9;
-    for (i = 0; i < loop_ub; i++) {
+    u1 = u0 * 9;
+    for (i = 0; i < u1; i++) {
       b_wls->rhs[i] = 0.0;
     }
     //  Omit zeros in the diff operators
@@ -33061,6 +34798,14 @@ void wls_var_sym_grad(WlsObject *b_wls,
         iWeight++;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      real_T timestamp1;
+      timestamp1 = static_cast<std::chrono::duration<double>>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+      b_wls->runtimes.data[2] = timestamp1 - timestamp;
+      timestamp = timestamp1;
+    }
     //  Step 3: Solve the Vandermonde system to build the operator
     if (b_wls->rowmajor) {
       rrqr_rtsolve(b_wls->QR, b_wls->ncols - b_wls->interp0, b_wls->rank,
@@ -33070,8 +34815,8 @@ void wls_var_sym_grad(WlsObject *b_wls,
                   b_wls->work);
     } else {
       b_wls->QRt.set_size(b_wls->QR.size(1), b_wls->QR.size(0));
-      loop_ub = b_wls->QR.size(1);
-      for (i = 0; i < loop_ub; i++) {
+      u1 = b_wls->QR.size(1);
+      for (i = 0; i < u1; i++) {
         u0 = b_wls->QR.size(0);
         for (i2 = 0; i2 < u0; i2++) {
           b_wls->QRt[i2 + b_wls->QRt.size(1) * i] =
@@ -33083,6 +34828,11 @@ void wls_var_sym_grad(WlsObject *b_wls,
       rrqr_qmulti(b_wls->QRt, b_wls->nrows - b_wls->interp0,
                   b_wls->ncols - b_wls->interp0, b_wls->rank, b_wls->rhs, 9,
                   b_wls->work);
+    }
+    u0 = b_wls->ncols;
+    u1 = b_wls->nrows;
+    if (u0 >= u1) {
+      u1 = u0;
     }
     vdops.set_size(u1, 9);
     //  Transpose the operator for row-major
@@ -33132,6 +34882,12 @@ void wls_var_sym_grad(WlsObject *b_wls,
         vdops[j] = totalw - s;
       }
     }
+    if (b_wls->runtimes.size[0] != 0) {
+      t = static_cast<std::chrono::duration<double>>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      b_wls->runtimes.data[3] = t - timestamp;
+    }
     i = b_wls->nrows;
     for (b_i = 0; b_i < i; b_i++) {
       real_T b_vdops;
@@ -33139,21 +34895,20 @@ void wls_var_sym_grad(WlsObject *b_wls,
       real_T d_vdops;
       real_T e_vdops;
       real_T f_vdops;
-      real_T g_vdops;
       b_vdops = vdops[vdops.size(1) * b_i + 3];
       c_vdops = vdops[vdops.size(1) * b_i];
-      d_vdops = vdops[vdops.size(1) * b_i + 1];
-      e_vdops = vdops[vdops.size(1) * b_i + 4];
-      f_vdops = vdops[vdops.size(1) * b_i + 5];
-      g_vdops = vdops[vdops.size(1) * b_i + 2];
+      t = vdops[vdops.size(1) * b_i + 1];
+      d_vdops = vdops[vdops.size(1) * b_i + 4];
+      e_vdops = vdops[vdops.size(1) * b_i + 5];
+      f_vdops = vdops[vdops.size(1) * b_i + 2];
       vdops[vdops.size(1) * b_i] = 0.0;
       vdops[vdops.size(1) * b_i + 1] = -b_vdops;
       vdops[vdops.size(1) * b_i + 2] = c_vdops;
-      vdops[vdops.size(1) * b_i + 3] = d_vdops;
+      vdops[vdops.size(1) * b_i + 3] = t;
       vdops[vdops.size(1) * b_i + 4] = 0.0;
-      vdops[vdops.size(1) * b_i + 5] = -e_vdops;
-      vdops[vdops.size(1) * b_i + 6] = -f_vdops;
-      vdops[vdops.size(1) * b_i + 7] = g_vdops;
+      vdops[vdops.size(1) * b_i + 5] = -d_vdops;
+      vdops[vdops.size(1) * b_i + 6] = -e_vdops;
+      vdops[vdops.size(1) * b_i + 7] = f_vdops;
       vdops[vdops.size(1) * b_i + 8] = 0.0;
     }
   }
