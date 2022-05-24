@@ -15248,9 +15248,9 @@ static void rrqr_factor(const ::coder::array<real_T, 2U> &A, real_T thres,
   work.set_size(wsize);
   //  Invoke C++ function
   p[0] = 0;
-  *rank = wls::rrqr_factor_nodag(&A[rowoffset + A.size(1) * coloffset], thres,
-                                 m, n, &QR[0], &(p.data())[0],
-                                 &(work.data())[0], wsize, A.size(1));
+  *rank = wls::rrqr_factor(&A[rowoffset + A.size(1) * coloffset], thres,
+                           m, n, &QR[0], &(p.data())[0],
+                           &(work.data())[0], wsize, A.size(1));
 }
 
 //  rrqr_qmulti  Perform Q*bs, where Q is stored implicitly in QR

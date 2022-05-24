@@ -36,7 +36,6 @@
 #include <vector>
 
 #include "wls_config.hpp"
-#include "rrqr_trunc.h"
 
 // wrapping LAPACK Fortran 77 interfaces
 extern "C" {
@@ -304,13 +303,13 @@ inline int determine_rank(const int n, const T *R, const int stride,
  * @return rank If nonnegative, numerical rank of the matrix.
  *         If negative, an LAPACK error.
  *
- * @sa query_work_size, rrqr_factor
+ * @sa query_work_size
  *
  */
 template <class T>
-inline int rrqr_factor_nodag(const T *A, const T cond_thres, const int m,
-                             const int n, T *B, int *jpvt, T *work,
-                             const int work_size, const int stride = 0) {
+inline int rrqr_factor(const T *A, const T cond_thres, const int m,
+                       const int n, T *B, int *jpvt, T *work,
+                       const int work_size, const int stride = 0) {
   lapack_int lda(stride <= 0 ? m : stride);
   T *        tau = &B[lda * n];
 
@@ -352,69 +351,6 @@ inline int rrqr_factor_nodag(const T *A, const T cond_thres, const int m,
 
   // fourth step, determine whether the matrix is rank deficient
   return determine_rank(std::min(m, n), B, lda, cond_thres, work);
-}
-
-/*!
- * @brief core function for rank-revealing QR with column pivoting (with trunc)
- *
- * @tparam T Value type, either \a double or \a float
- * @param[in] A   Weighted generalized Vandermode matrix
- * @param[in] cond_thres Threshold of 2-norm condition number
- * @param[in] m  Number of rows
- * @param[in] n  Number of columns
- * @param[out] B Upon output, this is the internal structure for QRCP with tau
- * @param[in,out] jpvt Column pivoting array (1-based index), size of n;
- *                    if jpvt[0]>0 at input, it will be used to permute A.
- * @param[out] work Internal work space
- * @param[in]  work_size Size of internal floating-point work space,
- *                       should equal to query_work_size
- * @param[in] stride (optional) Stride for A and B
- * @param[in] dag (optional) DAG for columns in Vandermonde system
- * @param[in] dim (optional) Dimension of DAG (1:3), if \a dag is given, then
- *                \a dim must be provided.
- * @param[in] nlvls_dag (optional) Number of nodes/levels in the DAG, should be
- *                      no smaller than \a n.
- * @return rank If nonnegative, numerical rank of the matrix.
- *         If negative, an LAPACK error.
- *
- * @sa query_work_size, rrqr_factor_nodag
- *
- */
-template <class T>
-inline int rrqr_factor(const T *A, const T cond_thres, const int m, const int n,
-                       T *B, int *jpvt, T *work, const int work_size,
-                       const int stride = 0, const unsigned char *dag = nullptr,
-                       const int dim = 0, const int nlvls_dag = 0) {
-  if (n) *jpvt = 0;
-  int rank =
-      rrqr_factor_nodag(A, cond_thres, m, n, B, jpvt, work, work_size, stride);
-  if (rank < 0) return rank;
-  if (rank == n || !dag) return rank;
-  const int nlvls_dag_(nlvls_dag < n ? n : nlvls_dag);
-  if (dim < 1 || dim > 3) return -111;  // error inputs
-  // create coder dag interface
-  coder::array<unsigned char, 2U> dag_array;
-  dag_array.set(const_cast<unsigned char *>(dag), dim, nlvls_dag_);
-  coder::array<int, 1U> jpvt_array;
-  jpvt_array.set(jpvt, n);
-  coder::array<int, 2U> work_array;
-  work_array.set(reinterpret_cast<int *>(work), 4, n);
-#ifdef DEBUG
-  if (dag_array.is_owner()) return -222;  // should not be owner
-#endif
-  int n1 = n;
-  for (;;) {
-    boolean_T permuted;
-    rrqr_trunc(dag_array, &n1, rank, jpvt_array, work_array, &permuted);
-    if (permuted) {
-      // if we have permutation, continue factorizing QRCP with updated columns
-      rank = rrqr_factor_nodag(A, cond_thres, m, n1, B, jpvt, work, work_size,
-                               stride);
-      continue;
-    }
-    break;
-  }
-  return rank;
 }
 
 /*!
