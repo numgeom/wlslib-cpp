@@ -66,12 +66,7 @@ static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &us,
                             const WlsWeight *weight, ::coder::SizeType degree,
                             ::coder::SizeType order, ::coder::SizeType interp0,
-                            boolean_T a__1, ::coder::SizeType nstpnts);
-
-static inline void wls_init(WlsObject *b_wls,
-                            const ::coder::array<real_T, 2U> &us,
-                            const ::coder::array<char_T, 2U> &weight,
-                            ::coder::SizeType degree);
+                            int32_T nstpnts);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &us,
@@ -83,12 +78,6 @@ static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<char_T, 2U> &weight,
                             ::coder::SizeType degree, ::coder::SizeType order,
                             ::coder::SizeType interp0);
-
-static inline void wls_init(WlsObject *b_wls,
-                            const ::coder::array<real_T, 2U> &us,
-                            const ::coder::array<char_T, 2U> &weight,
-                            ::coder::SizeType degree, ::coder::SizeType order,
-                            ::coder::SizeType interp0, boolean_T a__1);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &us);
@@ -113,20 +102,18 @@ static inline void wls_init(WlsObject *b_wls,
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &us,
-                            const WlsWeight *weight, ::coder::SizeType degree,
-                            ::coder::SizeType order, ::coder::SizeType interp0,
-                            boolean_T a__1);
-
-static inline void wls_init(WlsObject *b_wls,
-                            const ::coder::array<real_T, 2U> &us,
                             const ::coder::array<char_T, 2U> &weight,
                             ::coder::SizeType degree, ::coder::SizeType order,
-                            ::coder::SizeType interp0, boolean_T a__1,
-                            ::coder::SizeType nstpnts);
+                            ::coder::SizeType interp0, int32_T nstpnts);
 
 static inline void wls_init(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &us,
                             const ::coder::array<char_T, 2U> &weight);
+
+static inline void wls_init(WlsObject *b_wls,
+                            const ::coder::array<real_T, 2U> &us,
+                            const ::coder::array<char_T, 2U> &weight,
+                            ::coder::SizeType degree);
 
 static inline void wls_solve_sys(WlsObject *b_wls,
                                  ::coder::array<real_T, 2U> &vdops);
