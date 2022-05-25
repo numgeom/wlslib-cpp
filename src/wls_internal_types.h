@@ -2,7 +2,7 @@
 //
 // wls_internal_types.h
 //
-// Code generation for function 'wls_func'
+// Code generation for function 'wls_div'
 //
 
 #ifndef WLS_INTERNAL_TYPES_H
@@ -30,14 +30,13 @@ struct WlsObject {
   int32_T nstpnts;
   int32_T degree;
   int32_T order;
+  boolean_T unimono;
   int32_T interp0;
-  boolean_T use_dag;
   int32_T stride;
   ::coder::array<real_T, 2U> us;
   ::coder::bounded_array<real_T, 3U, 2U> origin;
   ::coder::array<real_T, 1U> rweights;
   ::coder::bounded_array<real_T, 3U, 2U> hs_inv;
-  ::coder::array<uint8_T, 2U> dag;
   ::coder::array<real_T, 2U> V;
   ::coder::array<real_T, 2U> QR;
   ::coder::array<real_T, 2U> rhs;
