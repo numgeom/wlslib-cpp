@@ -26,28 +26,37 @@ struct WlsWeight;
 
 // Function Declarations
 namespace wls {
+static inline void wls_curl(WlsObject *b_wls,
+                            const ::coder::array<real_T, 2U> &eval_pnts,
+                            const ::coder::array<real_T, 2U> &varargin_1,
+                            ::coder::SizeType varargin_2,
+                            ::coder::array<real_T, 2U> &varargout_1);
+
+static inline void wls_curl(WlsObject *b_wls,
+                            const ::coder::array<real_T, 2U> &eval_pnts,
+                            const ::coder::array<real_T, 2U> &varargin_1,
+                            ::coder::array<real_T, 2U> &varargout_1);
+
+static inline void wls_curl(WlsObject *b_wls,
+                            const ::coder::array<real_T, 2U> &eval_pnts,
+                            ::coder::array<real_T, 2U> &varargout_1);
+
 static inline void wls_div(WlsObject *b_wls,
                            const ::coder::array<real_T, 2U> &eval_pnts,
                            const ::coder::array<real_T, 2U> &varargin_1,
                            ::coder::SizeType varargin_2,
                            ::coder::array<real_T, 2U> &varargout_1,
-                           ::coder::array<real_T, 1U> &varargout_2);
+                           ::coder::array<real_T, 2U> &varargout_2);
 
 static inline void wls_div(WlsObject *b_wls,
                            const ::coder::array<real_T, 2U> &eval_pnts,
                            const ::coder::array<real_T, 2U> &varargin_1,
                            ::coder::array<real_T, 2U> &varargout_1,
-                           ::coder::array<real_T, 1U> &varargout_2);
+                           ::coder::array<real_T, 2U> &varargout_2);
 
 static inline void wls_div(WlsObject *b_wls,
                            const ::coder::array<real_T, 2U> &eval_pnts,
                            ::coder::array<real_T, 2U> &varargout_1);
-
-static inline void wls_eval_ops(const WlsObject *b_wls,
-                                const ::coder::array<int8_T, 2U> &vdops,
-                                const ::coder::array<real_T, 2U> &fs,
-                                boolean_T isdiv, ::coder::SizeType nOps,
-                                ::coder::array<real_T, 2U> &result);
 
 static inline void wls_func(WlsObject *b_wls,
                             const ::coder::array<real_T, 2U> &eval_pnts,
@@ -162,62 +171,6 @@ static inline void wls_init(WlsObject *b_wls,
                             ::coder::SizeType interp0,
                             ::coder::SizeType unimono);
 
-static inline void
-wls_kernel(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-           ::coder::SizeType order, const ::coder::array<int8_T, 2U> &diff_idx,
-           const ::coder::array<real_T, 2U> &fs, ::coder::SizeType nevpnts,
-           ::coder::array<real_T, 2U> &vdops,
-           ::coder::array<real_T, 2U> &results);
-
-static inline void wls_kernel(WlsObject *b_wls,
-                              const ::coder::array<real_T, 2U> &eval_pnts,
-                              ::coder::SizeType order,
-                              const ::coder::array<int8_T, 2U> &diff_idx,
-                              const ::coder::array<real_T, 2U> &fs,
-                              ::coder::array<real_T, 2U> &vdops,
-                              ::coder::array<real_T, 2U> &results);
-
-static inline void wls_kernel(WlsObject *b_wls,
-                              const ::coder::array<real_T, 2U> &eval_pnts,
-                              ::coder::SizeType order,
-                              const ::coder::array<int8_T, 2U> &diff_idx,
-                              ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_solve_sys(WlsObject *b_wls,
-                                 ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_solve_sys(WlsObject *b_wls,
-                                 const ::coder::array<int8_T, 2U> &diff_idx,
-                                 ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_solve_sys(WlsObject *b_wls,
-                                 const ::coder::array<int8_T, 2U> &diff_idx,
-                                 const ::coder::array<real_T, 2U> &ws,
-                                 ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_tab_mbasis(WlsObject *b_wls,
-                                  const ::coder::array<real_T, 2U> &evpnts);
-
-static inline void wls_tab_mbasis(WlsObject *b_wls,
-                                  const ::coder::array<real_T, 2U> &evpnts,
-                                  ::coder::SizeType order);
-
-static inline void wls_tab_mbasis(WlsObject *b_wls,
-                                  const ::coder::array<real_T, 2U> &evpnts,
-                                  ::coder::SizeType order,
-                                  ::coder::SizeType nevpnts);
-
-static inline void wls_update_rhs(WlsObject *b_wls,
-                                  const ::coder::array<int8_T, 2U> &diff_idx);
-
-static inline void wls_update_rhs2(WlsObject *b_wls,
-                                   const ::coder::array<int8_T, 2U> &diff_idx,
-                                   const ::coder::array<real_T, 2U> &ws);
-
-static inline void wls_update_rhs3(WlsObject *b_wls,
-                                   const ::coder::array<int8_T, 2U> &diff_idx,
-                                   const ::coder::array<real_T, 2U> &ws);
-
 static inline void wls_var_bilap(WlsObject *b_wls,
                                  const ::coder::array<real_T, 2U> &eval_pnts,
                                  const ::coder::array<real_T, 2U> &varargin_1,
@@ -276,10 +229,6 @@ static inline void wls_var_cdr4(WlsObject *b_wls,
 
 static inline void wls_var_cdr5(WlsObject *b_wls,
                                 const ::coder::array<real_T, 2U> &eval_pnts,
-                                ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_var_cdr6(WlsObject *b_wls,
-                                const ::coder::array<real_T, 2U> &eval_pnts,
                                 const ::coder::array<real_T, 2U> &ws_lap,
                                 ::coder::array<real_T, 2U> &vdops);
 
@@ -310,42 +259,42 @@ static inline void wls_var_convdiff(WlsObject *b_wls,
                                     ::coder::array<real_T, 2U> &ws_lap,
                                     ::coder::array<real_T, 2U> &vdops);
 
-static inline void
-wls_var_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-             const ::coder::array<real_T, 2U> &ws,
-             const ::coder::array<real_T, 2U> &fs, ::coder::SizeType varargin_1,
-             ::coder::array<real_T, 2U> &vdops, const real_T result_data[],
-             ::coder::SizeType result_size[2]);
+static inline void wls_var_curl(WlsObject *b_wls,
+                                const ::coder::array<real_T, 2U> &eval_pnts,
+                                const ::coder::array<real_T, 2U> &ws,
+                                const ::coder::array<real_T, 2U> &varargin_1,
+                                ::coder::SizeType varargin_2,
+                                ::coder::array<real_T, 2U> &varargout_1,
+                                ::coder::array<real_T, 2U> &varargout_2);
 
 static inline void wls_var_curl(WlsObject *b_wls,
                                 const ::coder::array<real_T, 2U> &eval_pnts,
                                 const ::coder::array<real_T, 2U> &ws,
-                                const ::coder::array<real_T, 2U> &fs,
-                                ::coder::array<real_T, 2U> &vdops,
-                                real_T result_data[],
-                                ::coder::SizeType result_size[2]);
+                                const ::coder::array<real_T, 2U> &varargin_1,
+                                ::coder::array<real_T, 2U> &varargout_1,
+                                ::coder::array<real_T, 2U> &varargout_2);
 
 static inline void wls_var_curl(WlsObject *b_wls,
                                 const ::coder::array<real_T, 2U> &eval_pnts,
-                                ::coder::array<real_T, 2U> &vdops);
+                                ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void wls_var_curl(WlsObject *b_wls,
                                 const ::coder::array<real_T, 2U> &eval_pnts,
                                 const ::coder::array<real_T, 2U> &ws,
-                                ::coder::array<real_T, 2U> &vdops);
+                                ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void wls_var_curl_curl(
     WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-    const ::coder::array<real_T, 2U> &ws, const ::coder::array<real_T, 2U> &fs,
-    ::coder::SizeType varargin_1, ::coder::array<real_T, 2U> &vdops,
-    const real_T result_data[], ::coder::SizeType result_size[2]);
+    ::coder::array<real_T, 1U> &ws,
+    const ::coder::array<real_T, 2U> &varargin_1, ::coder::SizeType varargin_2,
+    ::coder::array<real_T, 2U> &vdops, ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-                  const ::coder::array<real_T, 2U> &ws,
-                  const ::coder::array<real_T, 2U> &fs,
-                  ::coder::array<real_T, 2U> &vdops, real_T result_data[],
-                  ::coder::SizeType result_size[2]);
+                  ::coder::array<real_T, 1U> &ws,
+                  const ::coder::array<real_T, 2U> &varargin_1,
+                  ::coder::array<real_T, 2U> &vdops,
+                  ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
@@ -353,32 +302,32 @@ wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
 
 static inline void
 wls_var_curl_curl(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-                  const ::coder::array<real_T, 2U> &ws,
+                  ::coder::array<real_T, 1U> &ws,
                   ::coder::array<real_T, 2U> &vdops);
 
 static inline void wls_var_div(WlsObject *b_wls,
                                const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 2U> &ws,
                                const ::coder::array<real_T, 2U> &varargin_1,
-                               const ::coder::array<real_T, 2U> &varargin_2,
-                               ::coder::SizeType varargin_3,
-                               ::coder::array<real_T, 2U> &varargout_1,
-                               ::coder::array<real_T, 1U> &varargout_2);
-
-static inline void wls_var_div(WlsObject *b_wls,
-                               const ::coder::array<real_T, 2U> &eval_pnts,
-                               const ::coder::array<real_T, 2U> &varargin_1,
-                               const ::coder::array<real_T, 2U> &varargin_2,
-                               ::coder::array<real_T, 2U> &varargout_1,
-                               ::coder::array<real_T, 1U> &varargout_2);
-
-static inline void wls_var_div(WlsObject *b_wls,
-                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               ::coder::SizeType varargin_2,
+                               ::coder::array<real_T, 2U> &vdops,
                                ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void wls_var_div(WlsObject *b_wls,
                                const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 2U> &ws,
                                const ::coder::array<real_T, 2U> &varargin_1,
+                               ::coder::array<real_T, 2U> &vdops,
                                ::coder::array<real_T, 2U> &varargout_1);
+
+static inline void wls_var_div(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_div(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 2U> &ws,
+                               ::coder::array<real_T, 2U> &vdops);
 
 static inline void wls_var_func(WlsObject *b_wls,
                                 const ::coder::array<real_T, 2U> &eval_pnts,
@@ -430,17 +379,16 @@ static inline void wls_var_grad(WlsObject *b_wls,
 
 static inline void wls_var_grad_div(
     WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-    const ::coder::array<real_T, 2U> &ws, const ::coder::array<real_T, 2U> &fs,
-    ::coder::SizeType varargin_1, ::coder::array<real_T, 2U> &vdops,
-    const real_T result_data[], ::coder::SizeType result_size[2]);
+    ::coder::array<real_T, 1U> &ws,
+    const ::coder::array<real_T, 2U> &varargin_1, ::coder::SizeType varargin_2,
+    ::coder::array<real_T, 2U> &vdops, ::coder::array<real_T, 2U> &varargout_1);
 
-static inline void wls_var_grad_div(WlsObject *b_wls,
-                                    const ::coder::array<real_T, 2U> &eval_pnts,
-                                    const ::coder::array<real_T, 2U> &ws,
-                                    const ::coder::array<real_T, 2U> &fs,
-                                    ::coder::array<real_T, 2U> &vdops,
-                                    real_T result_data[],
-                                    ::coder::SizeType result_size[2]);
+static inline void
+wls_var_grad_div(WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
+                 ::coder::array<real_T, 1U> &ws,
+                 const ::coder::array<real_T, 2U> &varargin_1,
+                 ::coder::array<real_T, 2U> &vdops,
+                 ::coder::array<real_T, 2U> &varargout_1);
 
 static inline void wls_var_grad_div(WlsObject *b_wls,
                                     const ::coder::array<real_T, 2U> &eval_pnts,
@@ -448,60 +396,8 @@ static inline void wls_var_grad_div(WlsObject *b_wls,
 
 static inline void wls_var_grad_div(WlsObject *b_wls,
                                     const ::coder::array<real_T, 2U> &eval_pnts,
-                                    const ::coder::array<real_T, 2U> &ws,
+                                    ::coder::array<real_T, 1U> &ws,
                                     ::coder::array<real_T, 2U> &vdops);
-
-static inline void wls_var_hess(WlsObject *b_wls,
-                                const ::coder::array<real_T, 2U> &eval_pnts,
-                                const ::coder::array<real_T, 2U> &varargin_1,
-                                const ::coder::array<real_T, 2U> &varargin_2,
-                                ::coder::SizeType varargin_3,
-                                ::coder::array<real_T, 2U> &varargout_1,
-                                ::coder::array<real_T, 2U> &varargout_2);
-
-static inline void wls_var_hess(WlsObject *b_wls,
-                                const ::coder::array<real_T, 2U> &eval_pnts,
-                                const ::coder::array<real_T, 2U> &varargin_1,
-                                const ::coder::array<real_T, 2U> &varargin_2,
-                                ::coder::array<real_T, 2U> &varargout_1,
-                                ::coder::array<real_T, 2U> &varargout_2);
-
-static inline void wls_var_hess(WlsObject *b_wls,
-                                const ::coder::array<real_T, 2U> &eval_pnts,
-                                ::coder::array<real_T, 2U> &varargout_1);
-
-static inline void wls_var_hess(WlsObject *b_wls,
-                                const ::coder::array<real_T, 2U> &eval_pnts,
-                                const ::coder::array<real_T, 2U> &varargin_1,
-                                ::coder::array<real_T, 2U> &varargout_1);
-
-static inline void wls_var_kernel(
-    WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-    ::coder::SizeType order, const ::coder::array<int8_T, 2U> &diff_idx,
-    const ::coder::array<real_T, 2U> &ws, const ::coder::array<real_T, 2U> &fs,
-    ::coder::SizeType nevpnts, ::coder::array<real_T, 2U> &vdops,
-    ::coder::array<real_T, 2U> &result);
-
-static inline void wls_var_kernel(
-    WlsObject *b_wls, const ::coder::array<real_T, 2U> &eval_pnts,
-    ::coder::SizeType order, const ::coder::array<int8_T, 2U> &diff_idx,
-    const ::coder::array<real_T, 2U> &ws, const ::coder::array<real_T, 2U> &fs,
-    ::coder::array<real_T, 2U> &vdops, ::coder::array<real_T, 2U> &result);
-
-static inline void wls_var_kernel(WlsObject *b_wls,
-                                  const ::coder::array<real_T, 2U> &eval_pnts,
-                                  ::coder::SizeType order,
-                                  const ::coder::array<int8_T, 2U> &diff_idx,
-                                  ::coder::array<real_T, 2U> &vdops,
-                                  ::coder::array<real_T, 2U> &result);
-
-static inline void wls_var_kernel(WlsObject *b_wls,
-                                  const ::coder::array<real_T, 2U> &eval_pnts,
-                                  ::coder::SizeType order,
-                                  const ::coder::array<int8_T, 2U> &diff_idx,
-                                  const ::coder::array<real_T, 2U> &ws,
-                                  ::coder::array<real_T, 2U> &vdops,
-                                  ::coder::array<real_T, 2U> &result);
 
 static inline void wls_var_lap(WlsObject *b_wls,
                                const ::coder::array<real_T, 2U> &eval_pnts,
@@ -527,26 +423,52 @@ static inline void wls_var_lap(WlsObject *b_wls,
                                ::coder::array<real_T, 2U> &ws,
                                ::coder::array<real_T, 2U> &vdops);
 
-static inline void wls_var_sym_grad(WlsObject *b_wls,
-                                    const ::coder::array<real_T, 2U> &eval_pnts,
-                                    const ::coder::array<real_T, 2U> &ws,
-                                    const ::coder::array<real_T, 2U> &fs,
-                                    ::coder::array<real_T, 2U> &vdops,
-                                    real_T result_data[],
-                                    ::coder::SizeType result_size[2]);
+static inline void wls_var_uno(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 1U> &ws_graddiv,
+                               const ::coder::array<real_T, 1U> &ws_lap,
+                               const ::coder::array<real_T, 2U> &ws_grad,
+                               const ::coder::array<real_T, 1U> &ws_rho,
+                               const ::coder::array<real_T, 2U> &fs,
+                               ::coder::SizeType nevpnts,
+                               ::coder::array<real_T, 2U> &vdops,
+                               ::coder::array<real_T, 2U> &result);
 
-static inline void wls_var_sym_grad(WlsObject *b_wls,
-                                    const ::coder::array<real_T, 2U> &eval_pnts,
-                                    ::coder::array<real_T, 2U> &vdops,
-                                    const real_T result_data[],
-                                    ::coder::SizeType result_size[2]);
+static inline void wls_var_uno(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 1U> &ws_graddiv,
+                               const ::coder::array<real_T, 1U> &ws_lap,
+                               const ::coder::array<real_T, 2U> &ws_grad,
+                               const ::coder::array<real_T, 1U> &ws_rho,
+                               const ::coder::array<real_T, 2U> &fs,
+                               ::coder::array<real_T, 2U> &vdops,
+                               ::coder::array<real_T, 2U> &result);
 
-static inline void wls_var_sym_grad(WlsObject *b_wls,
-                                    const ::coder::array<real_T, 2U> &eval_pnts,
-                                    const ::coder::array<real_T, 2U> &ws,
-                                    ::coder::array<real_T, 2U> &vdops,
-                                    const real_T result_data[],
-                                    ::coder::SizeType result_size[2]);
+static inline void wls_var_uno(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 1U> &ws_graddiv,
+                               const ::coder::array<real_T, 1U> &ws_lap,
+                               const ::coder::array<real_T, 2U> &ws_grad,
+                               const ::coder::array<real_T, 1U> &ws_rho,
+                               ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_uno(WlsObject *b_wls,
+                               const ::coder::array<real_T, 2U> &eval_pnts,
+                               const ::coder::array<real_T, 1U> &ws_graddiv,
+                               const ::coder::array<real_T, 1U> &ws_lap,
+                               const ::coder::array<real_T, 2U> &ws_grad,
+                               ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_uno5(WlsObject *b_wls,
+                                const ::coder::array<real_T, 2U> &eval_pnts,
+                                const ::coder::array<real_T, 1U> &ws_graddiv,
+                                const ::coder::array<real_T, 1U> &ws_lap,
+                                ::coder::array<real_T, 2U> &vdops);
+
+static inline void wls_var_uno6(WlsObject *b_wls,
+                                const ::coder::array<real_T, 2U> &eval_pnts,
+                                const ::coder::array<real_T, 1U> &ws_graddiv,
+                                ::coder::array<real_T, 2U> &vdops);
 
 } // namespace wls
 

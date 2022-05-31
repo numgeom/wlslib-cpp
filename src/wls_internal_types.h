@@ -2,7 +2,7 @@
 //
 // wls_internal_types.h
 //
-// Code generation for function 'wls_div'
+// Code generation for function 'wls_curl'
 //
 
 #ifndef WLS_INTERNAL_TYPES_H
