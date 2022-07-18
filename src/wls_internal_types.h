@@ -22,7 +22,6 @@ typedef int32_T SizeType;
 #endif // CODER_ARRAY_SIZE_TYPE_DEFINED
 
 #include "coder_array.h"
-#include "coder_bounded_array.h"
 
 // Type Definitions
 namespace wls {
@@ -34,9 +33,9 @@ struct WlsObject {
   int32_T interp0;
   int32_T stride;
   ::coder::array<real_T, 2U> us;
-  ::coder::bounded_array<real_T, 3U, 2U> origin;
+  ::coder::array<real_T, 2U> origin;
   ::coder::array<real_T, 1U> rweights;
-  ::coder::bounded_array<real_T, 3U, 2U> hs_inv;
+  ::coder::array<real_T, 2U> hs_inv;
   ::coder::array<real_T, 2U> V;
   ::coder::array<real_T, 2U> QR;
   ::coder::array<real_T, 2U> rhs;
@@ -49,7 +48,7 @@ struct WlsObject {
   ::coder::array<real_T, 1U> work;
   boolean_T rowmajor;
   ::coder::array<real_T, 2U> QRt;
-  ::coder::bounded_array<real_T, 4U, 1U> runtimes;
+  ::coder::array<real_T, 1U> runtimes;
 };
 
 struct WlsWeight {
