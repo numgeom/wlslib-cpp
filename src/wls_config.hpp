@@ -31,7 +31,7 @@
 
 #ifdef __GNUC__
 #  define WLS_COMP_FLAG 1
-#  if __GNUC__ < 7 && !defined(_WIN32)
+#  if __GNUC__ < 7 && !defined(_WIN32) && !defined(__clang__)
 #    warning "To get best performance, GCC v7.0+ is recommended."
 #  endif
 #else
